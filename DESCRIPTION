@@ -8,16 +8,27 @@ Description: What the package does (one paragraph).
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.2
 Imports: 
     chirps,
+    cli,
     dplyr,
+    ecmwfr,
     geodata,
+    glue,
+    lifecycle,
     lubridate,
     ncdf4,
     raster,
+    rlang,
     sf,
     tidyr,
+    withr,
     zoo
+Depends:
+    ecmwfr,
+    sf,
+    dplyr,
+    lubridate
 URL: https://github.com/nputney4/malclimsim
 BugReports: https://github.com/nputney4/malclimsim/issues

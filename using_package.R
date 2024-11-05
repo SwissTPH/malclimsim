@@ -6,7 +6,9 @@ library(sf)
 library(chirps)
 library(dplyr)
 library(roxygen2)
+library(pak)
 
+library(malclimsim)
 years <- 2014:2023
 lat <- 8.3
 lon <- 17.9

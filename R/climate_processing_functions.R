@@ -52,10 +52,10 @@ rolling_average_D_days <- function(avg_rain, D, save = TRUE, file = "", rain = T
   c2 <- as.numeric(as.matrix(avg_rain[2]))  # Rainfall column
 
   # Create a time-series object using zoo
-  x <- zoo(c2, c1)
+  x <- zoo::zoo(c2, c1)
 
   # Calculate rolling average with a window of D days
-  avg_rain$rollmean <- rollmean(x, D, fill = NA, align = "right")
+  avg_rain$rollmean <- zoo::rollmean(x, D, fill = NA, align = "right")
 
   # Optionally save the updated data with rolling average
   if (save) {
@@ -83,24 +83,6 @@ standardize_rainfall <- function(avg_rain, save = TRUE, file = "") {
 
   return(avg_rain)  # Return the updated data frame
 }
-
-#' Processing climate data for use in model simulation
-#'
-#' @param country # 3-letter country ISO code
-#' @param dates_for_rain Date range for rainfall extraction
-#' @param dates_for_temp Years for which temperature data will be extracted (data available until 2016)
-#' @param dates_of_interest Date range for the analysis (e.g., when malaria and SMC data are available)
-#' @param D Number of days prior to a target date to include for rainfall (rolling average window)
-#'
-#' @return A data frame.
-#' @export
-#'
-#' @examples
-#'country <- "RWA"
-#'dates_for_rain <- c("2008-01-01","2016-12-31")
-#'dates_for_temp <- 2008:2016
-#'dates_of_interest <- c("2008-01-01","2016-12-31")
-#'D1 <- 30
 
 save_era5 <- function(years, path){
   current_datetime <- Sys.time()
@@ -131,11 +113,11 @@ save_era5 <- function(years, path){
 }
 
 extract_era5 <- function(lon, lat, path_to_file){
-  nc <- nc_open(path_to_file)
-  temp_values <- ncvar_get(nc, "t2m")
-  lat_values <- ncvar_get(nc, "latitude")
-  lon_values <- ncvar_get(nc, "longitude")
-  valid_time <- ncvar_get(nc, "valid_time")  # Extract valid_time
+  nc <- ncdf4::nc_open(path_to_file)
+  temp_values <- ncdf4::ncvar_get(nc, "t2m")
+  lat_values <- ncdf4::ncvar_get(nc, "latitude")
+  lon_values <- ncdf4::ncvar_get(nc, "longitude")
+  valid_time <- ncdf4::ncvar_get(nc, "valid_time")  # Extract valid_time
 
   dim1_ind <- which.min(abs(lon_values - lon))  # Closest longitude index
   dim2_ind <- which.min(abs(lat_values - lat))  # Closest latitude index
@@ -194,7 +176,7 @@ daily_smooth_temp <- function(temp_df) {
 #' @param rain - boolean for if CHIRPS data should be downloaded and saved
 #' @param temp - boolean for if ERA5 data should be downloaded and saved
 #'
-#' @return
+#' @return - nothing
 #' @export
 #'
 #' @examples
@@ -214,18 +196,27 @@ save_climate_data <- function(long, lat, years, path_to_data, rain = TRUE, temp 
 
 #' Title
 #'
-#' @param lon
-#' @param lat
-#' @param years
-#' @param D
-#' @param temp_path
-#' @param rain_path
-#' @param path_to_data
+#' @param lon - longitude coordinate
+#' @param lat - latitude coordinate
+#' @param years - vector containing each year for the analysis
+#' @param D - the number of previous days to take an average over for the rainfall rolling mean
+#' @param temp_path - path to temperature data saved by save_climate_data
+#' @param rain_path path to rainfall data saved by save_climate_data
+#' @param path_to_data path to directory where the processed climate data will be stored
 #'
-#' @return
+#' @return a data frame
 #' @export
 #'
 #' @examples
+#' years <- 2014:2023
+#' lon <- 17.9
+#' lat <- 8.3
+#' path_to_data <- "C:/Users/putnni/Documents/r-packages/data/"
+#' save_climate_data(lon, lat, years, path_to_data)
+#' temp_path <- paste0(path_to_data, "era5_11051417.nc")
+#' rain_path <- paste0(path_to_data, "chirps_11051418.rds")
+#' met <- process_climate_data(lon, lat, years, D = 30, temp_path = temp_path,
+#' rain_path = rain_path, path_to_data
 process_climate_data <- function(lon, lat, years, D, temp_path, rain_path, path_to_data){
   # Temperature
   temp_df <- extract_era5(lat = lat, lon = lon, path_to_file = temp_path)
@@ -241,7 +232,7 @@ process_climate_data <- function(lon, lat, years, D, temp_path, rain_path, path_
 
   # Fill missing values in the rolling averages by extending the last available value forward
   # - `na.fill(..., c("extend"))` fills any NA values by extending the last non-NA value forward
-  rolling_avg$rollmean <- na.fill(rolling_avg$rollmean, c("extend"))
+  rolling_avg$rollmean <- zoo::na.fill(rolling_avg$rollmean, c("extend"))
 
   # Standardize the rainfall data using z-scores (anomalies from the mean)
   # - `standardize_rainfall` calculates the anomaly (z-score) for rainfall to identify deviations from the norm
@@ -260,4 +251,3 @@ process_climate_data <- function(lon, lat, years, D, temp_path, rain_path, path_
 
   return(met)
 }
-
