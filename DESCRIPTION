@@ -1,0 +1,21 @@
+Package: malclimsim
+Title: Simulating From and Estimating Parameters of a Dynamical Malaria Model
+Version: 0.0.0.9000
+Authors@R: 
+    person("Nicholas", "Putney", , "nputney4@gmail.com", role = c("aut", "cre"),
+           comment = c(ORCID = "YOUR-ORCID-ID"))
+Description: What the package does (one paragraph).
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.2.3
+Imports: 
+    chirps,
+    dplyr,
+    geodata,
+    lubridate,
+    ncdf4,
+    raster,
+    sf,
+    tidyr,
+    zoo
