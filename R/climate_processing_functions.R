@@ -217,8 +217,7 @@ save_climate_data <- function(long, lat, years, path_to_data, rain = TRUE, temp 
 #' rain_path <- paste0(path_to_data, "chirps_11051418.rds")
 #' met <- process_climate_data(lon, lat, years, D = 30, temp_path = temp_path,
 #' rain_path = rain_path, path_to_data
-process_climate_data <- function(lon, lat, years, D, temp_path, rain_path, path_to_data){
-  # Temperature
+process_climate_data <- function(lon, lat, years, D, temp_path, rain_path, path_to_data, months_30_days = TRUE){
   temp_df <- extract_era5(lat = lat, lon = lon, path_to_file = temp_path)
   temp <- daily_smooth_temp(temp_df)
 
@@ -237,12 +236,13 @@ process_climate_data <- function(lon, lat, years, D, temp_path, rain_path, path_
   # Standardize the rainfall data using z-scores (anomalies from the mean)
   # - `standardize_rainfall` calculates the anomaly (z-score) for rainfall to identify deviations from the norm
   met <- standardize_rainfall(rolling_avg, save = FALSE)
-
   # Combine rainfall and temperature
   # Overwrite the `rwa_met` object with average temperature data from `temp_rwa`
   # - `temp_rwa$tavg` contains the average daily temperature extracted earlier
   met$temp <- temp$Temperature
-
+  if(months_30_days){
+    met <- climate_to_30_day_months(met, start_year = years[1], end_year = years[length(years)])
+  }
   # Save the processed Rwanda climate data (rainfall and temperature) to the specified directory
   # - The data is saved as an RDS file, which is an efficient format for storing R objects
   current_datetime <- Sys.time()

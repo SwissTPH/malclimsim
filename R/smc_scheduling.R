@@ -40,39 +40,69 @@ gen_smc_schedule <- function(start_date, end_date, years, months_active, months_
 }
 
 
-
-
+#' Generate a schedule of coverage values for a given period with decay
+#'
+#' This function generates a schedule of coverage values for the given time period,
+#' filling missing values with previous non-zero coverage and applying a decay calculation.
+#'
+#' @param smc_cov A data frame containing the coverage data. It should have at least two columns:
+#'   - `date_start`: The date of the coverage value.
+#'   - `coverage`: The coverage value corresponding to that date.
+#' @param months_30_days Logical; whether to generate dates in 30-day month format (defaults to `FALSE`).
+#'   If `TRUE`, the sequence of dates will follow a 360-day year with 12 months of 30 days each.
+#' @param years A numeric vector containing the range of years to generate the schedule for (e.g., `c(2014, 2022)`).
+#' @param const A numeric value representing the decay constant used in the decay calculation (default is `-0.1806`).
+#'
+#' @return A data frame containing the following columns:
+#'   - `dates`: The sequence of dates from the beginning to the end of the time period.
+#'   - `SMC`: A binary value indicating the presence (1) or absence (0) of coverage on each date.
+#'   - `cov`: The coverage value for each date.
+#'   - `decay`: The decay values calculated for each date based on the SMC and the decay constant.
+#'
+#' @export
+#'
+#' @examples
+#' smc_schedule_from_data(smc_cov = smc_cov_data, months_30_days = FALSE, years = c(2014, 2022))
 smc_schedule_from_data <- function(smc_cov, months_30_days, years, const = -0.1806) {
-  start_date <- as.Date(paste0(years[1], "-01-01"))
-  end_date <- as.Date(paste0(years[length(years)], "-12-31"))
+
+  # Set start and end dates based on the input years
+  start_date <- as.Date(paste0(years[1], "-01-01"))  # Start date of the time range (Jan 1 of the first year)
+  end_date <- as.Date(paste0(years[length(years)], "-12-31"))  # End date of the time range (Dec 31 of the last year)
+
+  # Ensure that `date_start` in `smc_cov` is a character vector (for compatibility in joining)
   smc_cov$date_start <- as.character(smc_cov$date_start)
 
-  # Create a sequence of all days from 2014-01-01 to 2022-12-31
+  # Create a sequence of all dates from the start date to the end date (by default 1 day interval)
   all_dates <- data.frame(date_start = as.character(seq(as.Date(start_date),
                                                         as.Date(end_date), by = "day")))
-  if(month_30_days){
+
+  # If `months_30_days` is TRUE, generate dates using the 30-day month format (360-day year)
+  if(months_30_days){
     all_dates <- data.frame(date_start = generate_360_day_dates(years[1], years[length(years)]))
   }
 
-  # Join the sequence of dates with the original data
-  # NA values will appear for dates that were not in the original dataset
+  # Merge the sequence of dates with the original `smc_cov` data frame
   smc_cov_day <- all_dates %>%
     left_join(smc_cov, by = "date_start") %>%
-    # Replace NA values with zero initially
+    # Replace NA values in the coverage column with zero initially (indicating no coverage)
     mutate(coverage = ifelse(is.na(coverage), 0, coverage))
 
-  # Fill in missing coverage values with the previous non-zero value
+  # Fill missing coverage values with the previous non-zero value using the `fill` function
   smc_cov_exp <- smc_cov_day %>%
     mutate(coverage = ifelse(coverage == 0, NA, coverage)) %>%
-    fill(coverage, .direction = "down") %>%
-    # Replace any remaining NA values with zero
+    fill(coverage, .direction = "down") %>%  # Propagate the last non-zero coverage forward
+    # Replace any remaining NA values (those that had no coverage) with zero
     replace_na(list(coverage = 0))
 
-  smc_df <- data.frame(dates = all_dates$date_start, SMC = 0,
-                       cov = smc_cov_exp$coverage)
+  # Create the final schedule data frame, including a binary `SMC` indicator and the coverage values
+  smc_df <- data.frame(dates = all_dates$date_start, SMC = 0, cov = smc_cov_exp$coverage)
+
+  # Set the `SMC` column to 1 for dates where there is coverage (coverage > 0)
   smc_df$SMC[which(smc_cov_day$coverage > 0)] <- 1
+
+  # Calculate the decay values for each date using the `calc_decay_arr` function
   smc_df$decay <- calc_decay_arr(smc_df$SMC, const = const)
 
+  # Return the final data frame with dates, SMC, coverage, and decay
   return(smc_df)
 }
-

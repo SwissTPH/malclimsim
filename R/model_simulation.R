@@ -1,3 +1,18 @@
+
+
+#' Loading an Odin Model
+#'
+#' @param name name of the model written in Odin DSL to be loaded. This is a path to an R file,
+#'
+#' @return the loaded model to be used for simulation, inference, etc
+#' @export
+#'
+#' @examples
+load_model <- function(name){
+  file <- system.file("models", paste0(name, ".R"), package = "malclimsim")
+  return(odin.dust::odin_dust(file))
+}
+
 # Helper function to model the decay of SMC (Seasonal Malaria Chemoprevention) efficacy over time.
 # The decay follows a sigmoid curve where efficacy reduces as time (x) increases.
 # Args:
@@ -139,3 +154,4 @@ data_sim <- function(model_SMC, param_inputs, start_date, end_date,
   # Return the resulting incidence dataframe
   return(inc_df)
 }
+

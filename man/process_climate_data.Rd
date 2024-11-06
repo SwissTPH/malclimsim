@@ -4,7 +4,16 @@
 \alias{process_climate_data}
 \title{Title}
 \usage{
-process_climate_data(lon, lat, years, D, temp_path, rain_path, path_to_data)
+process_climate_data(
+  lon,
+  lat,
+  years,
+  D,
+  temp_path,
+  rain_path,
+  path_to_data,
+  months_30_days = TRUE
+)
 }
 \arguments{
 \item{lon}{\itemize{
