@@ -15,39 +15,31 @@ initialize_priors <- function(param_inputs, proposal_matrix, params_to_estimate)
 
   # Define the prior functions and parameter bounds as specified in the model
   default_priors <- list(
+
+    # 1. Transmission and Recovery Parameters
     phi = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dbeta(p, 40, 12, log = TRUE)),
     qR = list(initial = 0.2, min = 1e-6, max = 1, prior = function(p) dbeta(p, 1, 150, log = TRUE)),
-    a_R = list(initial = 0.5, min = 0.01, max = 1, prior = function(p) dbeta(p, 6, 12, log = TRUE)),
-    b_R = list(initial = 3, min = -Inf, max = Inf, prior = function(p) dnorm(p, mean = 2, sd = 0.25, log = TRUE)),
-    s = list(initial = 0.8, min = 0.01, max = 1, prior = function(p) dgamma(p, shape = 20, rate = 20, log = TRUE)),
-    eff_SMC = list(initial = 0.6, min = 0.00, max = 1, prior = function(p) dbeta(p, 2, 2, log = TRUE)),
-    z = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dbeta(p, 4, 2, log = TRUE)),
-    p_surv = list(initial = 0.91, min = 0.88, max = 0.97, prior = function(p) dnorm(p, mean = 0.91, sd = 0.01, log = TRUE)),
-    size = list(initial = 5.5, min = 5, max = 10, prior = function(p) dnorm(p, mean = 5.5, sd = 0.5, log = TRUE)),
     mu_RS_C = list(initial = 1/200, min = 1/400, max = 1/120, prior = function(p) dgamma(p, shape = 2, rate = 480, log = TRUE)),
     mu_EI = list(initial = 1/8, min = 1/15, max = 1/6, prior = function(p) dgamma(p, shape = 6, rate = 63, log = TRUE)),
     phi_C2 = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dbeta(p, 40, 12, log = TRUE)),
     phi_A = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dbeta(p, 40, 12, log = TRUE)),
-    tau = list(initial = 0.2, min = 0, max = 1, prior = function(p) dbeta(p, 40, 12, log = TRUE)),
-    kappa = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dbeta(p, 0.125, 0.125, log = TRUE)),
-    z_A = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dbeta(p, 0.125, 0.125, log = TRUE)),
-    z_C2 = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dbeta(p, 0.125, 0.125, log = TRUE)),
-    shift1 = list(initial = 5, min = 0, max = 90, prior = function(p) dunif(p, min = 0, max = 90, log = TRUE)),
-    shift2 = list(initial = 5, min = 0, max = 90, prior = function(p) dunif(p, min = 0, max = 90, log = TRUE)),
-
-    # Parameters without prior functions assigned will use uniform distribution (dunif)
     mu_TS = list(initial = 0.2, min = 0, max = 2, prior = function(p) dunif(p, min = 0, max = 2, log = TRUE)),
     mu_IR = list(initial = 1/5, min = 0.001, max = 1, prior = function(p) dunif(p, min = 0.001, max = 1, log = TRUE)),
-    fT_C = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dunif(p, min = 0.01, max = 1, log = TRUE)),
-    fT_C1 = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dunif(p, min = 0.01, max = 1, log = TRUE)),
+
+    # 2. Survival and Population Parameters
+    a_R = list(initial = 0.5, min = 0.01, max = 1, prior = function(p) dbeta(p, 6, 12, log = TRUE)),
+    b_R = list(initial = 3, min = -Inf, max = Inf, prior = function(p) dnorm(p, mean = 2, sd = 0.25, log = TRUE)),
+    p_surv = list(initial = 0.91, min = 0.88, max = 0.97, prior = function(p) dnorm(p, mean = 0.91, sd = 0.01, log = TRUE)),
+    size = list(initial = 5.5, min = 5, max = 10, prior = function(p) dnorm(p, mean = 5.5, sd = 0.5, log = TRUE)),
+
+    # 3. Intervention and Effectiveness Parameters
+    eff_SMC = list(initial = 0.6, min = 0.00, max = 1, prior = function(p) dbeta(p, 2, 2, log = TRUE)),
+    z = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dbeta(p, 4, 2, log = TRUE)),
     p_MH_C = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dunif(p, min = 0.01, max = 1, log = TRUE)),
     rho = list(initial = 0.2, min = 0.01, max = 0.99, prior = function(p) dunif(p, min = 0.01, max = 0.99, log = TRUE)),
-    delta_b = list(initial = 0.2, min = 0.01, max = 2, prior = function(p) dunif(p, min = 0.01, max = 2, log = TRUE)),
-    delta_d = list(initial = 0.2, min = 0.01, max = 2, prior = function(p) dunif(p, min = 0.01, max = 2, log = TRUE)),
-    delta_a = list(initial = 0.2, min = 0.01, max = 2, prior = function(p) dunif(p, min = 0.01, max = 2, log = TRUE)),
-    delta_a1 = list(initial = 0.2, min = 0.01, max = 2, prior = function(p) dunif(p, min = 0.01, max = 2, log = TRUE)),
-    delta_a2 = list(initial = 0.2, min = 0.01, max = 2, prior = function(p) dunif(p, min = 0.01, max = 2, log = TRUE)),
-    p_HM = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dunif(p, min = 0.01, max = 1, log = TRUE)),
+
+    # 4. Population Proportions and Initial Conditions
+    s = list(initial = 0.8, min = 0.01, max = 1, prior = function(p) dgamma(p, shape = 20, rate = 20, log = TRUE)),
     N = list(initial = 0.2, min = 0, max = 500000, prior = function(p) dunif(p, min = 0, max = 500000, log = TRUE)),
     percAdult = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dunif(p, min = 0.01, max = 1, log = TRUE)),
     percC1 = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dunif(p, min = 0.01, max = 1, log = TRUE)),
@@ -62,13 +54,23 @@ initialize_priors <- function(param_inputs, proposal_matrix, params_to_estimate)
     IA0 = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dunif(p, min = 0.01, max = 1, log = TRUE)),
     TA0 = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dunif(p, min = 0.01, max = 1, log = TRUE)),
     RA0 = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dunif(p, min = 0.01, max = 1, log = TRUE)),
+
+    # 5. Temperature and Environmental Parameters
+    shift1 = list(initial = 5, min = 0, max = 90, prior = function(p) dunif(p, min = 0, max = 90, log = TRUE)),
+    shift2 = list(initial = 5, min = 0, max = 90, prior = function(p) dunif(p, min = 0, max = 90, log = TRUE)),
     scale = list(initial = 0.2, min = 0.01, max = 1.5, prior = function(p) dunif(p, min = 0.01, max = 1.5, log = TRUE)),
     loc = list(initial = 0.2, min = 0, max = 5, prior = function(p) dunif(p, min = 0, max = 5, log = TRUE)),
     mean_t = list(initial = 20, min = 10, max = 40, prior = function(p) dunif(p, min = 10, max = 40, log = TRUE)),
     k_par = list(initial = 0.7, min = 0.4, max = 1, prior = function(p) dunif(p, min = 0.4, max = 1, log = TRUE)),
     delta_temp = list(initial = 0, min = -5, max = 2, prior = function(p) dunif(p, min = -5, max = 2, log = TRUE)),
-    eta = list(initial = 0.5, min = 0.5, max = 2, prior = function(p) dunif(p, min = 0.5, max = 2, log = TRUE))
+
+    # 6. Adjustment and Scaling Parameters
+    tau = list(initial = 0.2, min = 0, max = 1, prior = function(p) dbeta(p, 40, 12, log = TRUE)),
+    kappa = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dbeta(p, 0.125, 0.125, log = TRUE)),
+    z_A = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dbeta(p, 0.125, 0.125, log = TRUE)),
+    z_C2 = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dbeta(p, 0.125, 0.125, log = TRUE))
   )
+
 
 
   # Initialize an empty list to store priors for each parameter in the proposal matrix

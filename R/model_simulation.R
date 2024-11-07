@@ -176,3 +176,6 @@ data_sim_for_inference <- function(model_SMC, param_inputs,
   return(incidence_df)
 }
 
+# Take results and simulate model using parameters that had maximum ll/posterior
+
+

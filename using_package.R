@@ -28,7 +28,7 @@ lon <- 17.9
 path_to_data <- "C:/Users/putnni/Documents/r-packages/data/"
 
 # Saving the rainfall data locally based on specified path
-save_climate_data(lon, lat, years, path_to_data)
+#save_climate_data(lon, lat, years, path_to_data)
 
 # Reading in climate data saved by `save_climate_data`
 temp_path <- paste0(path_to_data, "era5_11051417.nc")
@@ -49,7 +49,7 @@ path_to_SMC <- "C:/Users/putnni/switchdrive/Chad/Data/data-raw/CPS/CPS_coverage_
 
 # Format SMC data so that the first column corresponds to the start of the first
 # round of SMC and the second column corresponds to the SMC coverage for that round
-SMC_data <- read_excel(path_to_SMC)
+SMC_data <- readxl::read_excel(path_to_SMC)
 View(SMC_data)
 SMC_clean <- SMC_data[c("date_start", "smc_couv_tot")]
 colnames(SMC_clean) <- c("date_start", "coverage")
@@ -67,8 +67,6 @@ smc_schedule <- smc_schedule_from_data(smc_cov = SMC_clean, months_30_days = TRU
 ### ----------------------- SIMULATING FROM THE MODEL ---------------------- ###
 ################################################################################
 climate_model <- load_model("model_det_1")  # Load the deterministic climate model
-model <- climate_model
-model$new(pars = param_inputs, time = 0, n_particles = 1)
 
 # Extract climate vectors
 rain <- met$anom  # Rainfall anomaly data
@@ -84,7 +82,7 @@ param_inputs <- list(
   mu_TS = 1/30, mu_IR = 1/5, eta = 1, mu_RS_C = 1/130, size = 1,
   mu_EI = 1/8, delta_b = 1/(21*365), delta_d = 1/(21*365),
   delta_a = 1/(5 * 365), phi = 1, p_HM = 0.125, p_MH_C = 0.5,
-  rho = 1, fT_C = 0.27, z = 1, qR = 0.17, a_R = 0.4, b_R = 3, N = 5e5,
+  rho = 1, fT_C = 0.27, z = 1, qR = 0.17, a_R = 0.4, b_R = 3, N = 2e5,
   s = 0.9, p_surv = 0.934, percAdult = 0.81, steps_per_day = 1, SC0 = 0.301,
   EC0 = 0.071, IC0 = 0.042, TC0 = 0.054, RC0 = 0.533, SA0 = 0.281,
   EA0 = 0.067, IA0 = 0.040, TA0 = 0.051, RA0 = 0.562, size_inv = 0,
@@ -135,11 +133,14 @@ params_to_estimate <- c(a_R = "a_R", b_R = "b_R", s = "s",
                               qR = "qR", z = "z", eff_SMC = "eff_SMC", "phi",
                               size = "size", p_surv = "p_surv")
 
+params_to_estimate <- c(a_R = "a_R", b_R = "b_R",
+                        qR = "qR", z = "z", eff_SMC = "eff_SMC", phi = "phi",
+                        size = "size")
 ################################################################################
 ### ----------------------- DEFINING MCMC PARAMETERS ----------------------- ###
 ################################################################################
 # Call function with default values
-params_default <- create_mcmc_params()
+params_default <- create_mcmc_params(n_steps = 1000)
 
 # Call function with custom values for n_steps and n_chains
 params_custom <- create_mcmc_params(n_steps = 20000, n_chains = 6)
@@ -155,7 +156,6 @@ control_params_2 <- params_custom$control_params
 ### ---------------- DEFINING PROPOSAL AND STARTING VALUES ----------------- ###
 ################################################################################
 # defining starting values for chains
-# these have to be the same order as what is defined in paramList in the inference function
 start_values <- create_start_values(params_to_estimate, params_default$control_params,
                                     model = climate_model, param_inputs = param_inputs)
 
@@ -165,23 +165,46 @@ proposal_matrix <- create_proposal_matrix(params_to_estimate = params_to_estimat
 
 
 # Default behavior with predefined param_names, min_max_start_values, and proposal_variance
-start_values <- create_start_values(
-  params_to_estimate = c("phi", "qR", "mu_IR"),
-  control_params = list(n_chains = 4)
-)
+# start_values <- create_start_values(
+#  params_to_estimate = c("phi", "qR", "mu_IR"),
+#  control_params = list(n_chains = 4)
+# )
 
 ################################################################################
 ### -------------------------- RUNNING INFERENCE --------------------------- ###
 ################################################################################
-dates_for_inf <- c("2015-01-01", "2021-12-31")
-dates_for_inf <- c("2014-01-01", "2023-12-31")
-inf_results <- inf_run(model_SMC = climate_model, param_inputs = param_inputs,
+dates_for_inf <- c("2014-01-01", "2021-12-31")
+inf_results <- inf_run(model = climate_model, param_inputs = param_inputs,
                            control_params = params_default$control_params,
                            params_to_estimate = params_to_estimate,
                            proposal_matrix = proposal_matrix,
-                           adaptive_param = params_default$adaptive_params,
+                           adaptive_params = params_default$adaptive_params,
                            start_values = start_values, month = TRUE,
                            dates = dates_for_inf, age_for_inf = 'u5',
                            synthetic = FALSE, incidence_df = obs_cases,
                            save_trajectories = FALSE,
-                           rerun_n = 1000, rerun_random = TRUE, dir = code_dir)
+                           rerun_n = 1000, rerun_random = TRUE)
+
+################################################################################
+### -------------------------- SOME DIAGNOSTICS --------------------------- ####
+################################################################################
+MCMC_diag(inf_results)
+post_plot(inf_results, params_to_estimate, dim_plot = c(3,2), show_true = FALSE)
+
+################################################################################
+### ---------------------- EVALUATING MODEL FIT --------------------------- ####
+################################################################################
+# Maximum likelihood/posterior
+max_ll_post(inf_results)
+
+
+
+# Posterior predictive check
+dates_sim <- c("2014-01-01", "2022-12-31") # dates to be used for simulated data
+dates_obs <- c("2014-01-01", "2022-12-31") # dates corresponding for observed data
+sim_df <- create_sim_df(results = inf_results, 300, dates_sim,
+                        dates_obs, model = climate_model)
+
+post_pred_plot <- post_pred_plot(inf_results, sim_df, dates_obs, dates_obs, show_clim = FALSE,
+                                 title = "", theme = NULL, ages = c("u5"))
+post_pred_plot

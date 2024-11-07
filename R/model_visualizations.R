@@ -123,3 +123,124 @@ plot_time_series <- function(results, met = NULL,
   }
 }
 
+
+post_pred_plot <- function(results, sim_df, model, dates_sim, dates_obs, show_clim = TRUE,
+                           met = NULL, title = "", ages = NULL, theme = NULL) {
+  obs_data <- results$incidence_df # observed
+
+  # observed data dataframe for plotting
+  obs_df <- data.frame(
+    date = sim_df$date,
+    lower = rep(NA, nrow(sim_df)),
+    upper = rep(NA, nrow(sim_df)),
+    value = c(obs_data$inc_C, obs_data$inc_A, obs_data$inc),
+    variable1 = sim_df$variable1,
+    variable2 = rep("Observed", nrow(sim_df))
+  )
+  comb_df <- rbind(sim_df, obs_df)
+
+  comb_df$variable1 <- forcats::fct_relevel(comb_df$variable1, "u5", "o5", "total")
+  if(!is.null(ages)){
+    comb_df <- subset(comb_df, variable1 %in% ages)
+  }
+
+  p1 <- comb_df %>% ggplot(aes(x = date, y = value)) +
+    geom_ribbon(aes(ymin = lower, ymax = upper, fill = variable2), alpha = 0.4) +
+    geom_line(data = subset(comb_df, variable2 == "Simulated")) +
+    geom_point(data = subset(comb_df, variable2 == "Observed"), size = 2) +
+    facet_wrap(~ variable1, ncol = 1, scales = "free") +
+    theme_bw() +
+    ggtitle(title) +
+    ylab("Monthly Cases") +
+    theme(
+      plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+      axis.title.x = element_blank(),
+      axis.title.y = element_text(size = 14, face = "bold"),
+      axis.text.x = element_text(size = 12),
+      axis.text.y = element_text(size = 12),
+      strip.text = element_text(size = 14, face = "bold"), # Facet label size
+      legend.position = "none",
+      legend.title = element_blank()
+    ) + theme
+
+  if(show_clim){
+    clim_df <- create_clim_df(met)
+    p_clim <- clim_df %>% ggplot(aes(x = date, y = value)) +
+      geom_line(color = "blue", linewidth = 1.2) + theme_bw() +
+      theme(
+        axis.title.y = element_blank(),
+        axis.text.x = element_text(size = 12),
+        axis.text.y = element_text(size = 12)
+      )
+
+    p1 <- (p1 + theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())) /
+      (p_clim + theme +
+         theme(axis.title.y = element_blank())) +
+      plot_layout(heights = c(3, 1))
+  }
+  return(p1)
+}
+
+
+# Sample n times the full posterior distribution and use these parameter values
+# to simulate different trajectories. The 1st and 99th quantiles of incidence will be taken
+# to construct a ribbon and the sample with the maximum likelihood will be used as
+# a sample trajectory. Alongside, the real data will be plotted as points.
+create_sim_df <- function(results, n, dates_sim, dates_obs, model){
+  n_years <- length(seq(year(as.Date(dates_sim[1])), year(as.Date(dates_sim[2]))))
+  n_months <- n_years * 12
+  coda_pars <- results$coda_pars
+  param_inputs <- results$param_inputs
+  i_to_keep <- sample(1:nrow(coda_pars), n) # picking which rows to keep
+  coda_pars_s <- coda_pars[i_to_keep,-c(1, 2, 3)]
+  month_inc_C <- matrix(nrow = n, ncol = n_months)
+  month_inc_A <- matrix(nrow = n, ncol = n_months)
+  best_params <- coda_pars[which.max(coda_pars_s[, 2]), -c(1, 2, 3)]
+  param_inputs[names(best_params)] <- best_params
+  best_sim <- data_sim(model, param_inputs,
+                       start_date = dates_sim[1], end_date = dates_sim[2],
+                       month = TRUE, round = FALSE, save = FALSE, month_unequal_days = FALSE)
+
+  for (i in 1:nrow(coda_pars_s)) {
+    param_values <- coda_pars_s[i, ]
+    param_inputs[colnames(coda_pars_s)] <- param_values
+    sim_results <- data_sim(model, param_inputs,
+                            start_date = dates_sim[1], end_date = dates_sim[2],
+                            month = TRUE, round = FALSE, save = FALSE, month_unequal_days = FALSE)
+    month_inc_C[i, ] <- sim_results$inc_C
+    month_inc_A[i, ] <- sim_results$inc_A
+  }
+  quantiles_C <- apply(month_inc_C, 2, function(x) quantile(x, probs = c(0.01, 0.05, 0.50, 0.95, 0.99)))
+  quantiles_A <- apply(month_inc_A, 2, function(x) quantile(x, probs = c(0.01, 0.05, 0.50, 0.95, 0.99)))
+  quantiles_total <- apply(month_inc_A + month_inc_C, 2, function(x) quantile(x, probs = c(0.01, 0.05, 0.50, 0.95, 0.99)))
+
+  # data frame for plotting with simulated data
+  # lower is 1st quantile and upper is 99th quantile
+  sim_df <- data.frame(date = rep(sim_results$date_ymd, 3),
+                       lower = c(quantiles_C[1, ], quantiles_A[1, ], quantiles_total[1, ]),
+                       upper = c(quantiles_C[5, ], quantiles_A[5, ], quantiles_total[5, ]),
+                       #value = c(best_sim$inc_C, best_sim$inc_A, best_sim$inc),
+                       value = c(quantiles_C[3, ], quantiles_A[3, ], quantiles_total[3, ]),
+                       variable1 = c(
+                         rep("u5", n_months),
+                         rep("o5", n_months),
+                         rep("total", n_months)
+                       ),
+                       variable2 = rep("Simulated", 3 * n_months))
+  sim_df <- sim_df[which(sim_df$date %in% seq(as.Date(dates_obs[1]), as.Date(dates_obs[2]), by = "day")), ]
+  return(sim_df)
+}
+
+create_clim_df <- function(clim_df){
+  month_clim <- rep(as.Date(clim_df$date), 2)
+  variable <- c(rep("rain", nrow(clim_df)))
+  value <- c(clim_df$anom)
+  variable2 <- rep("Climate", length(value))
+  upper <- rep(NA, length(value))
+  lower <- rep(NA, length(value))
+  clim_plot_df <- data.frame(date = month_clim, variable = variable, value = value,
+                             variable2 = variable2, upper = upper, lower = lower)
+  clim_plot_df <- data.frame(date = month_clim, lower = lower, upper = upper,
+                             value = value, variable1 = variable, variable2 = variable2)
+  return(clim_plot_df)
+}

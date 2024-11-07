@@ -33,6 +33,7 @@ Depends:
     lubridate,
     tidyr,
     ggplot2,
-    mcstate
+    mcstate,
+    coda
 URL: https://github.com/nputney4/malclimsim
 BugReports: https://github.com/nputney4/malclimsim/issues
