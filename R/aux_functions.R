@@ -115,3 +115,30 @@ generate_360_day_dates <- function(start_year, end_year) {
 
   return(unlist(dates))  # Return the list of dates as a vector
 }
+
+# Custom function to calculate days difference assuming a 360-day year
+calculate_360_day_difference <- function(date1, date2) {
+  # Convert dates to Date class if they aren't already
+  date1 <- as.Date(date1)
+  date2 <- as.Date(date2)
+
+  # Extract year, month, and day components for each date
+  y1 <- as.numeric(format(date1, "%Y"))
+  m1 <- as.numeric(format(date1, "%m"))
+  d1 <- as.numeric(format(date1, "%d"))
+
+  y2 <- as.numeric(format(date2, "%Y"))
+  m2 <- as.numeric(format(date2, "%m"))
+  d2 <- as.numeric(format(date2, "%d"))
+
+  # Calculate the difference in years, months, and days
+  year_diff <- y2 - y1
+  month_diff <- m2 - m1
+  day_diff <- d2 - d1
+
+  # Adjust month and day differences
+  # Each month is treated as 30 days, and each year as 360 days
+  total_days <- year_diff * 360 + month_diff * 30 + day_diff
+
+  return(total_days)
+}

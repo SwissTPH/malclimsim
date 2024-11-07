@@ -31,6 +31,8 @@ Depends:
     sf,
     dplyr,
     lubridate,
-    tidyr
+    tidyr,
+    ggplot2,
+    mcstate
 URL: https://github.com/nputney4/malclimsim
 BugReports: https://github.com/nputney4/malclimsim/issues

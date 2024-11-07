@@ -93,7 +93,7 @@ data_sim <- function(model_SMC, param_inputs, start_date, end_date,
                      month = FALSE, round = TRUE, save = TRUE, file = "",
                      month_unequal_days = FALSE){
   # Calculate the number of days in the SMC schedule
-  n_days <- length(param_inputs$SMC)
+  n_days <- calculate_360_day_difference(start_date, end_date)
 
   # Run the simulation using the model and parameters
   results <- sim_mod(model_SMC, pars = c(param_inputs), time_start = 0,
@@ -106,7 +106,7 @@ data_sim <- function(model_SMC, param_inputs, start_date, end_date,
   # If monthly aggregation is selected
   if(month){
     # Create monthly indices for aggregation
-    month_ind <- seq(1, length(param_inputs$SMC), by = 30)
+    month_ind <- seq(1, n_days, by = 30)
 
     # Adjust for months with unequal days, if specified
     if(month_unequal_days){
@@ -153,5 +153,26 @@ data_sim <- function(model_SMC, param_inputs, start_date, end_date,
 
   # Return the resulting incidence dataframe
   return(inc_df)
+}
+
+data_sim_for_inference <- function(model_SMC, param_inputs,
+                                   dates, noise = FALSE, month = FALSE,
+                                   month_unequal_days = FALSE){
+
+  # incidence dataframe in specific format from data_sim
+  if(month){
+    incidence_df <- data_sim(model_SMC, param_inputs, start_date = dates[1],
+                             end_date = dates[2], month = TRUE, save = FALSE,
+                             month_unequal_days = month_unequal_days)
+  }else{incidence_df <- data_sim(model_SMC, param_inputs, start_date = dates[1],
+                                 end_date = dates[2], month = FALSE, save = FALSE,
+                                 month_unequal_days = month_unequal_days)}
+
+  if(noise){
+    set.seed(seed)
+    #incidence_df$inc <- rpois(nrow(incidence_df), lambda = incidence_df$inc)
+    incidence_df$inc <- rnbinom(nrow(incidence_df), mu = incidence_df$inc, size = 100)
+  }
+  return(incidence_df)
 }
 
