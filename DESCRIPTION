@@ -18,6 +18,7 @@ Imports:
     glue,
     lifecycle,
     lubridate,
+    magrittr,
     ncdf4,
     odin.dust,
     raster,

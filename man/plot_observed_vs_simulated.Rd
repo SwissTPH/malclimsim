@@ -14,17 +14,6 @@ plot_observed_vs_simulated(
   n_samples = 100,
   groups = c("inc_A", "inc_C", "inc")
 )
-
-plot_observed_vs_simulated(
-  results,
-  obs_cases,
-  start_date,
-  end_date,
-  model,
-  add_ribbon = FALSE,
-  n_samples = 100,
-  groups = c("inc_A", "inc_C", "inc")
-)
 }
 \arguments{
 \item{results}{The MCMC results object containing the parameter samples.}
@@ -45,23 +34,13 @@ plot_observed_vs_simulated(
 }
 \value{
 A ggplot object displaying observed data as points, simulated data as a line, and an optional ribbon for quantiles.
-
-A ggplot object displaying observed data as points, simulated data as a line, and an optional ribbon for quantiles.
 }
 \description{
 This function simulates data from a model using parameters that maximize the log posterior,
 then plots the observed and simulated incidence data for comparison. Optionally, a ribbon
 representing the 1st and 99th quantiles of additional simulations can be included to visualize uncertainty.
-
-This function simulates data from a model using parameters that maximize the log posterior,
-then plots the observed and simulated incidence data for comparison. Optionally, a ribbon
-representing the 1st and 99th quantiles of additional simulations can be included to visualize uncertainty.
 }
 \examples{
-# Assuming `results` contains MCMC output and `obs_cases` is the observed cases data
-plot_observed_vs_simulated(results, obs_cases, start_date = "2014-01-01",
-                           end_date = "2014-12-31", model = data_sim,
-                           add_ribbon = TRUE, n_samples = 100, groups = c("inc_A", "inc_C", "inc"))
 # Assuming `results` contains MCMC output and `obs_cases` is the observed cases data
 plot_observed_vs_simulated(results, obs_cases, start_date = "2014-01-01",
                            end_date = "2014-12-31", model = data_sim,

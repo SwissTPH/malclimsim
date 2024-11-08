@@ -91,91 +91,19 @@ calculate_bias <- function(observed, simulated) {
   return(bias)
 }
 
-#' Plot Residuals Between Observed and Simulated Data
+#' Plot Residuals of Observed vs Simulated Data
 #'
-#' Plots the residuals (difference between observed and simulated values) over time.
-#'
-#' @param dates A vector of dates corresponding to the observations.
-#' @param observed A numeric vector of observed values.
-#' @param simulated A numeric vector of simulated values.
-#' @return A ggplot object showing residuals over time.
-#' @examples
-#' residual_plot <- plot_residuals(dates, observed, simulated)
-plot_residuals <- function(dates, observed, simulated) {
-  residuals <- observed - simulated
-  library(ggplot2)
-  p <- ggplot(data.frame(date = dates, residuals = residuals), aes(x = date, y = residuals)) +
-    geom_line(color = "darkred", size = 1) +
-    labs(title = "Residuals Over Time", x = "Date", y = "Residuals (Observed - Simulated)") +
-    theme_minimal() +
-    theme(plot.title = element_text(hjust = 0.5))
-
-  return(p)
-}
-
-#' Assess Model Performance
-#'
-#' Calculates various error metrics (MAE, RMSE, MAPE, Bias) and plots residuals between
-#' observed and simulated values.
-#'
-#' @param observed_df A data frame containing observed values (columns: `inc_A`, `inc_C`, `inc`).
-#' @param simulated_df A data frame containing simulated values (columns: `inc_A`, `inc_C`, `inc`).
-#' @param date_column The name of the column representing dates in `observed_df` and `simulated_df`.
-#' @return A list of error metrics for each group (`inc_A`, `inc_C`, `inc`) and residual plots.
-#' @examples
-#' error_metrics <- assess_model_performance(observed_df, simulated_df, date_column = "date_ymd")
-assess_model_performance <- function(observed_df, simulated_df, date_column = "date_ymd") {
-
-  # Merging observed and simulated data based on the date column
-  combined_data <- merge(observed_df, simulated_df, by = date_column, suffixes = c("_obs", "_sim"))
-
-  # Error metrics for each group (inc_A, inc_C, inc)
-  groups <- c("inc_A", "inc_C", "inc")
-
-  error_metrics <- lapply(groups, function(group) {
-    observed <- combined_data[[paste0(group, "_obs")]]
-    simulated <- combined_data[[paste0(group, "_sim")]]
-
-    mae <- calculate_mae(observed, simulated)
-    rmse <- calculate_rmse(observed, simulated)
-    mape <- calculate_mape(observed, simulated)
-    bias <- calculate_bias(observed, simulated)
-
-    list(
-      group = group,
-      MAE = mae,
-      RMSE = rmse,
-      MAPE = mape,
-      Bias = bias
-    )
-  })
-
-  # Create residual plots for each group
-  residual_plots <- lapply(groups, function(group) {
-    observed <- combined_data[[paste0(group, "_obs")]]
-    simulated <- combined_data[[paste0(group, "_sim")]]
-    plot_residuals(combined_data[[date_column]], observed, simulated)
-  })
-
-  # Return a list with metrics and plots
-  return(list(
-    error_metrics = error_metrics,
-    residual_plots = residual_plots
-  ))
-}
-
-#' Calculate Model Errors
-#'
-#' This function calculates various error metrics (MAE, RMSE, MAPE, R²) for observed and simulated data.
+#' This function creates residual plots for observed and simulated data, allowing the user to select specific groups.
 #'
 #' @param observed_df Data frame containing the observed data.
 #' @param simulated_df Data frame containing the simulated data.
 #' @param date_column The name of the date column in both data frames.
-#' @return A data frame containing error metrics for each group.
+#' @param groups A character vector specifying which groups to include in the plot (`inc_A`, `inc_C`, `inc`).
+#' @return A ggplot object displaying the residual plots.
 #' @export
 #' @examples
-#' error_metrics <- calculate_model_errors(obs_cases, simulated_df, date_column = "date_ymd")
-calculate_model_errors <- function(observed_df, simulated_df, date_column) {
+#' residual_plot <- plot_residuals(obs_cases, simulated_df, date_column = "date_ymd", groups = c("inc_A", "inc_C"))
+plot_residuals <- function(observed_df, simulated_df, date_column, groups = c("inc_A", "inc_C", "inc")) {
 
   # Ensure date compatibility and merge observed and simulated data
   observed_df[[date_column]] <- as.Date(observed_df[[date_column]])
@@ -187,40 +115,111 @@ calculate_model_errors <- function(observed_df, simulated_df, date_column) {
   combined_data$residual_inc_C <- combined_data$inc_C_obs - combined_data$inc_C_sim
   combined_data$residual_inc <- combined_data$inc_obs - combined_data$inc_sim
 
-  # Calculate error metrics (MAE, RMSE, MAPE, R²) for each group
-  mae_inc_A <- mean(abs(combined_data$residual_inc_A), na.rm = TRUE)
-  mae_inc_C <- mean(abs(combined_data$residual_inc_C), na.rm = TRUE)
-  mae_inc <- mean(abs(combined_data$residual_inc), na.rm = TRUE)
+  # Prepare data for plotting residuals for each selected group
+  residuals_long <- data.frame(
+    date_ymd = combined_data[[date_column]],
+    inc_A = combined_data$residual_inc_A,
+    inc_C = combined_data$residual_inc_C,
+    inc = combined_data$residual_inc
+  ) %>%
+    tidyr::pivot_longer(cols = c("inc_A", "inc_C", "inc"),
+                        names_to = "Group",
+                        values_to = "Residual") %>%
+    dplyr::filter(Group %in% groups)  # Filter selected groups
 
-  rmse_inc_A <- sqrt(mean(combined_data$residual_inc_A^2, na.rm = TRUE))
-  rmse_inc_C <- sqrt(mean(combined_data$residual_inc_C^2, na.rm = TRUE))
-  rmse_inc <- sqrt(mean(combined_data$residual_inc^2, na.rm = TRUE))
+  # Create facet plot for residuals
+  residual_plot <- ggplot(residuals_long, aes(x = date_ymd, y = Residual)) +
+    geom_line(color = "darkblue") +
+    geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+    facet_wrap(~ Group, scales = "free_y", ncol = 1,
+               labeller = labeller(Group = c(
+                 "inc_A" = ">=5 years old (inc_A)",
+                 "inc_C" = "<5 years old (inc_C)",
+                 "inc" = "Total incidence (inc)"
+               ))) +
+    labs(
+      title = "Residuals: Observed vs Simulated Incidence",
+      x = "Date",
+      y = "Residuals (Observed - Simulated)"
+    ) +
+    theme_minimal() +
+    theme(
+      plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+      axis.text.x = element_text(angle = 45, hjust = 1),
+      strip.text = element_text(size = 14, face = "bold")
+    )
 
-  mape_inc_A <- mean(abs(combined_data$residual_inc_A / combined_data$inc_A_obs), na.rm = TRUE) * 100
-  mape_inc_C <- mean(abs(combined_data$residual_inc_C / combined_data$inc_C_obs), na.rm = TRUE) * 100
-  mape_inc <- mean(abs(combined_data$residual_inc / combined_data$inc_obs), na.rm = TRUE) * 100
-
-  r2_inc_A <- 1 - (sum(combined_data$residual_inc_A^2, na.rm = TRUE) /
-                     sum((combined_data$inc_A_obs - mean(combined_data$inc_A_obs, na.rm = TRUE))^2, na.rm = TRUE))
-
-  r2_inc_C <- 1 - (sum(combined_data$residual_inc_C^2, na.rm = TRUE) /
-                     sum((combined_data$inc_C_obs - mean(combined_data$inc_C_obs, na.rm = TRUE))^2, na.rm = TRUE))
-
-  r2_inc <- 1 - (sum(combined_data$residual_inc^2, na.rm = TRUE) /
-                   sum((combined_data$inc_obs - mean(combined_data$inc_obs, na.rm = TRUE))^2, na.rm = TRUE))
-
-  # Compile error metrics into a data frame
-  error_metrics <- data.frame(
-    Group = c(">=5 years old (inc_A)", "<5 years old (inc_C)", "Total (inc)"),
-    MAE = c(mae_inc_A, mae_inc_C, mae_inc),
-    RMSE = c(rmse_inc_A, rmse_inc_C, rmse_inc),
-    MAPE = c(mape_inc_A, mape_inc_C, mape_inc),
-    R2 = c(r2_inc_A, r2_inc_C, r2_inc)
-  )
-
-  return(error_metrics)
+  return(residual_plot)
 }
 
+
+
+#' Calculate Error Metrics for Model Assessment
+#'
+#' This function calculates various error metrics (MAE, RMSE, MAPE, R^2) between observed and simulated data.
+#'
+#' @param observed_df Data frame containing the observed data.
+#' @param simulated_df Data frame containing the simulated data.
+#' @param date_column The name of the date column in both data frames.
+#' @param groups A character vector specifying which groups to calculate error metrics for (e.g., `c("inc_A", "inc_C", "inc")`).
+#' @return A data frame containing the calculated error metrics for each group.
+#' @export
+#' @examples
+#' error_metrics <- calculate_error_metrics(obs_cases, simulated_df, date_column = "date_ymd", groups = c("inc_A", "inc_C", "inc"))
+calculate_error_metrics <- function(observed_df, simulated_df, date_column, groups) {
+  # Check if date_column exists in both data frames
+  if (!(date_column %in% names(observed_df)) || !(date_column %in% names(simulated_df))) {
+    stop("The specified date_column does not exist in one or both data frames.")
+  }
+
+  # Check if observed_df and simulated_df contain necessary columns for the specified groups
+  necessary_columns <- unlist(lapply(groups, function(group) c(paste0(group, "_obs"), paste0(group, "_sim"))))
+  missing_columns <- necessary_columns[!necessary_columns %in% names(observed_df) & !necessary_columns %in% names(simulated_df)]
+  if (length(missing_columns) > 0) {
+    stop("The following columns are missing in one or both data frames: ", paste(missing_columns, collapse = ", "))
+  }
+
+  # Ensure date compatibility and merge observed and simulated data
+  observed_df[[date_column]] <- as.Date(observed_df[[date_column]])
+  simulated_df[[date_column]] <- as.Date(simulated_df[[date_column]])
+  combined_data <- merge(observed_df, simulated_df, by = date_column, suffixes = c("_obs", "_sim"))
+
+  error_metrics_list <- lapply(groups, function(group) {
+    residuals <- combined_data[[paste0(group, "_obs")]] - combined_data[[paste0(group, "_sim")]]
+    mae <- mean(abs(residuals), na.rm = TRUE)
+    rmse <- sqrt(mean(residuals^2, na.rm = TRUE))
+    mape <- mean(abs(residuals / combined_data[[paste0(group, "_obs")]]), na.rm = TRUE) * 100
+    r2 <- 1 - (sum(residuals^2, na.rm = TRUE) / sum((combined_data[[paste0(group, "_obs")]] - mean(combined_data[[paste0(group, "_obs")]], na.rm = TRUE))^2, na.rm = TRUE))
+
+    data.frame(Group = group, MAE = mae, RMSE = rmse, MAPE = mape, R2 = r2)
+  })
+
+  # Combine error metrics into a data frame
+  error_metrics_df <- do.call(rbind, error_metrics_list)
+  return(error_metrics_df)
+}
+
+#' Assess Model Performance
+#'
+#' This function assesses the performance of a model by calculating error metrics and plotting residuals.
+#'
+#' @param observed_df Data frame containing the observed data.
+#' @param simulated_df Data frame containing the simulated data.
+#' @param date_column The name of the date column in both data frames.
+#' @param groups A character vector specifying which groups to assess (e.g., `c("inc_A", "inc_C", "inc")`).
+#' @return A list containing a data frame of error metrics and a ggplot object of residual plots.
+#' @export
+#' @examples
+#' performance_results <- assess_model_performance(obs_cases, simulated_df, date_column = "date_ymd", groups = c("inc_A", "inc_C", "inc"))
+assess_model_performance <- function(observed_df, simulated_df, date_column, groups) {
+  # Calculate error metrics
+  error_metrics <- calculate_error_metrics(observed_df, simulated_df, date_column, groups)
+
+  # Plot residuals
+  residual_plot <- plot_residuals(observed_df, simulated_df, date_column, groups)
+
+  return(list(error_metrics = error_metrics, residual_plot = residual_plot))
+}
 
 
 
