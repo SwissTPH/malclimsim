@@ -244,7 +244,6 @@ create_clim_df <- function(clim_df){
                              value = value, variable1 = variable, variable2 = variable2)
   return(clim_plot_df)
 }
-
 #' Plot Observed vs Simulated Data with Quantiles Ribbon for Each Group
 #'
 #' This function simulates data from a model using parameters that maximize the log posterior,
@@ -323,31 +322,40 @@ plot_observed_vs_simulated <- function(results, obs_cases, start_date, end_date,
 
   # Add quantile ribbon if requested
   if (add_ribbon) {
+    # For each group, add the corresponding quantile ribbon
     for (group in groups) {
-      p <- p + geom_ribbon(data = combined_data,
-                           aes_string(x = "date_ymd",
-                                      ymin = paste0(group, "_q01"),
-                                      ymax = paste0(group, "_q99")),
-                           fill = "grey", alpha = 0.3)
+      # Filter data specifically for the selected group to add the ribbon
+      ribbon_data <- combined_data[, c("date_ymd", paste0(group, "_q01"), paste0(group, "_q99"))]
+      colnames(ribbon_data) <- c("date_ymd", "q01", "q99")
+      ribbon_data$group <- group
+
+      # Add ribbon for the corresponding group facet
+      p <- p + geom_ribbon(
+        data = subset(ribbon_data, group == group),
+        aes(x = date_ymd, ymin = q01, ymax = q99),
+        fill = "grey",
+        alpha = 0.3,
+        inherit.aes = FALSE
+      )
     }
   }
 
   return(p)
 }
 
-#' Assess Model Performance
+#' Plot Residuals of Observed vs Simulated Data
 #'
-#' This function assesses the performance of a model by comparing observed and simulated data.
-#' It calculates various error metrics including MAE, RMSE, MAPE, and R², and generates residual plots to visualize the differences.
+#' This function creates residual plots for observed and simulated data, allowing the user to select specific groups.
 #'
 #' @param observed_df Data frame containing the observed data.
 #' @param simulated_df Data frame containing the simulated data.
 #' @param date_column The name of the date column in both data frames.
-#' @return A list containing error metrics and a ggplot object of residual plots.
+#' @param groups A character vector specifying which groups to include in the plot (`inc_A`, `inc_C`, `inc`).
+#' @return A ggplot object displaying the residual plots.
 #' @export
 #' @examples
-#' performance_results <- assess_model_performance(obs_cases, simulated_df, date_column = "date_ymd")
-assess_model_performance <- function(observed_df, simulated_df, date_column) {
+#' residual_plot <- plot_residuals(obs_cases, simulated_df, date_column = "date_ymd", groups = c("inc_A", "inc_C"))
+plot_residuals <- function(observed_df, simulated_df, date_column, groups = c("inc_A", "inc_C", "inc")) {
 
   # Ensure date compatibility and merge observed and simulated data
   observed_df[[date_column]] <- as.Date(observed_df[[date_column]])
@@ -359,38 +367,7 @@ assess_model_performance <- function(observed_df, simulated_df, date_column) {
   combined_data$residual_inc_C <- combined_data$inc_C_obs - combined_data$inc_C_sim
   combined_data$residual_inc <- combined_data$inc_obs - combined_data$inc_sim
 
-  # Calculate error metrics (MAE, RMSE, MAPE, R²) for each group
-  mae_inc_A <- mean(abs(combined_data$residual_inc_A), na.rm = TRUE)
-  mae_inc_C <- mean(abs(combined_data$residual_inc_C), na.rm = TRUE)
-  mae_inc <- mean(abs(combined_data$residual_inc), na.rm = TRUE)
-
-  rmse_inc_A <- sqrt(mean(combined_data$residual_inc_A^2, na.rm = TRUE))
-  rmse_inc_C <- sqrt(mean(combined_data$residual_inc_C^2, na.rm = TRUE))
-  rmse_inc <- sqrt(mean(combined_data$residual_inc^2, na.rm = TRUE))
-
-  mape_inc_A <- mean(abs(combined_data$residual_inc_A / combined_data$inc_A_obs), na.rm = TRUE) * 100
-  mape_inc_C <- mean(abs(combined_data$residual_inc_C / combined_data$inc_C_obs), na.rm = TRUE) * 100
-  mape_inc <- mean(abs(combined_data$residual_inc / combined_data$inc_obs), na.rm = TRUE) * 100
-
-  r2_inc_A <- 1 - (sum(combined_data$residual_inc_A^2, na.rm = TRUE) /
-                     sum((combined_data$inc_A_obs - mean(combined_data$inc_A_obs, na.rm = TRUE))^2, na.rm = TRUE))
-
-  r2_inc_C <- 1 - (sum(combined_data$residual_inc_C^2, na.rm = TRUE) /
-                     sum((combined_data$inc_C_obs - mean(combined_data$inc_C_obs, na.rm = TRUE))^2, na.rm = TRUE))
-
-  r2_inc <- 1 - (sum(combined_data$residual_inc^2, na.rm = TRUE) /
-                   sum((combined_data$inc_obs - mean(combined_data$inc_obs, na.rm = TRUE))^2, na.rm = TRUE))
-
-  # Compile error metrics into a data frame
-  error_metrics <- data.frame(
-    Group = c(">=5 years old (inc_A)", "<5 years old (inc_C)", "Total (inc)"),
-    MAE = c(mae_inc_A, mae_inc_C, mae_inc),
-    RMSE = c(rmse_inc_A, rmse_inc_C, rmse_inc),
-    MAPE = c(mape_inc_A, mape_inc_C, mape_inc),
-    R2 = c(r2_inc_A, r2_inc_C, r2_inc)
-  )
-
-  # Prepare data for plotting residuals for each group
+  # Prepare data for plotting residuals for each selected group
   residuals_long <- data.frame(
     date_ymd = combined_data[[date_column]],
     inc_A = combined_data$residual_inc_A,
@@ -399,7 +376,8 @@ assess_model_performance <- function(observed_df, simulated_df, date_column) {
   ) %>%
     tidyr::pivot_longer(cols = c("inc_A", "inc_C", "inc"),
                         names_to = "Group",
-                        values_to = "Residual")
+                        values_to = "Residual") %>%
+    dplyr::filter(Group %in% groups)  # Filter selected groups
 
   # Create facet plot for residuals
   residual_plot <- ggplot(residuals_long, aes(x = date_ymd, y = Residual)) +
@@ -423,7 +401,127 @@ assess_model_performance <- function(observed_df, simulated_df, date_column) {
       strip.text = element_text(size = 14, face = "bold")
     )
 
-  return(list(error_metrics = error_metrics, residual_plot = residual_plot))
+  return(residual_plot)
+}
+
+#' Plot SMC Coverage Scenarios
+#'
+#' This function plots the simulated malaria cases for different SMC coverage scenarios,
+#' including "No SMC", "Current Coverage", and "Full SMC Coverage" scenarios.
+#' It optionally includes observed data for comparison.
+#'
+#' @param observed_df A data frame of observed malaria cases with columns for `date_ymd`, `inc_A`, `inc_C`, and `inc`.
+#' @param no_smc_df A data frame of simulated malaria cases with no SMC (`eff_SMC = 0`).
+#' @param current_smc_df A data frame of simulated malaria cases with current SMC coverage.
+#' @param full_smc_df A data frame of simulated malaria cases with full SMC coverage.
+#' @param groups A character vector specifying which groups to include in the plot (`inc_A`, `inc_C`, `inc`).
+#' @param include_observed Logical; if `TRUE`, includes observed data in the plot. Default is `TRUE`.
+#' @return A ggplot object displaying the simulated data for different SMC scenarios (and optionally observed data).
+#' @export
+#' @examples
+#' # Assuming the scenarios have been simulated and stored as `observed`, `no_smc`, `current_smc`, `full_smc`
+#' plot_smc_scenarios(observed, no_smc, current_smc, full_smc, groups = c("inc_A", "inc_C", "inc"), include_observed = TRUE)
+plot_smc_scenarios <- function(observed_df, no_smc_df, current_smc_df, full_smc_df, groups = c("inc_A", "inc_C", "inc"), include_observed = TRUE) {
+
+  # Ensure the date column is compatible and has the same name across all data frames
+  no_smc_df$date_ymd <- as.Date(no_smc_df$date_ymd)
+  current_smc_df$date_ymd <- as.Date(current_smc_df$date_ymd)
+  full_smc_df$date_ymd <- as.Date(full_smc_df$date_ymd)
+
+  # Rename columns to add suffixes to avoid conflicts
+  colnames(no_smc_df)[-1] <- paste0(colnames(no_smc_df)[-1], "_no_smc")
+  colnames(current_smc_df)[-1] <- paste0(colnames(current_smc_df)[-1], "_current_smc")
+  colnames(full_smc_df)[-1] <- paste0(colnames(full_smc_df)[-1], "_full_smc")
+
+  # Merge simulated data by date
+  combined_data <- merge(no_smc_df, current_smc_df, by = "date_ymd")
+  combined_data <- merge(combined_data, full_smc_df, by = "date_ymd")
+
+  # If include_observed is TRUE, merge observed data as well
+  if (include_observed) {
+    observed_df$date_ymd <- as.Date(observed_df$date_ymd)
+    colnames(observed_df)[-1] <- paste0(colnames(observed_df)[-1], "_obs")
+    combined_data <- merge(observed_df, combined_data, by = "date_ymd")
+  }
+
+  # Convert the combined data into long format for ggplot2
+  library(reshape2)
+  measure_vars <- unlist(lapply(groups, function(group) {
+    c(
+      if (include_observed) paste0(group, "_obs"),
+      paste0(group, "_no_smc"),
+      paste0(group, "_current_smc"),
+      paste0(group, "_full_smc")
+    )
+  }))
+
+  # Ensure the columns exist in the combined data
+  measure_vars <- measure_vars[measure_vars %in% colnames(combined_data)]
+
+  combined_data_long <- melt(combined_data, id.vars = "date_ymd", measure.vars = measure_vars)
+
+  # Extract the scenario from the variable name for easy labeling
+  combined_data_long$Scenario <- gsub(".*_(obs|no_smc|current_smc|full_smc)$", "\\1", combined_data_long$variable)
+  combined_data_long$Scenario <- factor(combined_data_long$Scenario, levels = c("obs", "no_smc", "current_smc", "full_smc")) # Ensure levels are consistent
+  combined_data_long$Group <- gsub("(_obs|_no_smc|_current_smc|_full_smc)", "", combined_data_long$variable)
+
+  # Filtering to only include the specified groups
+  combined_data_long <- combined_data_long[combined_data_long$Group %in% groups, ]
+
+  # Create descriptive labels for facet titles
+  facet_labels <- c(
+    "inc_A" = "Incidence (>=5 years old)",
+    "inc_C" = "Incidence (<5 years old)",
+    "inc" = "Total Incidence"
+  )
+
+  # Improve scenario labels for clarity
+  scenario_labels <- c(
+    "obs" = "Observed Data",
+    "no_smc" = "No SMC Coverage",
+    "current_smc" = "Current SMC Coverage",
+    "full_smc" = "Full SMC Coverage (100%)"
+  )
+
+  # Plot the simulated malaria cases under different scenarios (and optionally observed data)
+  library(ggplot2)
+  p <- ggplot(combined_data_long, aes(x = date_ymd, y = value, color = Scenario, linetype = Scenario)) +
+    geom_line(size = 1.2) +  # Increased line thickness for better visibility
+    facet_wrap(~ Group, scales = "free_y", ncol = 1, labeller = as_labeller(facet_labels)) +
+    labs(
+      title = "Malaria Cases Under Different SMC Scenarios",
+      x = "Date",
+      y = "Number of Monthly Malaria Cases",
+      color = "Scenario",
+      linetype = "Scenario"
+    ) +
+    scale_color_manual(
+      values = c("obs" = "black",
+                 "no_smc" = "darkred",
+                 "current_smc" = "blue",
+                 "full_smc" = "green4"),
+      labels = scenario_labels
+    ) +
+    scale_linetype_manual(
+      values = c("obs" = "solid",
+                 "no_smc" = "dashed",
+                 "current_smc" = "twodash",
+                 "full_smc" = "dotted"),
+      labels = scenario_labels
+    ) +
+    theme_minimal() +
+    theme(
+      plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+      axis.title.y = element_text(size = 14, face = "bold"),
+      axis.text.x = element_text(size = 12),
+      axis.text.y = element_text(size = 12),
+      strip.text = element_text(size = 14, face = "bold"),
+      legend.position = "bottom",
+      legend.title = element_text(size = 12, face = "bold"),
+      legend.text = element_text(size = 12)
+    )
+
+  return(p)
 }
 
 

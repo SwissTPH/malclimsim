@@ -172,7 +172,7 @@ proposal_matrix <- create_proposal_matrix(params_to_estimate = params_to_estimat
 # )
 
 ################################################################################
-### -------------------------- RUNNING INFERENCE --------------------------- ###
+### --------------- RUNNING MCMC (Random Walk Metropolis) ------------------ ###
 ################################################################################
 dates_for_inf <- c("2014-01-01", "2021-12-31")
 results <- inf_run(model = climate_model, param_inputs = param_inputs,
@@ -187,10 +187,9 @@ results <- inf_run(model = climate_model, param_inputs = param_inputs,
                            rerun_n = 1000, rerun_random = TRUE)
 
 ################################################################################
-### -------------------- SOME INFERENCE DIAGNOSTICS ----------------------- ####
+### ----------------------- SOME MCMC DIAGNOSTICS ------------------------- ####
 ################################################################################
 MCMC_diag(inf_results)
-post_plot(inf_results, params_to_estimate, dim_plot = c(3,2), show_true = FALSE)
 
 ################################################################################
 ### -------------------- EVALUATING MODEL ERROR --------------------------- ####
@@ -202,7 +201,7 @@ max_ll_post(inf_results)
 plot_observed_vs_simulated(results = inf_results, obs_cases,
                            start_date = "2014-01-01", end_date = "2022-12-01",
                            model = climate_model, add_ribbon = TRUE, n_samples = 5,
-                           groups = "inc_C")
+                           groups = c("inc_C"))
 
 
 # Extract the parameters that had the highest log posterior from your MCMC results
@@ -214,13 +213,33 @@ param_inputs_updated <- update_param_list(results$param_inputs, max_posterior_pa
 # Run a model simulation using the updated parameters
 start_date <- "2014-01-01"  # Replace with your actual start date
 end_date <- "2022-12-31"    # Replace with your actual end date
-pred <- simulate_with_max_posterior_params(results, start_date, end_date, model = climate_model)
+simulated_df <- simulate_with_max_posterior_params(results, start_date, end_date, model = climate_model)
 
-# Assuming observed_df contains observed incidence data and simulated_df contains simulated results
-error_results <- assess_model_performance(observed_df = obs_cases, simulated_df = pred, date_column = "date_ymd")
+error_metrics <- calculate_model_errors(obs_cases, simulated_df, date_column = "date_ymd")
+residual_plot <- plot_residuals(obs_cases, simulated_df, date_column = "date_ymd", groups = c("inc_A", "inc_C"))
 
-# View error metrics
-print(error_results$error_metrics)
+################################################################################
+### --------- ESTIMATING CASES AVERTED (THIS IS FINALLY INFERENCE) -------- ####
+################################################################################
+# Step 1: Simulate the scenarios
+current_smc_df <- simulate_with_smc(results, start_date = "2014-01-01", end_date = "2022-12-31", model = climate_model)
+no_smc_df <- simulate_without_smc(results, start_date = "2014-01-01", end_date = "2022-12-31", model = climate_model)
+full_smc_df <- simulate_with_full_coverage(results, start_date = "2014-01-01", end_date = "2022-12-31", model = climate_model, coverage_level = 1)
 
-# Plot residuals for `inc_A`
-print(error_results$residual_plot)
+# Step 2: Calculate the number and percent of cases averted
+cases_averted_full_coverage <- calculate_cases_averted(sim_full_coverage, sim_without_smc)
+print(cases_averted_full_coverage)
+
+# Step 3: Optionally, compare full coverage to current SMC coverage
+cases_averted_current_vs_full <- calculate_cases_averted(sim_full_coverage, sim_with_smc)
+print(cases_averted_current_vs_full)
+
+# Assuming the scenarios have been simulated and stored as `observed_df`, `no_smc_df`, `current_smc_df`, `full_smc_df`
+plot_smc_scenarios(
+  observed_df = obs_cases,
+  no_smc_df = no_smc_df,
+  current_smc_df = current_smc_df,
+  full_smc_df = full_smc_df,
+  groups = c("inc_C"),
+  include_observed = FALSE
+)
