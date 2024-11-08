@@ -33,3 +33,18 @@ max_ll_post <- function(results) {
   cat("Maximum Log-Likelihood:", max_log_likelihood, "\n")
   cat("Maximum Log-Posterior:", max_log_posterior, "\n")
 }
+
+#' Calculate Mean Absolute Error (MAE)
+#'
+#' Calculates the Mean Absolute Error between observed and simulated values.
+#'
+#' @param observed A numeric vector of observed values.
+#' @param simulated A numeric vector of simulated values.
+#' @return The MAE value.
+#' @examples
+#' mae_value <- calculate_mae(observed, simulated)
+calculate_mae <- function(observed, simulated) {
+  mae <- mean(abs(observed - simulated))
+  return(mae)
+}
+

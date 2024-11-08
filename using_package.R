@@ -118,6 +118,7 @@ plot_time_series(results = results, met = met, plot_title = "Malaria Incidence a
 ################################################################################
 path_to_cases <- "C:/Users/putnni/switchdrive/Chad/Data/cases-data/cases_MOISSALA.rds"
 obs_cases <- readRDS(path_to_cases)
+colnames(obs_cases)[1] <- "date_ymd"
 View(cases_moiss)
 # First column - `month` - date object corresponding to month of recorded cases
 # Second column - `month_no` - numeric where first month is 0
@@ -174,7 +175,7 @@ proposal_matrix <- create_proposal_matrix(params_to_estimate = params_to_estimat
 ### -------------------------- RUNNING INFERENCE --------------------------- ###
 ################################################################################
 dates_for_inf <- c("2014-01-01", "2021-12-31")
-inf_results <- inf_run(model = climate_model, param_inputs = param_inputs,
+results <- inf_run(model = climate_model, param_inputs = param_inputs,
                            control_params = params_default$control_params,
                            params_to_estimate = params_to_estimate,
                            proposal_matrix = proposal_matrix,
@@ -186,25 +187,40 @@ inf_results <- inf_run(model = climate_model, param_inputs = param_inputs,
                            rerun_n = 1000, rerun_random = TRUE)
 
 ################################################################################
-### -------------------------- SOME DIAGNOSTICS --------------------------- ####
+### -------------------- SOME INFERENCE DIAGNOSTICS ----------------------- ####
 ################################################################################
 MCMC_diag(inf_results)
 post_plot(inf_results, params_to_estimate, dim_plot = c(3,2), show_true = FALSE)
 
 ################################################################################
-### ---------------------- EVALUATING MODEL FIT --------------------------- ####
+### -------------------- EVALUATING MODEL ERROR --------------------------- ####
 ################################################################################
 # Maximum likelihood/posterior
 max_ll_post(inf_results)
 
-
-
 # Posterior predictive check
-dates_sim <- c("2014-01-01", "2022-12-31") # dates to be used for simulated data
-dates_obs <- c("2014-01-01", "2022-12-31") # dates corresponding for observed data
-sim_df <- create_sim_df(results = inf_results, 300, dates_sim,
-                        dates_obs, model = climate_model)
+plot_observed_vs_simulated(results = inf_results, obs_cases,
+                           start_date = "2014-01-01", end_date = "2022-12-01",
+                           model = climate_model, add_ribbon = TRUE, n_samples = 5,
+                           groups = "inc_C")
 
-post_pred_plot <- post_pred_plot(inf_results, sim_df, dates_obs, dates_obs, show_clim = FALSE,
-                                 title = "", theme = NULL, ages = c("u5"))
-post_pred_plot
+
+# Extract the parameters that had the highest log posterior from your MCMC results
+max_posterior_params <- extract_max_posterior_params(results)
+
+# Update the parameter list with the maximum posterior parameters
+param_inputs_updated <- update_param_list(results$param_inputs, max_posterior_params)
+
+# Run a model simulation using the updated parameters
+start_date <- "2014-01-01"  # Replace with your actual start date
+end_date <- "2022-12-31"    # Replace with your actual end date
+pred <- simulate_with_max_posterior_params(results, start_date, end_date, model = climate_model)
+
+# Assuming observed_df contains observed incidence data and simulated_df contains simulated results
+error_results <- assess_model_performance(observed_df = obs_cases, simulated_df = pred, date_column = "date_ymd")
+
+# View error metrics
+print(error_results$error_metrics)
+
+# Plot residuals for `inc_A`
+print(error_results$residual_plot)

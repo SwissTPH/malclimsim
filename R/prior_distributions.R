@@ -30,7 +30,7 @@ initialize_priors <- function(param_inputs, proposal_matrix, params_to_estimate)
     a_R = list(initial = 0.5, min = 0.01, max = 1, prior = function(p) dbeta(p, 6, 12, log = TRUE)),
     b_R = list(initial = 3, min = -Inf, max = Inf, prior = function(p) dnorm(p, mean = 2, sd = 0.25, log = TRUE)),
     p_surv = list(initial = 0.91, min = 0.88, max = 0.97, prior = function(p) dnorm(p, mean = 0.91, sd = 0.01, log = TRUE)),
-    size = list(initial = 5.5, min = 5, max = 10, prior = function(p) dnorm(p, mean = 5.5, sd = 0.5, log = TRUE)),
+    size = list(initial = 5.5, min = 1, max = 50, prior = function(p) dnorm(p, mean = 5.5, sd = 0.5, log = TRUE)),
 
     # 3. Intervention and Effectiveness Parameters
     eff_SMC = list(initial = 0.6, min = 0.00, max = 1, prior = function(p) dbeta(p, 2, 2, log = TRUE)),

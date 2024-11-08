@@ -244,3 +244,188 @@ create_clim_df <- function(clim_df){
                              value = value, variable1 = variable, variable2 = variable2)
   return(clim_plot_df)
 }
+
+#' Plot Observed vs Simulated Data with Quantiles Ribbon for Each Group
+#'
+#' This function simulates data from a model using parameters that maximize the log posterior,
+#' then plots the observed and simulated incidence data for comparison. Optionally, a ribbon
+#' representing the 1st and 99th quantiles of additional simulations can be included to visualize uncertainty.
+#'
+#' @param results The MCMC results object containing the parameter samples.
+#' @param obs_cases A data frame of observed cases with columns for `month` (date), `inc_A`, `inc_C`, and `inc`.
+#' @param start_date The start date for the simulation as a `Date` object or character string.
+#' @param end_date The end date for the simulation as a `Date` object or character string.
+#' @param model The model function to simulate from.
+#' @param add_ribbon Logical; if TRUE, adds a ribbon to the plot representing the 1st and 99th quantiles of the incidence data from additional simulations.
+#' @param n_samples The number of samples to draw from the MCMC results for the quantiles ribbon.
+#' @param groups A character vector specifying which groups to include in the plot (`inc_A`, `inc_C`, `inc`).
+#' @return A ggplot object displaying observed data as points, simulated data as a line, and an optional ribbon for quantiles.
+#' @examples
+#' # Assuming `results` contains MCMC output and `obs_cases` is the observed cases data
+#' plot_observed_vs_simulated(results, obs_cases, start_date = "2014-01-01",
+#'                            end_date = "2014-12-31", model = data_sim,
+#'                            add_ribbon = TRUE, n_samples = 100, groups = c("inc_A", "inc_C", "inc"))
+plot_observed_vs_simulated <- function(results, obs_cases, start_date, end_date, model, add_ribbon = FALSE, n_samples = 100, groups = c("inc_A", "inc_C", "inc")) {
+
+  # Run the simulation with parameters that maximize log posterior
+  sim_data <- simulate_with_max_posterior_params(results, start_date, end_date, model)
+
+  # Ensure date column compatibility with observed data
+  sim_data$month <- as.Date(sim_data$month)
+  colnames(obs_cases)[1] <- "date_ymd"
+
+  # Merge observed and simulated data by date
+  combined_data <- merge(obs_cases, sim_data, by = "date_ymd", suffixes = c("_obs", "_sim"))
+
+  # If add_ribbon is TRUE, generate quantiles from additional simulations
+  if (add_ribbon) {
+    # Step 1: Sample parameters from MCMC results
+    sampled_params <- sample_params(results, n_samples)
+
+    # Step 2: Simulate models using the sampled parameters
+    simulations <- simulate_models(model, results$param_inputs, sampled_params, start_date, end_date)
+
+    # Step 3: Calculate incidence quantiles for each group
+    incidence_quantiles <- calculate_incidence_quantiles(simulations)
+
+    # Step 4: Merge quantiles with the combined observed and simulated data
+    combined_data <- merge(combined_data, incidence_quantiles, by = "date_ymd", all.x = TRUE)
+  }
+
+  # Melt the combined data for plotting observed vs simulated on the same panel
+  library(reshape2)
+  combined_data_long <- melt(combined_data, id.vars = "date_ymd", measure.vars = c("inc_A_obs", "inc_C_obs", "inc_obs", "inc_A_sim", "inc_C_sim", "inc_sim"))
+
+  # Filter selected groups for both observed and simulated
+  selected_groups <- unlist(lapply(groups, function(group) c(paste0(group, "_obs"), paste0(group, "_sim"))))
+  combined_data_long <- combined_data_long[combined_data_long$variable %in% selected_groups, ]
+
+  # Create a mapping for facet labels to make them more descriptive
+  facet_labels <- c("inc_A" = "Incidence (>=5 years)", "inc_C" = "Incidence (<5 years)", "inc" = "Total Incidence")
+
+  # Plotting observed and simulated data on the same panels
+  library(ggplot2)
+  p <- ggplot(combined_data_long, aes(x = date_ymd)) +
+    geom_point(data = subset(combined_data_long, grepl("_obs$", variable)), aes(y = value), color = "blue", size = 2, alpha = 0.7) +  # Observed data as points
+    geom_line(data = subset(combined_data_long, grepl("_sim$", variable)), aes(y = value), color = "red", size = 1) +                # Simulated data as line
+    facet_wrap(~ gsub("(_obs|_sim)", "", variable), scales = "free", ncol = 1, labeller = as_labeller(facet_labels)) +
+    labs(title = "Observed vs Simulated Monthly Malaria Cases",
+         x = "Date",
+         y = "Number of Monthly Malaria Cases") +
+    theme_minimal() +
+    theme(
+      plot.title = element_text(hjust = 0.5, size = 16, face = "bold"), # Center the plot title
+      axis.title.y = element_text(size = 14, face = "bold"),
+      axis.text.x = element_text(size = 12),
+      axis.text.y = element_text(size = 12),
+      strip.text = element_text(size = 14, face = "bold") # Facet label size
+    )
+
+  # Add quantile ribbon if requested
+  if (add_ribbon) {
+    for (group in groups) {
+      p <- p + geom_ribbon(data = combined_data,
+                           aes_string(x = "date_ymd",
+                                      ymin = paste0(group, "_q01"),
+                                      ymax = paste0(group, "_q99")),
+                           fill = "grey", alpha = 0.3)
+    }
+  }
+
+  return(p)
+}
+
+#' Assess Model Performance
+#'
+#' This function assesses the performance of a model by comparing observed and simulated data.
+#' It calculates various error metrics including MAE, RMSE, MAPE, and R², and generates residual plots to visualize the differences.
+#'
+#' @param observed_df Data frame containing the observed data.
+#' @param simulated_df Data frame containing the simulated data.
+#' @param date_column The name of the date column in both data frames.
+#' @return A list containing error metrics and a ggplot object of residual plots.
+#' @export
+#' @examples
+#' performance_results <- assess_model_performance(obs_cases, simulated_df, date_column = "date_ymd")
+assess_model_performance <- function(observed_df, simulated_df, date_column) {
+
+  # Ensure date compatibility and merge observed and simulated data
+  observed_df[[date_column]] <- as.Date(observed_df[[date_column]])
+  simulated_df[[date_column]] <- as.Date(simulated_df[[date_column]])
+  combined_data <- merge(observed_df, simulated_df, by = date_column, suffixes = c("_obs", "_sim"))
+
+  # Calculate residuals for each group: (observed - simulated)
+  combined_data$residual_inc_A <- combined_data$inc_A_obs - combined_data$inc_A_sim
+  combined_data$residual_inc_C <- combined_data$inc_C_obs - combined_data$inc_C_sim
+  combined_data$residual_inc <- combined_data$inc_obs - combined_data$inc_sim
+
+  # Calculate error metrics (MAE, RMSE, MAPE, R²) for each group
+  mae_inc_A <- mean(abs(combined_data$residual_inc_A), na.rm = TRUE)
+  mae_inc_C <- mean(abs(combined_data$residual_inc_C), na.rm = TRUE)
+  mae_inc <- mean(abs(combined_data$residual_inc), na.rm = TRUE)
+
+  rmse_inc_A <- sqrt(mean(combined_data$residual_inc_A^2, na.rm = TRUE))
+  rmse_inc_C <- sqrt(mean(combined_data$residual_inc_C^2, na.rm = TRUE))
+  rmse_inc <- sqrt(mean(combined_data$residual_inc^2, na.rm = TRUE))
+
+  mape_inc_A <- mean(abs(combined_data$residual_inc_A / combined_data$inc_A_obs), na.rm = TRUE) * 100
+  mape_inc_C <- mean(abs(combined_data$residual_inc_C / combined_data$inc_C_obs), na.rm = TRUE) * 100
+  mape_inc <- mean(abs(combined_data$residual_inc / combined_data$inc_obs), na.rm = TRUE) * 100
+
+  r2_inc_A <- 1 - (sum(combined_data$residual_inc_A^2, na.rm = TRUE) /
+                     sum((combined_data$inc_A_obs - mean(combined_data$inc_A_obs, na.rm = TRUE))^2, na.rm = TRUE))
+
+  r2_inc_C <- 1 - (sum(combined_data$residual_inc_C^2, na.rm = TRUE) /
+                     sum((combined_data$inc_C_obs - mean(combined_data$inc_C_obs, na.rm = TRUE))^2, na.rm = TRUE))
+
+  r2_inc <- 1 - (sum(combined_data$residual_inc^2, na.rm = TRUE) /
+                   sum((combined_data$inc_obs - mean(combined_data$inc_obs, na.rm = TRUE))^2, na.rm = TRUE))
+
+  # Compile error metrics into a data frame
+  error_metrics <- data.frame(
+    Group = c(">=5 years old (inc_A)", "<5 years old (inc_C)", "Total (inc)"),
+    MAE = c(mae_inc_A, mae_inc_C, mae_inc),
+    RMSE = c(rmse_inc_A, rmse_inc_C, rmse_inc),
+    MAPE = c(mape_inc_A, mape_inc_C, mape_inc),
+    R2 = c(r2_inc_A, r2_inc_C, r2_inc)
+  )
+
+  # Prepare data for plotting residuals for each group
+  residuals_long <- data.frame(
+    date_ymd = combined_data[[date_column]],
+    inc_A = combined_data$residual_inc_A,
+    inc_C = combined_data$residual_inc_C,
+    inc = combined_data$residual_inc
+  ) %>%
+    tidyr::pivot_longer(cols = c("inc_A", "inc_C", "inc"),
+                        names_to = "Group",
+                        values_to = "Residual")
+
+  # Create facet plot for residuals
+  residual_plot <- ggplot(residuals_long, aes(x = date_ymd, y = Residual)) +
+    geom_line(color = "darkblue") +
+    geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+    facet_wrap(~ Group, scales = "free_y", ncol = 1,
+               labeller = labeller(Group = c(
+                 "inc_A" = ">=5 years old (inc_A)",
+                 "inc_C" = "<5 years old (inc_C)",
+                 "inc" = "Total incidence (inc)"
+               ))) +
+    labs(
+      title = "Residuals: Observed vs Simulated Incidence",
+      x = "Date",
+      y = "Residuals (Observed - Simulated)"
+    ) +
+    theme_minimal() +
+    theme(
+      plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+      axis.text.x = element_text(angle = 45, hjust = 1),
+      strip.text = element_text(size = 14, face = "bold")
+    )
+
+  return(list(error_metrics = error_metrics, residual_plot = residual_plot))
+}
+
+
+
+
