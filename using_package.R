@@ -69,8 +69,8 @@ smc_schedule <- smc_schedule_from_data(smc_cov = SMC_clean, months_30_days = TRU
 climate_model <- load_model("model_det_1")  # Load the deterministic climate model
 
 # Extract climate vectors
-rain <- met$anom  # Rainfall anomaly data
-temp <- met$temp  # Temperature data
+rain <- met_360$anom  # Rainfall anomaly data
+temp <- met_360$temp  # Temperature data
 
 # Extract key SMC schedule information
 SMC <- smc_schedule$SMC  # Indicator for days when an SMC round started (1s and 0s)

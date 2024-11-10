@@ -12,6 +12,7 @@
 #'
 #' @return A matrix of starting values for each parameter and chain.
 #'
+#' @export
 create_start_values <- function(params_to_estimate, control_params, min_max_start_values = NULL,
                                 random = TRUE, seed = 10, model, param_inputs) {
 
@@ -67,6 +68,7 @@ create_start_values <- function(params_to_estimate, control_params, min_max_star
 #'
 #' @return A square matrix with dimensions equal to the number of parameters, with diagonal elements corresponding to the proposal variances for each parameter.
 #'
+#' @export
 create_proposal_matrix <- function(params_to_estimate, proposal_variance = NULL, model, param_inputs) {
 
   # Retrieve all parameter names from the model

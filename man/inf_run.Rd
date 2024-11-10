@@ -22,7 +22,8 @@ inf_run(
   incidence_df = NULL,
   save_trajectories = TRUE,
   rerun_n = Inf,
-  rerun_random = FALSE
+  rerun_random = FALSE,
+  param_priors = NULL
 )
 }
 \arguments{
