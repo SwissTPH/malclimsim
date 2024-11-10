@@ -5,6 +5,8 @@
 \title{Generate a schedule of coverage values for a given period with decay}
 \usage{
 smc_schedule_from_data(smc_cov, months_30_days, years, const = -0.1806)
+
+smc_schedule_from_data(smc_cov, months_30_days, years, const = -0.1806)
 }
 \arguments{
 \item{smc_cov}{A data frame containing the coverage data. It should have at least two columns:
@@ -28,11 +30,23 @@ A data frame containing the following columns:
 \item \code{cov}: The coverage value for each date.
 \item \code{decay}: The decay values calculated for each date based on the SMC and the decay constant.
 }
+
+A data frame containing the following columns:
+\itemize{
+\item \code{dates}: The sequence of dates from the beginning to the end of the time period.
+\item \code{SMC}: A binary value indicating the presence (1) or absence (0) of coverage on each date.
+\item \code{cov}: The coverage value for each date.
+\item \code{decay}: The decay values calculated for each date based on the SMC and the decay constant.
+}
 }
 \description{
 This function generates a schedule of coverage values for the given time period,
 filling missing values with previous non-zero coverage and applying a decay calculation.
+
+This function generates a schedule of coverage values for the given time period,
+filling missing values with previous non-zero coverage and applying a decay calculation.
 }
 \examples{
+smc_schedule_from_data(smc_cov = smc_cov_data, months_30_days = FALSE, years = c(2014, 2022))
 smc_schedule_from_data(smc_cov = smc_cov_data, months_30_days = FALSE, years = c(2014, 2022))
 }

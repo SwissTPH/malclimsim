@@ -1,6 +1,16 @@
-# Function to convert a date range into a vector of week-year format
-# Takes in a start date and an end date (e.g., "2014-01-01") and returns
-# weeks in the format "YYYY-WW" (ISO week number). Handles year transitions.
+#' Convert a Date Range to Weekly Year Format
+#'
+#' This function takes a start date and an end date, and converts the range into
+#' a vector of week-year format ("YYYY-WW") according to the ISO week numbering.
+#'
+#' @param start_date The start date as a character string or `Date` object.
+#' @param end_date The end date as a character string or `Date` object.
+#'
+#' @return A character vector containing each week between `start_date` and `end_date` in the format "YYYY-WW".
+#' @export
+#'
+#' @examples
+#' date_to_weeks("2022-01-01", "2022-03-01")
 date_to_weeks <- function(start_date, end_date){
   weeks <- c()  # Initialize an empty vector to store weeks
 
@@ -25,8 +35,19 @@ date_to_weeks <- function(start_date, end_date){
   return(weeks)
 }
 
-# Function to convert a date range into a sequence of months
-# It takes start and end dates and returns a list of months in the format "YYYY-MM"
+#' Convert Date Range to Monthly Format
+#'
+#' This function takes a start date and an end date, and converts the range into a vector of the first day
+#' of each month in the range, formatted as "YYYY-MM".
+#'
+#' @param start_date The start date as a character string or `Date` object.
+#' @param end_date The end date as a character string or `Date` object.
+#'
+#' @return A vector of `Date` objects representing the first day of each month within the given date range.
+#' @export
+#'
+#' @examples
+#' date_to_months("2022-01-01", "2022-06-01")
 date_to_months <- function(start_date, end_date) {
   # Convert start and end dates from strings to Date objects
   start_date <- as.Date(start_date)
@@ -45,12 +66,20 @@ date_to_months <- function(start_date, end_date) {
   return(c(result_df$Date))
 }
 
-################################################################################
-### ------- FUNCTION FOR CONVERTING CLIMATE DATA TO 360 DAY YEARS ---------- ###
-################################################################################
-# given the climate dataframe produced in the climate processing file,
-# creates 360 day years by forcing each month to be 30 days by either
-# removing or repeating values
+#' Convert Climate Data to 360-Day Years
+#'
+#' This function converts climate data to a 360-day calendar, with each month forced to 30 days.
+#' Data is either removed or repeated to ensure the adjustment, useful for simplifying climate simulations.
+#'
+#' @param clim_df A data frame of climate data, which must include columns for `date`, `month`, `day`, `anom`, `temp`, and `rollmean`.
+#' @param start_year The starting year of the conversion (default is 2014).
+#' @param end_year The ending year of the conversion (default is 2022).
+#'
+#' @return A data frame with 360-day years, where each month has exactly 30 days.
+#' @export
+#'
+#' @examples
+#' climate_to_30_day_months(clim_df, start_year = 2014, end_year = 2022)
 climate_to_30_day_months <- function(clim_df, start_year = 2014, end_year = 2022){
   dates_30_day_months <- generate_360_day_dates(start_year = start_year, end_year = end_year)
   n_years <- max(year(clim_df$date)) - min(year(clim_df$date)) + 1
@@ -59,6 +88,7 @@ climate_to_30_day_months <- function(clim_df, start_year = 2014, end_year = 2022
   rollmean_360 <- rep(NA, 360 * n_years)
   vec_i = 1 # keep track of vector position
   months_31_days <- c(1, 3, 5, 7, 8, 10, 12)
+
   for(date_i in 1:nrow(clim_df)){ # keep track of date position
     if((clim_df$month[date_i] == 2) & (clim_df$day[date_i] == 28)){
       if(leap_year(year(clim_df$date[date_i]))){
@@ -66,32 +96,39 @@ climate_to_30_day_months <- function(clim_df, start_year = 2014, end_year = 2022
         temp_360[vec_i:(vec_i+1)] <- clim_df$temp[date_i]
         rollmean_360[vec_i:(vec_i+1)] <- clim_df$rollmean[date_i]
         vec_i = vec_i + 2
-      }else{
+      } else {
         anom_360[vec_i:(vec_i+2)] <- clim_df$anom[date_i]
         temp_360[vec_i:(vec_i+2)] <- clim_df$temp[date_i]
         rollmean_360[vec_i:(vec_i+2)] <- clim_df$rollmean[date_i]
         vec_i = vec_i + 3
       }
-    }else if((clim_df$month[date_i] %in% months_31_days) & (clim_df$day[date_i] == 31)){
+    } else if((clim_df$month[date_i] %in% months_31_days) & (clim_df$day[date_i] == 31)){
       next
-    }else{
+    } else {
       anom_360[vec_i] <- clim_df$anom[date_i]
       temp_360[vec_i] <- clim_df$temp[date_i]
       rollmean_360[vec_i] <- clim_df$rollmean[date_i]
       vec_i = vec_i + 1
     }
   }
+
   clim_df_360_day_years <- data.frame(dates = dates_30_day_months, anom = anom_360, temp = temp_360, rollmean = rollmean_360)
   return(clim_df_360_day_years)
 }
 
-# Function to generate a sequence of dates assuming a 360-day year (12 months of 30 days each).
-# This is used to simulate a calendar without leap years and 31-day months.
-# Args:
-#   - start_year: The starting year of the date sequence.
-#   - end_year: The ending year of the date sequence.
-# Returns:
-#   - A vector of dates formatted as "YYYY-MM-DD" for the entire period.
+#' Generate Dates for a 360-Day Year Calendar
+#'
+#' This function generates a sequence of dates assuming a 360-day year, with each month consisting of 30 days.
+#' Useful for simplified models where leap years and 31-day months are ignored.
+#'
+#' @param start_year The starting year of the date sequence.
+#' @param end_year The ending year of the date sequence.
+#'
+#' @return A vector of dates formatted as "YYYY-MM-DD" for each day within the given range, assuming a 360-day year.
+#' @export
+#'
+#' @examples
+#' generate_360_day_dates(2014, 2022)
 generate_360_day_dates <- function(start_year, end_year) {
   dates <- vector("list", length = (end_year - start_year + 1) * 12 * 30)  # Initialize list to store dates
   counter <- 1  # Counter to track the number of generated dates
@@ -122,10 +159,10 @@ generate_360_day_dates <- function(start_year, end_year) {
 #' where each month is treated as having 30 days. This approach is commonly used in
 #' financial calculations for simplicity.
 #'
-#' @param date1 The start date as a character string or `Date` object.
-#' @param date2 The end date as a character string or `Date` object.
+#' @param date1 The start date as a character string or Date object.
+#' @param date2 The end date as a character string or Date object.
 #'
-#' @return The difference in days between `date1` and `date2` assuming a 360-day year.
+#' @return The difference in days between date1 and date2 assuming a 360-day year.
 #' @export
 #'
 #' @examples

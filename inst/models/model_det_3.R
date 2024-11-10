@@ -12,42 +12,65 @@ steps_per_week <- steps_per_day * 7
 steps_per_month <- steps_per_day * 30
 dt <- 1 / steps_per_day
 time <- step + 1
-
+#initial(time) <- 0
+#update(time) <- (step + 1) * dt
+kappa <- user()
 SMC_effect <- decay[time] * eff_SMC * cov_SMC[time]
+SMC_effect_A <- kappa * SMC_effect
 SMC_removal <- if (SMC[time] == 1) SMC_effect else 0
+#SMC_effect <- decay[time] * eff_SMC * cov_SMC[time]
 
-# Children
-update(SC) <- SC * (1 - delta_a - delta_d - (1 - SMC_effect) * mu_SE_C) + delta_b * P + mu_RS_C * RC + mu_TS * TrC
-update(EC) <- EC * (1 - delta_a - delta_d - mu_EI - SMC_removal) + (1 - SMC_effect) * mu_SE_C * SC
-update(IC) <- IC * (1 - delta_a - delta_d - mu_IR - SMC_removal) + (1 - fT_C) * mu_EI * EC
-update(TrC) <- TrC * (1 - delta_a - delta_d - mu_TS) + fT_C * mu_EI * EC + SMC_removal * (EC + IC)
-update(RC) <- RC * (1 - delta_a - delta_d - mu_RS_C) + mu_IR * IC
-
-
-# Adults
-update(SA) <- SA * (1 - delta_d - mu_SE_A) + delta_a * SC + mu_RS_A * RA + mu_TS * TrA
-update(EA) <- EA * (1 - delta_d - mu_EI) + delta_a * EC + mu_SE_A * SA
-update(IA) <- IA * (1 - delta_d - mu_IR) + delta_a * IC + (1 - fT_A) * mu_EI * EA
-update(TrA) <- TrA * (1 - delta_d - mu_TS) + delta_a * TrC + fT_A * mu_EI * EA
-update(RA) <- RA * (1 - delta_d - mu_RS_A) + delta_a * RC + mu_IR * IA
-
-
-# SMC_effect <- decay[time] * eff_SMC * cov_SMC[time]
-#
 # # Children
-# update(SC) <- SC * (1 - delta_a - delta_d - (1 - SMC_effect) * mu_SE_C) + delta_b * P + mu_RS_C * RC + mu_TS * TrC
-# update(EC) <- EC * (1 - delta_a - delta_d - mu_EI) + (1 - SMC_effect) * mu_SE_C * SC
+# update(SC) <- SC * (1 - delta_a - delta_d - (1 - SMC_effect) * mu_SE_C) + mu_RS_C * RC + mu_TS * TrC + delta_b * P
+# update(EC) <- EC * (1 - delta_a - delta_d - mu_EI) + (1 - SMC_effect) * mu_SE_C
 # update(IC) <- IC * (1 - delta_a - delta_d - mu_IR) + (1 - fT_C) * mu_EI * EC
 # update(TrC) <- TrC * (1 - delta_a - delta_d - mu_TS) + fT_C * mu_EI * EC
 # update(RC) <- RC * (1 - delta_a - delta_d - mu_RS_C) + mu_IR * IC
 #
 # # Adults
+# update(SA) <- SA * (1 - delta_d - mu_SE_A) + mu_RS_A * RA + mu_TS * TrA + delta_a * SC
+# update(EA) <- EA * (1 - delta_d - mu_EI) + mu_SE_A * SA + delta_a * EC
+# update(IA) <- IA * (1 - delta_d - mu_IR) + (1 - fT_A) * mu_EI * EA + delta_a * IC
+# update(TrA) <- TrA * (1 - delta_d - mu_TS) + fT_A * mu_EI * EA + delta_a * TrC
+# update(RA) <- RA * (1 - delta_d - mu_RS_A) + mu_IR * IA + delta_a * RC
+
+
+# # Children
+# update(SC) <- SC * (1 - delta_a - delta_d - (1 - SMC_effect) * mu_SE_C) + delta_b * P + mu_RS_C * RC + mu_TS * TrC
+# update(EC) <- EC * (1 - delta_a - delta_d - mu_EI - SMC_removal) + (1 - SMC_effect) * mu_SE_C * SC
+# update(IC) <- IC * (1 - delta_a - delta_d - mu_IR - SMC_removal) + (1 - fT_C) * mu_EI * EC
+# update(TrC) <- TrC * (1 - delta_a - delta_d - mu_TS) + fT_C * mu_EI * EC + SMC_removal * (EC + IC)
+# update(RC) <- RC * (1 - delta_a - delta_d - mu_RS_C) + mu_IR * IC
+#
+#
+# # Adults
 # update(SA) <- SA * (1 - delta_d - mu_SE_A) + delta_a * SC + mu_RS_A * RA + mu_TS * TrA
 # update(EA) <- EA * (1 - delta_d - mu_EI) + delta_a * EC + mu_SE_A * SA
-# update(IA) <- IA * (1 - delta_d - mu_IR) + delta_a * IC + (1 - fT_A) * mu_EI * EA
+# update(IA) <- IA * (1 - delta_d - mu_IR) + delta_a * IC + (1 - fT_A) * mu_EI * IA
 # update(TrA) <- TrA * (1 - delta_d - mu_TS) + delta_a * TrC + fT_A * mu_EI * EA
 # update(RA) <- RA * (1 - delta_d - mu_RS_A) + delta_a * RC + mu_IR * IA
 
+
+# Children
+update(SC) <- (SC * r_C) * (1 - delta_a - delta_d - (1 - SMC_effect) * mu_SE_C) + delta_b * P + mu_RS_C * RC + mu_TS * TrC
+update(EC) <- (EC * r_C) * (1 - delta_a - delta_d - mu_EI - SMC_removal) + (1 - SMC_effect) * mu_SE_C * SC
+update(IC) <- (IC * r_C) * (1 - delta_a - delta_d - mu_IR - SMC_removal) + (1 - fT_C) * mu_EI * EC
+update(TrC) <- (TrC * r_C) * (1 - delta_a - delta_d - mu_TS) + fT_C * mu_EI * EC + SMC_removal * (EC + IC)
+update(RC) <- (RC * r_C) * (1 - delta_a - delta_d - mu_RS_C) + mu_IR * IC
+
+
+# Adults
+update(SA) <- (SA * r_A) * (1 - delta_d - (1 - SMC_effect_A) * mu_SE_A) + delta_a * SC + mu_RS_A * RA + mu_TS * TrA
+update(EA) <- (EA * r_A) * (1 - delta_d - mu_EI) + delta_a * EC + (1 - SMC_effect_A) * mu_SE_A * SA
+update(IA) <- (IA * r_A) * (1 - delta_d - mu_IR) + delta_a * IC + (1 - fT_A) * mu_EI * EA
+update(TrA) <- (TrA * r_A) * (1 - delta_d - mu_TS) + delta_a * TrC + fT_A * mu_EI * EA
+update(RA) <- (RA * r_A) * (1 - delta_d - mu_RS_A) + delta_a * RC + mu_IR * IA
+
+# update(SC) <- SC * (1 - delta_a - delta_d - (1 - SMC_effect) * mu_SE_C) + mu_RS_C * RC + mu_TS * TrC + delta_b * P
+# update(EC) <- EC * (1 - delta_a - delta_d - mu_EI) + (1 - SMC_effect) * mu_SE_C
+# update(IC) <- IC * (1 - delta_a - delta_d - mu_IR) + (1 - fT_C) * mu_EI * EC
+# update(TrC) <- TrC * (1 - delta_a - delta_d - mu_TS) + fT_C * mu_EI * EC
+# update(RC) <- RC * (1 - delta_a - delta_d - mu_RS_C) + mu_IR * IC
 
 
 # daily and weekly incidence
@@ -80,9 +103,17 @@ update(month_inc_total) <- if ((step) %% steps_per_month == 0) mu_EI * (EC * fT_
 
 size <- user()
 
+# Growth rates
+r_C <- user(1.000071) # daily growth rate u5 Chad
+r_A <- user(1.000092) # daily growth rate o5 Chad
+
 # User defined parameters
 #dt <- user(1)
 phi <- user()
+# initial(mu_SE_C) <- 1 - exp(-p_MH_C * EIR)
+# update(mu_SE_C) <- 1 - exp(-p_MH_C * EIR)
+# initial(mu_SE_A) <- phi * (1 - exp(-rho * p_MH_C * EIR))
+# update(mu_SE_A) <- phi * (1 - exp(-rho * p_MH_C * EIR))
 
 mu_SE_C <- 1 - exp(-p_MH_C * EIR)
 mu_SE_A <- phi * (1 - exp(-rho * p_MH_C * EIR))
@@ -138,19 +169,17 @@ C <- a
 #p_HM_A <- theta * p_HM_C
 # initial(EIR) <- (A * p_HM * X / (B + (C * p_HM * X)))
 # update(EIR) <- (A * p_HM * X / (B + (C * p_HM * X)))
-EIR <- (A * p_HM * X / (B + (C * p_HM)))
-#update(EIR) <- (A * p_HM * X / (B + (C * p_HM * X)))
+EIR <- (A * p_HM * X / (B + (C * p_HM * X)))
 initial(EIR2) <- EIR
 update(EIR2) <- EIR
+#update(EIR) <- (A * p_HM * X / (B + (C * p_HM * X)))
 
 p_HM <- user()
 
 qR <- user()
-#qR2 <- user()
 X <- (IA + IC + qR * (RA + RC)) / P
-#X <- (qR2 * IA + IC + qR * (qR2 * RA + RC)) / P
-#initial(X2) <- X
-#update(X2) <- X
+initial(X2) <- X
+update(X2) <- X
 
 # Mosquito density
 initial(m) <- (B_egg * p_EA) / (tau_EA * g)
@@ -168,25 +197,34 @@ temp[] <- user()
 a <- (0.017 * temp[time] - 0.165) * dt
 
 # Sporogony (development of sporozites in mosquitos)
-pT <- if (temp[time] >= 35) dt * 0.01 else (dt * (0.000112 * temp[time] * (temp[time] - 15.384) * (35 - temp[time])^(1/2)))
-
+pT <- if (temp[time] >= 35) dt * 0.01 else (dt * (0.000112 * temp[time - shift1] * (temp[time - shift1] - 15.384) * (35 - temp[time - shift1])^(1/2)))
+#pT <- if (temp[time] >= 35) dt * 0.05 else (dt * (0.000112 * temp[time] * (temp[time] - 15.384) * (36 - temp[time])))
 n <- 1 / pT
 # Egg to adult survivorship
-p_EA_T <- if (temp_w >= 33.3 || temp_w < 15.38) 0.01 else (-0.00924 * (temp_w)^2 + 0.453 * (temp_w) - 4.77)^dt
-p_EA_R <- (1 / (1 + exp(-a_R * (c_R_D[time] - b_R))))^dt
+# initial(p_EA_T) <- if (temp_w >= 33.3 || temp_w < 15.38) 0.01 else (-0.00924 * (temp_w)^2 + 0.453 * (temp_w) - 4.77)^dt
+# #update(p_EA_T) <- if (temp_w >= 33.3 || temp_w < 15.38) 0.01 else (-0.00924 * (temp_w)^2 + 0.453 * (temp_w) - 4.77)^dt
+# initial(p_EA_R) <- (1 / (1 + exp(-a_R * (c_R_D[time] - b_R))))^dt
+# update(p_EA_R) <- (1 / (1 + exp(-a_R * (c_R_D[time] - b_R))))^dt
+p_EA_T <- if (temp_w >= 33.3 || temp_w < 15.38) 0.001 else (-0.00924 * (temp_w)^2 + 0.453 * (temp_w) - 4.77)^dt
+p_EA_R <- (1 / (1 + exp(-a_R * (c_R_D[time - shift2] - b_R))))^dt
 
 
 a_R <- user()
 b_R <- user()
 c_R_D[] <- user() # this will be informed by data
 p_EA <- p_EA_T * p_EA_R
-shift <- user(1)
+shift1 <- user(0)
+shift2 <- user(0)
 
 # Egg-adult Development time due to temperature
 bM <- if (temp_w >= 34 || temp_w <= 14.8) 0.01 else (0.000111 * temp_w * (temp_w - 14.7) * (34-temp_w)^(1/2)) * dt
+#bM <- if (temp_w >= 34 || temp_w <= 14.8) 0.01 else (0.000111 * temp_w * (temp_w - 14.7) * (34-temp_w)) * dt
+#bM <- if (temp_w >= 34 || temp_w <= 14.8) 0 else (0.000111 * temp_w * (temp_w - 14.7) * (34-temp_w)^(1/2)) * dt
+# initial(tau_EA) <- 1 / bM
+# update(tau_EA) <- 1/ bM
 tau_EA <- 1 / bM
 
-temp_w <- k_par * temp[time] + delta_temp
+temp_w <- k_par * temp[time - shift1] + delta_temp
 k_par <- user(1)
 delta_temp <- user(2)
 
@@ -235,3 +273,14 @@ initial(P_A) <- SA + EA + IA + TrA + RA
 update(P_C) <- SC + EC + IC + TrC + RC
 update(P_A) <- SA + EA + IA + TrA + RA
 P = (SC + EC + IC + TrC + RC + SA + EA + IA + TrA + RA)
+
+initial(P1) <- P
+update(P1) <- P
+
+## Things to examine
+# initial(A_1) <- m * a^2 * exp(-g * n)
+# initial(B_1) <- g
+# initial(C_1) <- a
+# update(A_1) <- m * a^2 * exp(-g * n)
+# update(B_1) <- g
+# update(C_1) <- a

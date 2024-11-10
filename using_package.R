@@ -66,7 +66,10 @@ smc_schedule <- smc_schedule_from_data(smc_cov = SMC_clean, months_30_days = TRU
 ################################################################################
 ### ----------------------- SIMULATING FROM THE MODEL ---------------------- ###
 ################################################################################
-climate_model <- load_model("model_det_1")  # Load the deterministic climate model
+climate_model_1 <- load_model("model_det_1")  # Load the deterministic climate model
+climate_model_2 <- load_model("model_det_2")  # Load the deterministic climate model
+climate_model_3 <- load_model("model_det_3")  # Load the deterministic climate model
+
 
 # Extract climate vectors
 rain <- met_360$anom  # Rainfall anomaly data
@@ -77,24 +80,25 @@ SMC <- smc_schedule$SMC  # Indicator for days when an SMC round started (1s and 
 decay <- smc_schedule$decay  # Efficacy decay of SMC over time
 cov <- smc_schedule$cov  # SMC coverage over time
 
+temp <- rep(mean(temp), length(rain))
 # Define parameter inputs for the malaria model simulation
 param_inputs <- list(
   mu_TS = 1/30, mu_IR = 1/5, eta = 1, mu_RS_C = 1/130, size = 1,
   mu_EI = 1/8, delta_b = 1/(21*365), delta_d = 1/(21*365),
   delta_a = 1/(5 * 365), phi = 1, p_HM = 0.125, p_MH_C = 0.5,
-  rho = 1, fT_C = 0.27, z = 1, qR = 0.17, a_R = 0.4, b_R = 3, N = 2e5,
-  s = 0.9, p_surv = 0.934, percAdult = 0.81, steps_per_day = 1, SC0 = 0.301,
-  EC0 = 0.071, IC0 = 0.042, TC0 = 0.054, RC0 = 0.533, SA0 = 0.281,
+  rho = 1, fT_C = 0.27, z = 1, qR = 0.01, a_R = 0.5, b_R = 2, N = 2e5,
+  s = 0.9, p_surv = 0.91, percAdult = 0.81, steps_per_day = 1, SC0 = 0.301,
+  EC0 = 0.071, IC0 = 0.042, TC0 = 0.054, RC0 = 0.533, SA0 = 0.281, kappa = 1,
   EA0 = 0.067, IA0 = 0.040, TA0 = 0.051, RA0 = 0.562, size_inv = 0,
-  eff_SMC = 0, decay = decay, SMC = SMC, cov_SMC = cov,
+  eff_SMC = 1, decay = decay, SMC = SMC, cov_SMC = cov,
   c_R_D = rain, temp = temp  # Inputs for rainfall and temperature
 )
 
 # Run the climate-malaria model simulation
 start_date <- ymd("2014-01-01")  # Start date of the simulation
-end_date <- ymd("2021-12-31")  # End date of the simulation
+end_date <- ymd("2022-12-31")  # End date of the simulation
 results <- data_sim(
-  climate_model, param_inputs = param_inputs, start_date, end_date,
+  climate_model_3, param_inputs = param_inputs, start_date, end_date,
   month = TRUE, round = FALSE, save = FALSE, month_unequal_days = FALSE
 )
 
