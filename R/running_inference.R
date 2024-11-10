@@ -46,8 +46,10 @@ define_transformations <- function(temp, c_R_D, SMC, decay, cov_SMC) {
 }
 
 # Define priors and proposal parameters
-define_priors_and_proposals <- function(param_inputs, proposal_matrix, params_to_estimate, transform_fn) {
-  param_priors <- initialize_priors(param_inputs, proposal_matrix, params_to_estimate)
+define_priors_and_proposals <- function(param_inputs, proposal_matrix, params_to_estimate, transform_fn, param_priors = NULL) {
+  if(is.null(param_priors)){
+    param_priors <- initialize_priors(param_inputs, proposal_matrix, params_to_estimate)
+  }
 
   valid_params <- names(param_inputs)[names(param_inputs) %in% names(param_priors)]
   paramFix <- param_inputs[valid_params]
@@ -111,7 +113,7 @@ run_mcmc_simulation <- function(mcmc_pars, filter, start_values, control1, contr
 inf_run <- function(model, param_inputs, control_params, params_to_estimate, proposal_matrix,
                     adaptive_params, start_values, noise = FALSE, seed = 24, month = FALSE,
                     month_unequal_days = FALSE, dates, age_for_inf, synthetic = TRUE, incidence_df = NULL,
-                    save_trajectories = TRUE, rerun_n = Inf, rerun_random = FALSE) {
+                    save_trajectories = TRUE, rerun_n = Inf, rerun_random = FALSE, param_priors = NULL) {
 
   # Generate synthetic data if necessary
   incidence_df <- generate_synthetic_data(model, param_inputs, dates, month, month_unequal_days, noise, seed, synthetic, incidence_df)

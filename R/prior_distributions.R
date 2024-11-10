@@ -1,5 +1,8 @@
 # Define a function to initialize priors based on parameters in the model
-initialize_priors <- function(param_inputs, proposal_matrix, params_to_estimate) {
+initialize_priors <- function(param_inputs = NULL, proposal_matrix = NULL, params_to_estimate = NULL) {
+  if(is.null(param_inputs) | is.null(proposal_matrix) | is.null(params_to_estimate)){
+    stop("Values required for param_inputs, proposal_matrix, and params_to_estimate")
+  }
 
   # Step 1: Extract parameter names from the proposal matrix to ensure we match the model
   param_names <- rownames(proposal_matrix)
@@ -108,3 +111,124 @@ initialize_priors <- function(param_inputs, proposal_matrix, params_to_estimate)
 }
 
 
+#' View Default Priors
+#'
+#' This function displays the default priors and their details, including initial values, min/max bounds, and prior distributions.
+#'
+#' @param param_inputs List of input parameters for the model.
+#' @param proposal_matrix Covariance matrix for the MCMC proposal distribution.
+#' @param params_to_estimate Character vector specifying which parameters' priors should be viewed.
+#' @param priors List of priors to view. If NULL, the default priors will be displayed.
+#' @return A data frame containing the details of each prior specified in params_to_estimate.
+#' @export
+#' @examples
+#' view_priors(param_inputs, proposal_matrix, params_to_estimate = c("a_R", "b_R", "qR", "z", "eff_SMC", "phi", "size"))
+view_priors <- function(param_inputs, proposal_matrix, params_to_estimate, priors = NULL) {
+  if (is.null(priors)) {
+    priors <- initialize_priors(param_inputs, proposal_matrix, params_to_estimate)
+  }
+
+  # Filter the priors to only include those specified in params_to_estimate
+  filtered_priors <- priors[names(priors) %in% params_to_estimate]
+
+  # Convert the filtered priors list to a data frame for easy viewing
+  priors_df <- do.call(rbind, lapply(filtered_priors, function(prior) {
+    data.frame(
+      Name = prior$name,
+      Initial = prior$initial,
+      Min = prior$min,
+      Max = prior$max,
+      Description = paste(deparse(prior$prior), collapse = " ")
+    )
+  }))
+
+  return(priors_df)
+}
+
+
+#' Plot Default Priors
+#'
+#' This function plots the default priors for the specified parameters, showing their distributions.
+#'
+#' @param param_inputs List of input parameters for the model.
+#' @param proposal_matrix Covariance matrix for the MCMC proposal distribution.
+#' @param params_to_estimate Character vector specifying which parameters' priors should be plotted.
+#' @param priors List of priors to plot. If NULL, the default priors will be displayed.
+#' @return A ggplot object showing the prior distributions for each of the specified parameters.
+#' @export
+#' @examples
+#' plot_priors(param_inputs, proposal_matrix, params_to_estimate = c("a_R", "b_R", "qR", "z", "eff_SMC", "phi", "size"))
+plot_priors <- function(param_inputs, proposal_matrix, params_to_estimate, priors = NULL) {
+  if (is.null(priors)) {
+    priors <- initialize_priors(param_inputs, proposal_matrix, params_to_estimate)
+  }
+
+  # Filter the priors to only include those specified in params_to_estimate
+  filtered_priors <- priors[names(priors) %in% params_to_estimate]
+
+  # Initialize an empty list to collect plot data
+  plot_data_list <- list()
+
+  # Loop over the filtered priors to generate plot data
+  for (prior_name in names(filtered_priors)) {
+    prior <- filtered_priors[[prior_name]]
+
+    # Check if min and max are finite numbers
+    if (is.finite(prior$min) && is.finite(prior$max)) {
+      param_range <- seq(prior$min, prior$max, length.out = 1000)
+      prior_values <- exp(prior$prior(param_range))  # Ensure prior is on original scale (not log)
+
+      # Collect the data for plotting
+      plot_data_list[[prior_name]] <- data.frame(
+        Parameter = prior_name,
+        Value = param_range,
+        Density = prior_values
+      )
+    } else {
+      warning(paste("Skipping prior for", prior_name, "due to non-finite min or max values."))
+    }
+  }
+
+  # Combine all plot data into a single data frame
+  plot_data <- do.call(rbind, plot_data_list)
+
+  # Create the plot using ggplot2
+  prior_plot <- ggplot2::ggplot(plot_data, ggplot2::aes(x = Value, y = Density)) +
+    ggplot2::geom_line() +
+    ggplot2::facet_wrap(~ Parameter, scales = "free", ncol = 2) +
+    ggplot2::labs(title = "Prior Distributions for Specified Parameters",
+                  x = "Parameter Value",
+                  y = "Density") +
+    ggplot2::theme_minimal() +
+    ggplot2::theme(
+      plot.title = ggplot2::element_text(hjust = 0.5, size = 16, face = "bold"),
+      strip.text = ggplot2::element_text(size = 14, face = "bold")
+    )
+
+  return(prior_plot)
+}
+
+
+#' Update Default Priors
+#'
+#' This function allows the user to update the default priors with new values.
+#'
+#' @param priors List of priors to update. Default is NULL, which means using the default priors.
+#' @param new_priors A named list of new prior specifications to replace the defaults.
+#' @return A list containing updated priors.
+#' @export
+update_priors <- function(param_inputs, proposal_matrix, params_to_estimate, priors = NULL, new_priors) {
+  if (is.null(priors)) {
+    priors <- initialize_priors(param_inputs, proposal_matrix, params_to_estimate)
+  }
+
+  for (param in names(new_priors)) {
+    if (param %in% names(priors)) {
+      priors[[param]] <- modifyList(priors[[param]], new_priors[[param]])
+    } else {
+      warning(paste("Parameter", param, "not found in priors. Ignoring."))
+    }
+  }
+
+  return(priors)
+}

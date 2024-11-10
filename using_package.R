@@ -137,6 +137,7 @@ params_to_estimate <- c(a_R = "a_R", b_R = "b_R", s = "s",
 params_to_estimate <- c(a_R = "a_R", b_R = "b_R",
                         qR = "qR", z = "z", eff_SMC = "eff_SMC", phi = "phi",
                         size = "size")
+
 ################################################################################
 ### ----------------------- DEFINING MCMC PARAMETERS ----------------------- ###
 ################################################################################
@@ -172,6 +173,19 @@ proposal_matrix <- create_proposal_matrix(params_to_estimate = params_to_estimat
 # )
 
 ################################################################################
+### -------------- EXAMINING AND CHANGING PRIOR DISTRIBUTIONS -------------- ###
+################################################################################
+viewed_priors <- view_priors(param_inputs, proposal_matrix, params_to_estimate)
+plot_priors(param_inputs, proposal_matrix, params_to_estimate)
+# Update default priors
+updated_priors <- update_priors(param_inputs, proposal_matrix, params_to_estimate,
+                                new_priors = list(
+  phi = list(initial = 0.3, min = 0.02, max = 0.9),
+  qR = list(prior = function(p) dbeta(p, 5, 10, log = TRUE),)
+))
+
+
+################################################################################
 ### --------------- RUNNING MCMC (Random Walk Metropolis) ------------------ ###
 ################################################################################
 dates_for_inf <- c("2014-01-01", "2021-12-31")
@@ -184,7 +198,8 @@ results <- inf_run(model = climate_model, param_inputs = param_inputs,
                            dates = dates_for_inf, age_for_inf = 'u5',
                            synthetic = FALSE, incidence_df = obs_cases,
                            save_trajectories = FALSE,
-                           rerun_n = 1000, rerun_random = TRUE)
+                           rerun_n = 1000, rerun_random = TRUE,
+                   param_priors = updated_priors)
 
 ################################################################################
 ### ----------------------- SOME MCMC DIAGNOSTICS ------------------------- ####
