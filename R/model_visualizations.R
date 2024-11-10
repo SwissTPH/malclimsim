@@ -259,6 +259,7 @@ create_clim_df <- function(clim_df){
 #' @param n_samples The number of samples to draw from the MCMC results for the quantiles ribbon.
 #' @param groups A character vector specifying which groups to include in the plot (`inc_A`, `inc_C`, `inc`).
 #' @return A ggplot object displaying observed data as points, simulated data as a line, and an optional ribbon for quantiles.
+#' @export
 #' @examples
 #' # Assuming `results` contains MCMC output and `obs_cases` is the observed cases data
 #' plot_observed_vs_simulated(results, obs_cases, start_date = "2014-01-01",
@@ -418,6 +419,7 @@ plot_residuals <- function(observed_df, simulated_df, date_column, groups = c("i
 #' @param include_observed Logical; if `TRUE`, includes observed data in the plot. Default is `TRUE`.
 #' @return A ggplot object displaying the simulated data for different SMC scenarios (and optionally observed data).
 #' @export
+#'
 #' @examples
 #' # Assuming the scenarios have been simulated and stored as `observed`, `no_smc`, `current_smc`, `full_smc`
 #' plot_smc_scenarios(observed, no_smc, current_smc, full_smc, groups = c("inc_A", "inc_C", "inc"), include_observed = TRUE)

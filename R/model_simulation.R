@@ -282,6 +282,7 @@ data_sim_for_inference <- function(model, param_inputs,
 #'
 #' @param results The MCMC results object containing parameter samples.
 #' @return A named vector of parameter values corresponding to the maximum log posterior.
+#' @export
 #' @examples
 #' # Assuming `results` contains the MCMC output
 #' max_posterior_params <- extract_max_posterior_params(results)
@@ -310,6 +311,7 @@ extract_max_posterior_params <- function(results) {
 #' @param param_values A named vector of parameters, typically from the maximum
 #' log posterior, to update values in `param_inputs`.
 #' @return An updated list of parameters with replaced values where matches exist.
+#' @export
 #' @examples
 #' # Assuming `param_inputs` is a list of parameters and `params_at_max_posterior`
 #' # is a named vector with values to update
@@ -336,6 +338,7 @@ update_param_list <- function(param_inputs, param_values) {
 #' @param end_date The end date for the simulation, as a `Date` object or character string.
 #' @param model The model function to simulate from.
 #' @return A data frame containing the simulation results.
+#' @export
 #' @examples
 #' # Assuming `results` contains the MCMC output, and `param_inputs` is the parameter list
 #' simulation_output <- simulate_with_max_posterior_params(
