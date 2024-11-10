@@ -144,83 +144,6 @@ sim_mod <- function(odin_mod, pars, time_start, n_particles, sim_time){
   return(list(x, model))
 }
 
-# Function to simulate malaria cases over time, either by month or week
-# Arguments:
-#   model: the model for SMC interventions
-#   param_inputs: model parameters (including SMC schedule and efficacy)
-#   start_date, end_date: date range for the simulation
-#   month: whether to aggregate results by month (TRUE) or by week (FALSE)
-#   round: whether to round the results (default is TRUE)
-#   save: whether to save the results to a file (default is TRUE)
-#   file: file path to save results if save = TRUE
-#   month_unequal_days: account for unequal days in months (default is FALSE)
-data_sim <- function(model, param_inputs, start_date, end_date,
-                     month = FALSE, round = TRUE, save = TRUE, file = "",
-                     month_unequal_days = FALSE){
-  # Calculate the number of days in the SMC schedule
-  n_days <- calculate_360_day_difference(start_date, end_date)
-
-  # Run the simulation using the model and parameters
-  results <- sim_mod(model, pars = c(param_inputs), time_start = 0,
-                     n_particles = 1, sim_time = n_days)
-
-  # Extract the simulation output and the model
-  x <- results[[1]]
-  mod <- results[[2]]
-
-  # If monthly aggregation is selected
-  if(month){
-    # Create monthly indices for aggregation
-    month_ind <- seq(1, n_days, by = 30)
-
-    # Adjust for months with unequal days, if specified
-    if(month_unequal_days){
-      month_ind <- which(param_inputs$day_count == 0)
-    }
-
-    # Extract monthly incidence for adults (inc_A) and children (inc_C)
-    inc_A <- x[mod$info()$index$month_inc_A,,][month_ind]
-    inc_C <- x[mod$info()$index$month_inc_C,,][month_ind]
-
-    # Get the corresponding monthly dates
-    month <- date_to_months(start_date = as.Date(start_date), end_date = as.Date(end_date))
-
-    # Create a dataframe for monthly incidence data
-    month_no <- 0:(length(inc_C) - 1)
-    inc_df <- data.frame(date_ymd = month, month_no, inc_A, inc_C, inc = inc_A + inc_C)
-
-    # If weekly aggregation is selected
-  } else {
-    # Create weekly indices for aggregation
-    wk_ind <- seq(1, n_days, by = 7)
-
-    # Extract weekly incidence for adults (inc_A) and children (inc_C)
-    inc_A <- x[mod$info()$index$wk_inc_A,,][wk_ind]
-    inc_C <- x[mod$info()$index$wk_inc_C,,][wk_ind]
-
-    # Get the corresponding weekly dates
-    week <- date_to_weeks(start_date = as.Date(start_date), end_date = as.Date(end_date))
-
-    # Create a dataframe for weekly incidence data
-    week_no <- 0:(length(inc_C) - 1)
-    inc_df <- data.frame(week, week_no, inc_A, inc_C, inc = inc_A + inc_C)
-  }
-
-  # Round the results if specified
-  if(round){
-    inc_df[3:5] <- round(inc_df[3:5])
-  }
-
-  # Save the dataframe to a file if specified
-  if(save){
-    saveRDS(inc_df, paste(dir, file, sep = ""))
-  }
-
-  # Return the resulting incidence dataframe
-  return(inc_df)
-}
-
-
 #' Simulate Data from Model
 #'
 #' This function runs the simulation using the specified model and parameters,
@@ -237,6 +160,7 @@ data_sim <- function(model, param_inputs, start_date, end_date,
 #' @param file Character; file name for saving the results, if `save` is `TRUE`.
 #' @param month_unequal_days Logical; if `TRUE`, adjust aggregation for unequal days in months.
 #' @return A data frame containing the incidence data aggregated by month or week.
+#' @export
 #' @examples
 #' # Running the simulation and getting monthly data
 #' inc_data <- data_sim(model, param_inputs, start_date = "2021-01-01", end_date = "2021-12-31", month = TRUE)

@@ -116,7 +116,24 @@ generate_360_day_dates <- function(start_year, end_year) {
   return(unlist(dates))  # Return the list of dates as a vector
 }
 
-# Custom function to calculate days difference assuming a 360-day year
+#' Calculate the Day Difference Assuming a 360-Day Year
+#'
+#' This function calculates the difference between two dates, assuming a 360-day year
+#' where each month is treated as having 30 days. This approach is commonly used in
+#' financial calculations for simplicity.
+#'
+#' @param date1 The start date as a character string or `Date` object.
+#' @param date2 The end date as a character string or `Date` object.
+#'
+#' @return The difference in days between `date1` and `date2` assuming a 360-day year.
+#' @export
+#'
+#' @examples
+#' # Example 1: Calculate difference between two dates
+#' calculate_360_day_difference("2023-01-01", "2023-12-31")
+#'
+#' # Example 2: Use Date class objects
+#' calculate_360_day_difference(as.Date("2023-01-01"), as.Date("2024-01-01"))
 calculate_360_day_difference <- function(date1, date2) {
   # Convert dates to Date class if they aren't already
   date1 <- as.Date(date1)
@@ -142,3 +159,4 @@ calculate_360_day_difference <- function(date1, date2) {
 
   return(total_days)
 }
+
