@@ -56,6 +56,71 @@ calc_decay_arr <- function(SMC, decay_func = decay_SMC, const = -0.1806){
   return(decay_arr)
 }
 
+calc_decay_arr <- function(SMC, decay_func = decay_SMC, const = -0.1806) {
+  # Initialize decay array with the same length as the input SMC
+  decay_arr <- numeric(length(SMC))  # Using numeric instead of array to ensure proper handling
+
+  # Loop through each SMC administration point
+  for (i in 1:length(SMC)) {
+    if (SMC[i] > 0) {  # Check if SMC was administered at index i
+      # Find the next SMC administration
+      next_SMC <- which(SMC[(i + 1):length(SMC)] > 0)
+
+      if (length(next_SMC) == 0) {
+        # If no subsequent SMC, calculate decay until the end
+        end <- length(SMC)
+      } else {
+        # If there is a subsequent SMC, calculate decay until just before the next SMC
+        end <- i + next_SMC[1]
+      }
+
+      # Calculate decay from index i to end
+      decay_arr[i:end] <- decay_func(seq(0, (end - i)), const = const)
+    }
+  }
+
+  # Set any remaining NA values in the decay array to 0 (no decay if no SMC was administered)
+  decay_arr[is.na(decay_arr)] <- 0
+  return(decay_arr)
+}
+
+calc_decay_arr <- function(SMC, decay_func = decay_SMC, const = -0.1806) {
+  # Initialize decay array with zeros, length same as the input SMC
+  decay_arr <- numeric(length(SMC))
+
+  # Iterate over each point where SMC is administered
+  i <- 1
+  while (i <= length(SMC)) {
+    if (SMC[i] > 0) {  # If SMC was administered
+      # Find the index of the next SMC administration
+      next_SMC <- which(SMC[(i + 1):length(SMC)] > 0)
+
+      if (length(next_SMC) == 0) {
+        # No subsequent SMC - apply decay until the end of the array
+        end <- length(SMC)
+      } else {
+        # There is a subsequent SMC - apply decay until just before next SMC
+        end <- i + next_SMC[1]
+      }
+
+      # Calculate decay values from index `i` to `end` (inclusive)
+      decay_values <- decay_func(seq(0, end - i), const = const)
+
+      # Ensure we do not exceed the boundaries of `decay_arr`
+      decay_arr[i:end] <- decay_values[1:(end - i + 1)]
+    }
+
+    # Move to the next index
+    i <- i + 1
+  }
+
+  # Return a decay array that has exactly the same length as `SMC`
+  decay_arr <- decay_arr[1:length(SMC)]
+
+  return(decay_arr)
+}
+
+
 # Function to run the malaria model simulation
 # Arguments:
 #   odin_mod: the model to simulate
@@ -358,7 +423,6 @@ simulate_with_max_posterior_params <- function(results, start_date, end_date, mo
   simulation_output <- data_sim(model, updated_params, start_date, end_date,
                                 month = TRUE, round = FALSE, save = FALSE,
                                 month_unequal_days = FALSE)
-
   return(simulation_output)
 }
 

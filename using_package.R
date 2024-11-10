@@ -213,7 +213,7 @@ MCMC_diag(inf_results)
 max_ll_post(inf_results)
 
 # Posterior predictive check
-plot_observed_vs_simulated(results = inf_results, obs_cases,
+plot_observed_vs_simulated(results = results, obs_cases,
                            start_date = "2014-01-01", end_date = "2022-12-01",
                            model = climate_model, add_ribbon = TRUE, n_samples = 5,
                            groups = c("inc_C"))
