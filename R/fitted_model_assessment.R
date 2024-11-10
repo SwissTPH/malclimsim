@@ -172,13 +172,6 @@ calculate_error_metrics <- function(observed_df, simulated_df, date_column, grou
     stop("The specified date_column does not exist in one or both data frames.")
   }
 
-  # Check if observed_df and simulated_df contain necessary columns for the specified groups
-  necessary_columns <- unlist(lapply(groups, function(group) c(paste0(group, "_obs"), paste0(group, "_sim"))))
-  missing_columns <- necessary_columns[!necessary_columns %in% names(observed_df) & !necessary_columns %in% names(simulated_df)]
-  if (length(missing_columns) > 0) {
-    stop("The following columns are missing in one or both data frames: ", paste(missing_columns, collapse = ", "))
-  }
-
   # Ensure date compatibility and merge observed and simulated data
   observed_df[[date_column]] <- as.Date(observed_df[[date_column]])
   simulated_df[[date_column]] <- as.Date(simulated_df[[date_column]])
