@@ -39,6 +39,7 @@ rain_path <- paste0(path_to_data, "chirps_11051418.rds")
 # calculation and `months_30_days` determines if years are 360 or 365 days
 met_360 <- process_climate_data(lon, lat, years, D = 30, temp_path = temp_path,
                             rain_path = rain_path, path_to_data, months_30_days = TRUE)
+colnames(met_360)[1] <- "date"
 met <- process_climate_data(lon, lat, years, D = 30, temp_path = temp_path,
                             rain_path = rain_path, path_to_data, months_30_days = FALSE)
 
@@ -74,19 +75,19 @@ climate_model_3 <- load_model("model_det_3")  # Load the deterministic climate m
 # Extract climate vectors
 rain <- met_360$anom  # Rainfall anomaly data
 temp <- met_360$temp  # Temperature data
+# temp <- rep(mean(temp), length(rain))
 
 # Extract key SMC schedule information
 SMC <- smc_schedule$SMC  # Indicator for days when an SMC round started (1s and 0s)
 decay <- smc_schedule$decay  # Efficacy decay of SMC over time
 cov <- smc_schedule$cov  # SMC coverage over time
 
-temp <- rep(mean(temp), length(rain))
 # Define parameter inputs for the malaria model simulation
 param_inputs <- list(
   mu_TS = 1/30, mu_IR = 1/5, eta = 1, mu_RS_C = 1/130, size = 1,
   mu_EI = 1/8, delta_b = 1/(21*365), delta_d = 1/(21*365),
   delta_a = 1/(5 * 365), phi = 1, p_HM = 0.125, p_MH_C = 0.5,
-  rho = 1, fT_C = 0.27, z = 1, qR = 0.01, a_R = 0.5, b_R = 2, N = 2e5,
+  rho = 1, fT_C = 0.27, z = 1, qR = 0.01, a_R = 0.5, b_R = 2, N = 10e5,
   s = 0.9, p_surv = 0.91, percAdult = 0.81, steps_per_day = 1, SC0 = 0.301,
   EC0 = 0.071, IC0 = 0.042, TC0 = 0.054, RC0 = 0.533, SA0 = 0.281, kappa = 1,
   EA0 = 0.067, IA0 = 0.040, TA0 = 0.051, RA0 = 0.562, size_inv = 0,
@@ -98,7 +99,7 @@ param_inputs <- list(
 start_date <- ymd("2014-01-01")  # Start date of the simulation
 end_date <- ymd("2022-12-31")  # End date of the simulation
 results <- data_sim(
-  climate_model_3, param_inputs = param_inputs, start_date, end_date,
+  climate_model_1, param_inputs = param_inputs, start_date, end_date,
   month = TRUE, round = FALSE, save = FALSE, month_unequal_days = FALSE
 )
 
@@ -140,7 +141,7 @@ params_to_estimate <- c(a_R = "a_R", b_R = "b_R", s = "s",
 
 params_to_estimate <- c(a_R = "a_R", b_R = "b_R",
                         qR = "qR", z = "z", eff_SMC = "eff_SMC", phi = "phi",
-                        size = "size")
+                        size = "size", s = "s")
 
 ################################################################################
 ### ----------------------- DEFINING MCMC PARAMETERS ----------------------- ###
@@ -192,8 +193,8 @@ updated_priors <- update_priors(param_inputs, proposal_matrix, params_to_estimat
 ################################################################################
 ### --------------- RUNNING MCMC (Random Walk Metropolis) ------------------ ###
 ################################################################################
-dates_for_inf <- c("2014-01-01", "2021-12-31")
-results <- inf_run(model = climate_model, param_inputs = param_inputs,
+dates_for_inf <- c("2014-01-01", "2014-12-31") # this isn't really doing anything
+results <- inf_run(model = climate_model_1, param_inputs = param_inputs,
                            control_params = params_default$control_params,
                            params_to_estimate = params_to_estimate,
                            proposal_matrix = proposal_matrix,
@@ -214,13 +215,13 @@ MCMC_diag(inf_results)
 ### -------------------- EVALUATING MODEL ERROR --------------------------- ####
 ################################################################################
 # Maximum likelihood/posterior
-max_ll_post(inf_results)
+max_ll_post(results)
 
 # Posterior predictive check
 plot_observed_vs_simulated(results = results, obs_cases,
-                           start_date = "2014-01-01", end_date = "2022-12-01",
+                           start_date = "2014-01-01", end_date = "2020-12-01",
                            model = climate_model, add_ribbon = TRUE, n_samples = 5,
-                           groups = c("inc_C"))
+                           groups = c("inc_C"), met = met_360, climate_facet = TRUE)
 
 
 # Extract the parameters that had the highest log posterior from your MCMC results
@@ -232,10 +233,11 @@ param_inputs_updated <- update_param_list(results$param_inputs, max_posterior_pa
 # Run a model simulation using the updated parameters
 start_date <- "2014-01-01"  # Replace with your actual start date
 end_date <- "2022-12-31"    # Replace with your actual end date
-simulated_df <- simulate_with_max_posterior_params(results, start_date, end_date, model = climate_model)
+simulated_df <- simulate_with_max_posterior_params(results, start_date, end_date, model = climate_model_1)
 
 error_metrics <- calculate_model_errors(obs_cases, simulated_df, date_column = "date_ymd")
 residual_plot <- plot_residuals(obs_cases, simulated_df, date_column = "date_ymd", groups = c("inc_A", "inc_C"))
+residual_plot
 
 ################################################################################
 ### --------- ESTIMATING CASES AVERTED (THIS IS FINALLY INFERENCE) -------- ####
@@ -246,11 +248,11 @@ no_smc_df <- simulate_without_smc(results, start_date = "2014-01-01", end_date =
 full_smc_df <- simulate_with_full_coverage(results, start_date = "2014-01-01", end_date = "2022-12-31", model = climate_model, coverage_level = 1)
 
 # Step 2: Calculate the number and percent of cases averted
-cases_averted_full_coverage <- calculate_cases_averted(sim_full_coverage, sim_without_smc)
+cases_averted_full_coverage <- calculate_cases_averted(full_smc_df, no_smc_df)
 print(cases_averted_full_coverage)
 
 # Step 3: Optionally, compare full coverage to current SMC coverage
-cases_averted_current_vs_full <- calculate_cases_averted(sim_full_coverage, sim_with_smc)
+cases_averted_current_vs_full <- calculate_cases_averted(full_smc_df, current_smc_df)
 print(cases_averted_current_vs_full)
 
 # Assuming the scenarios have been simulated and stored as `observed_df`, `no_smc_df`, `current_smc_df`, `full_smc_df`

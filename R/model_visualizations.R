@@ -231,24 +231,12 @@ create_sim_df <- function(results, n, dates_sim, dates_obs, model){
   return(sim_df)
 }
 
-create_clim_df <- function(clim_df){
-  month_clim <- rep(as.Date(clim_df$date), 2)
-  variable <- c(rep("rain", nrow(clim_df)))
-  value <- c(clim_df$anom)
-  variable2 <- rep("Climate", length(value))
-  upper <- rep(NA, length(value))
-  lower <- rep(NA, length(value))
-  clim_plot_df <- data.frame(date = month_clim, variable = variable, value = value,
-                             variable2 = variable2, upper = upper, lower = lower)
-  clim_plot_df <- data.frame(date = month_clim, lower = lower, upper = upper,
-                             value = value, variable1 = variable, variable2 = variable2)
-  return(clim_plot_df)
-}
-#' Plot Observed vs Simulated Data with Quantiles Ribbon for Each Group
+#' Plot Observed vs Simulated Data with Quantiles Ribbon and Optional Climate Data Facet
 #'
 #' This function simulates data from a model using parameters that maximize the log posterior,
 #' then plots the observed and simulated incidence data for comparison. Optionally, a ribbon
 #' representing the 1st and 99th quantiles of additional simulations can be included to visualize uncertainty.
+#' It also allows for optional inclusion of climate data as a separate facet.
 #'
 #' @param results The MCMC results object containing the parameter samples.
 #' @param obs_cases A data frame of observed cases with columns for `month` (date), `inc_A`, `inc_C`, and `inc`.
@@ -258,14 +246,17 @@ create_clim_df <- function(clim_df){
 #' @param add_ribbon Logical; if TRUE, adds a ribbon to the plot representing the 1st and 99th quantiles of the incidence data from additional simulations.
 #' @param n_samples The number of samples to draw from the MCMC results for the quantiles ribbon.
 #' @param groups A character vector specifying which groups to include in the plot (`inc_A`, `inc_C`, `inc`).
+#' @param met Optional climate data frame to be included as a separate facet.
+#' @param climate_facet Logical; if TRUE, adds climate data as a separate facet in the plot.
 #' @return A ggplot object displaying observed data as points, simulated data as a line, and an optional ribbon for quantiles.
 #' @export
 #' @examples
 #' # Assuming `results` contains MCMC output and `obs_cases` is the observed cases data
 #' plot_observed_vs_simulated(results, obs_cases, start_date = "2014-01-01",
 #'                            end_date = "2014-12-31", model = data_sim,
-#'                            add_ribbon = TRUE, n_samples = 100, groups = c("inc_A", "inc_C", "inc"))
-plot_observed_vs_simulated <- function(results, obs_cases, start_date, end_date, model, add_ribbon = FALSE, n_samples = 100, groups = c("inc_A", "inc_C", "inc")) {
+#'                            add_ribbon = TRUE, n_samples = 100, groups = c("inc_A", "inc_C", "inc"),
+#'                            met = met_data, climate_facet = TRUE)
+plot_observed_vs_simulated <- function(results, obs_cases, start_date, end_date, model, add_ribbon = FALSE, n_samples = 100, groups = c("inc_A", "inc_C", "inc"), met = NULL, climate_facet = FALSE) {
 
   # Run the simulation with parameters that maximize log posterior
   sim_data <- simulate_with_max_posterior_params(results, start_date, end_date, model)
@@ -341,8 +332,52 @@ plot_observed_vs_simulated <- function(results, obs_cases, start_date, end_date,
     }
   }
 
+  # Add climate data as separate facets if requested
+  if (climate_facet && !is.null(met)) {
+    # Create the climate data frame using the updated function
+    met_long <- create_clim_df(met)
+
+    # Plot climate data in separate facets
+    p_climate <- ggplot(met_long, aes(x = date, y = value, color = variable)) +
+      geom_line(size = 1.2) +
+      scale_color_manual(values = c("temp" = "red", "rollmean" = "blue")) +
+      facet_wrap(~ variable, scales = "free_y", ncol = 1) +
+      theme_minimal() +
+      labs(y = "Climate Data", x = "Date", color = "Climate Variable") +
+      theme(
+        axis.title.y = element_text(size = 14, face = "bold"),
+        axis.text.x = element_text(size = 12),
+        axis.text.y = element_text(size = 12),
+        strip.text = element_text(size = 14, face = "bold"),
+        plot.title = element_blank()
+      )
+
+    # Use patchwork to stack the incidence and climate plots
+    library(patchwork)
+    p <- p / p_climate + plot_layout(heights = c(3, 1))
+  }
+
   return(p)
 }
+
+
+# Update create_clim_df function to include temp and rollmean
+create_clim_df <- function(clim_df){
+  # Repeat the dates twice, once for each climate variable
+  month_clim <- rep(as.Date(clim_df$date), 2)
+
+  # Define the variable names and values for each climate variable
+  variable <- c(rep("rollmean", nrow(clim_df)), rep("temp", nrow(clim_df)))
+  value <- c(clim_df$rollmean, clim_df$temp)
+
+  # Create the data frame with climate data
+  clim_plot_df <- data.frame(date = month_clim, variable = variable, value = value)
+
+  return(clim_plot_df)
+}
+
+
+
 
 #' Plot Residuals of Observed vs Simulated Data
 #'
