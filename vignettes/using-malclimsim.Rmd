@@ -1,0 +1,169 @@
+---
+title: "Using malclimsim to Simulate from the Climate-driven Dynamical Transmission Model"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Using malclimsim to Simulate from the Climate-driven Dynamical Transmission Model}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Overview
+
+The climate-driven dynamical transmission model used in this package is a slight adaptation from the one constructed by Ukawuba and Shaman in 2022 (<https://doi.org/10.1371/journal.pcbi.1010161>). The original paper calibrated the model using data at the provincial and district levels (district-level analysis found in the supplement). A few key characteristics of the model are that only humans are modeled explicitly but climate-mosquito dynamics are incorporated through the addition of several equations relating rainfall and temperature to mosquito development. It is a compartmental model with 10 total compartments across two age groups, splitting the population into those who are Susceptible to disease, those who have been Exposed and are infected by malaria parasites, those who are Infectious but untreated, those who have been Treated, and those who have Recovered. Currently, the model assumes a year is 360 days with twelve 30 day months. There are two age groups being modeled - those under 5 years old and those who are 5 years and older. Only one intervention is being considered here - seasonal malaria chemoprevention.
+
+```{r setup}
+library(malclimsim)
+```
+
+## Climate-data downloading and processing
+
+The first step to simulating from the model is to specify the region (latitude and longitude) in which you want your model to simulate from. Additionally, the years used in the analysis must be specified.
+
+```{r}
+# Years used for the analysis
+years <- 2014:2023
+
+# Latitude and longitude where climate data (rainfall and temperature) is to be saved
+# Rainfall data is from CHIRPS and temperature data is from ERA5
+lat <- -2.07
+lon <- 30.63
+```
+
+Next, "save_climate_data" will download the raw data from the specified coordinates into the directory given by 'path_to_data', where the data can be loaded from for future uses. The temperature data comes from 'ERA5-Land' (<https://cds.climate.copernicus.eu/datasets/derived-era5-land-daily-statistics?tab=overview>) and the rainfall data comes from 'CHIRTSdaily' (<https://www.chc.ucsb.edu/data/chirtsdaily>).
+
+```{r}
+path_to_data <- "C:/Users/putnni/Documents/r-packages/data/"
+
+# Saving the rainfall data locally based on specified path
+save_climate_data(lon, lat, years, path_to_data)
+```
+
+Now the data is processed using the 'process_climate_data' function. A few things are done here. First, as the temperature data is in the form of monthly averages and the model requires an input for each day, smoothing splines are used to fit a smooth function to the data. This function is then used to estimate daily temperatures. A few more things are done with the rainfall data. First, a rolling average over the previous D (here 30) days is taken. This is done to "deal" with the lag that is typically seen between rainfall and the increase in malaria transmission. Note that the "best" value of D can change for different climates and regions. After, this rolling mean is standardized (i.e. subtract the mean and divide by the standard deviation for each day). This is because this is the expected input into the model.
+
+For more details, look at the code found in "climate_processing_functions.R".
+
+```{r}
+# Reading in climate data saved by `save_climate_data`
+temp_path <- paste0(path_to_data, "era5_11051417.nc")
+rain_path <- paste0(path_to_data, "chirps_11051418.rds")
+
+# Processing climate data to be used in the model
+# `D' controls the number of previous days used for the rainfall rolling average
+# calculation and `months_30_days` determines if years are 360 or 365 days
+met_360 <- process_climate_data(lon, lat, years, D = 60, temp_path = temp_path,
+                            rain_path = rain_path, path_to_data, months_30_days = TRUE)
+colnames(met_360)[1] <- "date"
+
+# Extract rainfall and temperature data
+rain <- met_360$anom  # Standardized rolling mean of rainfall
+temp <- met_360$temp  # Temperature data
+```
+
+One now needs to define the inputs related to seasonal malaria chemoprevention (SMC). There are three vectors that are needed which should all the same length as the rainfall and temperature vectors. One vector consists of 1s and 0s that define the start of a round of SMC. The second vector is the coverage of SMC for that round. And the last vector is the result of a decay function applied to the coverage over time. The total effect of SMC at a given time point is defined as the product (component-wise multiplication) of these vectors at this time.
+
+```{r}
+# Defining the start and end date of the simulation
+start_date <- as.Date(paste0(as.character(years[1]), "-01-01"))
+end_date <- as.Date(paste0(as.character(years[length(years)]), "-12-31"))
+
+# Create a matrix indicating which months are active for SMC in each year.
+# Each row represents a year, and each column (1-12) represents a month (1 = active, 0 = inactive).
+months_active <- matrix(data = 0, nrow = length(years), ncol = 12)  # Initialize all months as inactive
+months_active[, c(7, 8, 9, 10)] <- 1  # Set July through October as active months for SMC deployment
+
+# Generate the SMC schedule using the defined start date, end date, active months, and coverage.
+# The argument 'months_30_days = TRUE' simulates a 360-day calendar (12 months with 30 days each).
+# Coverage is set to 75%.
+smc_schedule <- gen_smc_schedule(start_date, end_date, years, months_active = months_active, months_30_days = TRUE, coverage = 0.75)
+
+# Viewing the contents of the resulting data frame
+print(head(smc_schedule[240:300,]))
+```
+
+```{r}
+# Extract key SMC schedule information
+SMC <- smc_schedule$SMC  # Indicator for days when an SMC round started (1s and 0s)
+decay <- smc_schedule$decay  # Efficacy decay of SMC over time
+cov <- smc_schedule$cov  # SMC coverage over time
+```
+
+Now, the climate model is loaded using "load_model" which takes as an input the name of the model. Here it is called "model_det_1". In principle, one could adjust the model or add new models which could then be loaded and simulated from. The model itself is written in 'odin', a domain-specific language (DSL) created for facilitating the writing of efficient state-space models. More information can be found in the originally paper by FitzJohn et al (10.12688/wellcomeopenres.16466.2).
+
+```{r}
+climate_model <- load_model("model_det_1")  # Load the deterministic climate model
+```
+
+One last object to define before running the model itself. This input is a named list where each name corresponds to a parameter within the model and the values can be specified based on prior knowledge or by fitting to some observed data. Many of the parameter values here come from the paper by Ukawuba and Shaman where the model was fit to district-level data in Rwanda. Found below is a table with information about each parameter (taken directly from Ukawuba), as well as the corresponding name in the paper by Ukawuba, as the naming convention differs slightly for some parameters.
+
+```{r}
+# Define parameter inputs for the malaria model simulation
+param_inputs <- list(
+  mu_TS = 1/30, mu_IR = 1/5, mu_RS_C = 1/130,
+  mu_EI = 1/8, delta_b = 1/(21*365), delta_d = 1/(21*365),
+  delta_a = 1/(5 * 365), p_HM = 0.125, p_MH_C = 0.5, 
+  fT_C = 0.27, qR = 0.17, a_R = 0.4, b_R = 3, N = 5e5, 
+  s = 0.9, p_surv = 0.934, percAdult = 0.81, 
+  eff_SMC = 0, decay = decay, SMC = SMC, cov_SMC = cov,
+  c_R_D = rain, temp = temp  # Inputs for rainfall and temperature
+)
+
+```
+
+| Param (N) | Param (U) | Description |
+|------------------|------------------|------------------------------------|
+| mu_TS | $\mu_{TS}$ | Duration of treatment + prophylaxis |
+| mu_IR | $\mu_{IR}$ | Duration of untreated infection |
+| mu_RS_C | $\mu_{RS}$ | Duration of patent/sub-patent period |
+| mu_EI | $\mu_{EI}$ | Duration of parasite incubation |
+| delta_b | $\mu_{BS}$ | Birth rate |
+| delta_d | $\delta$ | Death rate |
+| delta_a | None | Aging rate |
+| p_HM | $P_{HM}$ | Probability of transmission from human to mosquito |
+| p_MH_C | $P_{MH}$ | Probability of transmission from mosquito to human |
+| fT_C | $f_T$ | Proportion of infected receiving full treatment |
+| qR | $q_R$ | Infectivity of non-clinical cases relative to clinical cases |
+| a_R | $a.R$ | Egg-adult sensitivty to surface moisture |
+| b_R | $b.R$ | Mean anomaly of accumulated rainfall |
+| N | None | Population size |
+| s | $s$ | Population scaling factor |
+| p_surv | $e^{-\mu_M}$ | Daily probability of survival |
+| percAdult | None | Percent of the population that are adults |
+| eff_SMC | None | Relative effectiveness of SMC |
+| decay | None | Vector: Describes the extent to which SMC effect should decay over time |
+| SMC | None | Vector: Indicator as to whether an SMC has started on a given day |
+| cov_SMC | None | Vector: SMC coverage |
+| c_R_D | None | Vector: Standardized rolling mean of rainfall |
+| temp | None | Vector: Temperature (in Celsius) |
+
+
+The "date_sim" function outputs a data frame whic has five columns: the date, the month number, the incidence in those aged 5 and older, the incidence in those under 5 years old, and the total incidence.
+```{r}
+results <- data_sim(
+  climate_model, param_inputs = param_inputs, start_date, end_date,
+  month = TRUE, round = FALSE, save = FALSE, month_unequal_days = FALSE
+)
+```
+
+
+The "plot_time_series" function allows for one to visualize the incidence over time as well as the rainfall (standardized rolling average) over time. For all options see ?plot_time_series. 
+```{r}
+# Example 1: Plotting only malaria incidence data with only "total" incidence type
+plot_time_series(results = results, plot_title = "Malaria Incidence",
+                 select_incidence = "<5")
+
+# Example 2: Plotting both malaria incidence (only "<5" and ">=5") and climate data (only "temp")
+plot_time_series(results = results, met = met_360, plot_title = "Malaria Incidence and Climate Data",
+                 select_incidence = c("<5", ">=5"), select_climate = "temp", climate_facet = TRUE)
+
+# Example 3: Plotting both malaria incidence (only "total") and climate data (both "temp" and "rollmean")
+plot_time_series(results = results, met = met_360, plot_title = "Malaria Incidence and Climate Data",
+                 select_incidence = "total", select_climate = c("temp", "rollmean"), climate_facet = TRUE)
+
+```

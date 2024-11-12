@@ -41,6 +41,24 @@ initialize_priors <- function(param_inputs = NULL, proposal_matrix = NULL, param
     p_MH_C = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dunif(p, min = 0.01, max = 1, log = TRUE)),
     rho = list(initial = 0.2, min = 0.01, max = 0.99, prior = function(p) dunif(p, min = 0.01, max = 0.99, log = TRUE)),
 
+    # Multiplicative constants (k parameters)
+    k1 = list(initial = 1, min = 0.5, max = 1.5, prior = function(p) dnorm(p, mean = 1, sd = 0.1, log = TRUE)),
+    k2 = list(initial = 1, min = 0.5, max = 1.5, prior = function(p) dnorm(p, mean = 1, sd = 0.1, log = TRUE)),
+    k3 = list(initial = 1, min = 0.5, max = 1.5, prior = function(p) dnorm(p, mean = 1, sd = 0.1, log = TRUE)),
+    k4 = list(initial = -0.00924, min = -1, max = 1.5, prior = function(p) dnorm(p, mean = -0.00924, sd = 0.01, log = TRUE)),
+    k5 = list(initial = 0.453, min = 0.1, max = 2, prior = function(p) dnorm(p, mean = 0.453, sd = 0.1, log = TRUE)),
+    k7 = list(initial = 0.000112, min = 0.00001, max = 0.0003, prior = function(p) dnorm(p, mean = 0.000112, sd = 0.00001, log = TRUE)),
+
+    # Additive constants (c parameters)
+    c1 = list(initial = 0, min = -0.5, max = 0.5, prior = function(p) dnorm(p, mean = 0, sd = 0.1, log = TRUE)),
+    c3 = list(initial = 0, min = -0.5, max = 0.5, prior = function(p) dnorm(p, mean = 0, sd = 0.1, log = TRUE)),
+    c4 = list(initial = 0, min = -1, max = 8, prior = function(p) dnorm(p, mean = 4.77, sd = 0.1, log = TRUE)),
+    c5 = list(initial = 14.7, min = -0.5, max = 30, prior = function(p) dnorm(p, mean = 14.7, sd = 0.1, log = TRUE)),
+    c6 = list(initial = 34, min = 0.8, max = 45, prior = function(p) dnorm(p, mean = 34, sd = 5, log = TRUE)),
+    c7 = list(initial = 15.384, min = 5, max = 30, prior = function(p) dnorm(p, mean = 15.384, sd = 4, log = TRUE)),
+    c8 = list(initial = 35, min = 20, max = 50, prior = function(p) dnorm(p, mean = 35, sd = 5, log = TRUE)),
+    c9 = list(initial = 0.01, min = 0.005, max = 0.02, prior = function(p) dnorm(p, mean = 0.01, sd = 0.005, log = TRUE)),
+
     # 4. Population Proportions and Initial Conditions
     s = list(initial = 0.8, min = 0.01, max = 1, prior = function(p) dgamma(p, shape = 20, rate = 20, log = TRUE)),
     N = list(initial = 0.2, min = 0, max = 500000, prior = function(p) dunif(p, min = 0, max = 500000, log = TRUE)),
@@ -65,7 +83,7 @@ initialize_priors <- function(param_inputs = NULL, proposal_matrix = NULL, param
     loc = list(initial = 0.2, min = 0, max = 5, prior = function(p) dunif(p, min = 0, max = 5, log = TRUE)),
     mean_t = list(initial = 20, min = 10, max = 40, prior = function(p) dunif(p, min = 10, max = 40, log = TRUE)),
     k_par = list(initial = 0.7, min = 0.4, max = 1, prior = function(p) dunif(p, min = 0.4, max = 1, log = TRUE)),
-    delta_temp = list(initial = 0, min = -5, max = 2, prior = function(p) dunif(p, min = -5, max = 2, log = TRUE)),
+    delta_temp = list(initial = 0, min = -10, max = 2, prior = function(p) dunif(p, min = -5, max = 2, log = TRUE)),
 
     # 6. Adjustment and Scaling Parameters
     tau = list(initial = 0.2, min = 0, max = 1, prior = function(p) dbeta(p, 40, 12, log = TRUE)),

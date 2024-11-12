@@ -63,6 +63,62 @@ define_priors_and_proposals <- function(param_inputs, proposal_matrix, params_to
   return(list(mcmc_pars = mcmc_pars, paramFix = paramFix, param_priors = param_priors))
 }
 
+define_priors_and_proposals <- function(param_inputs, proposal_matrix, params_to_estimate, transform_fn, param_priors = NULL) {
+  if(is.null(param_priors)){
+    param_priors <- initialize_priors(param_inputs, proposal_matrix, params_to_estimate)
+  }
+
+  # Ensure all parameters are valid
+  missing_from_inputs <- setdiff(params_to_estimate, names(param_inputs))
+  if (length(missing_from_inputs) > 0) {
+    stop(paste("The following parameters are missing from param_inputs:", paste(missing_from_inputs, collapse = ", ")))
+  }
+
+  missing_from_proposals <- setdiff(params_to_estimate, rownames(proposal_matrix))
+  if (length(missing_from_proposals) > 0) {
+    stop(paste("The following parameters are missing from proposal_matrix:", paste(missing_from_proposals, collapse = ", ")))
+  }
+
+  # Validate priors
+  for (param in params_to_estimate) {
+    prior <- param_priors[[param]]
+    if (is.null(prior$min) || is.null(prior$max)) {
+      stop(paste("Missing min or max for parameter:", param))
+    }
+    if (!is.function(prior$prior)) {
+      stop(paste("Prior function is missing or invalid for parameter:", param))
+    }
+  }
+
+  # Apply transformations (if any)
+  transformed_params <- transform_fn(param_inputs)
+
+  # Validate transformed parameters
+  for (param in params_to_estimate) {
+    if (!param %in% names(transformed_params)) {
+      stop(paste("Transformed parameter missing for:", param))
+    }
+  }
+
+  # Define priors and proposals (remaining logic here)
+  if(is.null(param_priors)){
+    param_priors <- initialize_priors(param_inputs, proposal_matrix, params_to_estimate)
+  }
+
+  valid_params <- names(param_inputs)[names(param_inputs) %in% names(param_priors)]
+  paramFix <- param_inputs[valid_params]
+  paramFix <- paramFix[setdiff(names(paramFix), params_to_estimate)]
+  paramFix <- paramFix[sapply(paramFix, function(x) length(x) == 1)]
+  paramFix <- unlist(paramFix)
+
+  mcmc_pars <- mcstate::pmcmc_parameters$new(param_priors, proposal_matrix, transform_fn)
+  mcmc_pars <- mcmc_pars$fix(paramFix)
+
+  return(list(mcmc_pars = mcmc_pars, paramFix = paramFix, param_priors = param_priors))
+}
+
+
+
 # Define MCMC control settings
 define_mcmc_control <- function(control_params, adaptive_params, save_trajectories, rerun_n, rerun_random) {
   control1 <- mcstate::pmcmc_control(n_steps = 10, n_burnin = 0, progress = TRUE, n_chains = control_params$n_chains)
@@ -79,6 +135,21 @@ run_mcmc_simulation <- function(mcmc_pars, filter, start_values, control1, contr
   mcmc_run <- mcstate::pmcmc(mcmc_pars, filter, initial = start_values, control = control1)
   mcmc_run <- mcstate::pmcmc(mcmc_pars, filter, initial = start_values, control = control2)
   return(mcmc_run)
+}
+
+# Filter Incidence Data by Date Range
+filter_incidence_by_dates <- function(incidence_df, dates) {
+  # Convert 'date_ymd' column to Date if not already
+  incidence_df$date_ymd <- as.Date(incidence_df$date_ymd)
+
+  # Parse the start and end dates
+  start_date <- as.Date(dates[1])
+  end_date <- as.Date(dates[2])
+
+  # Filter the incidence_df based on the date range
+  filtered_df <- incidence_df[incidence_df$date_ymd >= start_date & incidence_df$date_ymd <= end_date, ]
+
+  return(filtered_df)
 }
 
 #' Run MCMC Inference Simulation
@@ -115,8 +186,12 @@ inf_run <- function(model, param_inputs, control_params, params_to_estimate, pro
                     month_unequal_days = FALSE, dates, age_for_inf, synthetic = TRUE, incidence_df = NULL,
                     save_trajectories = TRUE, rerun_n = Inf, rerun_random = FALSE, param_priors = NULL) {
 
+  # Filter Incidence Data by Date Range
+  incidence_df <- filter_incidence_by_dates(incidence_df, dates)
   # Generate synthetic data if necessary
-  incidence_df <- generate_synthetic_data(model, param_inputs, dates, month, month_unequal_days, noise, seed, synthetic, incidence_df)
+  if(synthetic){
+    incidence_df <- generate_synthetic_data(model, param_inputs, dates, month, month_unequal_days, noise, seed, synthetic, incidence_df)
+  }
 
   # Define parameters and initialize transformation function
   transform_fn <- define_transformations(temp = param_inputs$temp, c_R_D = param_inputs$c_R_D, SMC = param_inputs$SMC,

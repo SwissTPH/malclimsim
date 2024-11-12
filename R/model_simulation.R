@@ -24,65 +24,6 @@ decay_SMC <- function(x, const = -0.1806){
   return(0.90 / (1 + exp(const * (32.97 - x))))  # Sigmoid function for efficacy decay
 }
 
-# Function to calculate the decay of SMC efficacy over time for an entire schedule.
-# This function computes the decay between each SMC treatment, based on the efficacy decay curve.
-# Args:
-#   - SMC: A numeric vector where each element represents an SMC event (1 = SMC administered, 0 = no SMC).
-#   - decay_func: The decay function used to calculate efficacy (default = decay_SMC).
-#   - const: Decay constant to be passed to the decay function (default = -0.1806).
-# Returns:
-#   - A numeric vector representing the decayed efficacy over time.
-calc_decay_arr <- function(SMC, decay_func = decay_SMC, const = -0.1806){
-  decay_arr <- array(NA, dim = length(SMC))  # Initialize decay array
-
-  # Loop through each SMC administration point
-  for (i in 1:length(SMC)) {
-    if (SMC[i] > 0) {  # Check if SMC was administered
-      next_SMC <- i + which(SMC[(i + 1):length(SMC)] > 0)  # Find the next SMC administration
-
-      # If no subsequent SMC, calculate decay until the end
-      if (length(next_SMC) == 0) {
-        end <- length(SMC)
-        decay_arr[i:end] <- decay_func(seq(0, (end - i)), const = const)
-      } else {  # If there is a subsequent SMC, calculate decay until the next SMC
-        end <- next_SMC[1] - 1
-        decay_arr[i:end] <- decay_func(seq(0, (end - i)), const = const)
-      }
-    }
-  }
-
-  # Set any missing values in the decay array to 0 (no decay if no SMC was administered)
-  decay_arr[is.na(decay_arr)] <- 0
-  return(decay_arr)
-}
-
-calc_decay_arr <- function(SMC, decay_func = decay_SMC, const = -0.1806) {
-  # Initialize decay array with the same length as the input SMC
-  decay_arr <- numeric(length(SMC))  # Using numeric instead of array to ensure proper handling
-
-  # Loop through each SMC administration point
-  for (i in 1:length(SMC)) {
-    if (SMC[i] > 0) {  # Check if SMC was administered at index i
-      # Find the next SMC administration
-      next_SMC <- which(SMC[(i + 1):length(SMC)] > 0)
-
-      if (length(next_SMC) == 0) {
-        # If no subsequent SMC, calculate decay until the end
-        end <- length(SMC)
-      } else {
-        # If there is a subsequent SMC, calculate decay until just before the next SMC
-        end <- i + next_SMC[1]
-      }
-
-      # Calculate decay from index i to end
-      decay_arr[i:end] <- decay_func(seq(0, (end - i)), const = const)
-    }
-  }
-
-  # Set any remaining NA values in the decay array to 0 (no decay if no SMC was administered)
-  decay_arr[is.na(decay_arr)] <- 0
-  return(decay_arr)
-}
 
 calc_decay_arr <- function(SMC, decay_func = decay_SMC, const = -0.1806) {
   # Initialize decay array with zeros, length same as the input SMC

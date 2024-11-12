@@ -29,7 +29,7 @@ save_CHIRPS <- function(lon, lat, years, save = TRUE, path_to_data = NULL) {
   dates_for_rain <- as.character(date_bounds_from_years(years))
 
   # Retrieve CHIRPS rainfall data for the sampled points and date range
-  dat <- get_chirps(tp_point, dates = dates_for_rain, server = "ClimateSERV")
+  dat <- chirps::get_chirps(tp_point, dates = dates_for_rain, server = "ClimateSERV")
 
   # Calculate the average rainfall across the sampled locations
   avg_rain <- avg_across_loc(dat)

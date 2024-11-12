@@ -38,3 +38,7 @@ Depends:
     coda
 URL: https://github.com/nputney4/malclimsim
 BugReports: https://github.com/nputney4/malclimsim/issues
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr

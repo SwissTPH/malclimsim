@@ -29,10 +29,27 @@ create_start_values <- function(params_to_estimate, control_params, min_max_star
     min_max_start_values <- list(
       mu_EI = c(1/14, 1/8), qR = c(0.001, 0.2), a_R = c(0.4, 0.8), b_R = c(1, 3),
       eff_SMC = c(0.2, 0.8), s = c(0.2, 0.8), phi = c(0.2, 0.6), k_par = c(0.6, 0.8),
-      delta_temp = c(-4, 4), mu_RS_C = c(1/350, 1/250), z = c(0.2, 0.6), z_A = c(0.2, 0.6),
+      delta_temp = c(-4, 0), mu_RS_C = c(1/350, 1/250), z = c(0.2, 0.6), z_A = c(0.2, 0.6),
       z_C2 = c(0.2, 0.6), rho = c(0.3, 0.9), eta = c(0.1, 0.9), size = c(6, 7),
       phi_C2 = c(0.2, 0.6), phi_A = c(0.2, 0.6), tau = c(0.2, 0.6), p_surv = c(0.89, 0.92),
-      mu_IR = c(1/10, 1/2), shift1 = c(1, 30), shift2 = c(1, 30), kappa = c(0.2, 0.6)
+      mu_IR = c(1/10, 1/2), shift1 = c(1, 30), shift2 = c(1, 30), kappa = c(0.2, 0.6),
+      # Multiplicative constants (k parameters)
+      k1 = c(0.5, 1.5),      # Based on prior: mean = 1, sd = 0.1
+      k2 = c(0.5, 1.5),      # Based on prior: mean = 1, sd = 0.1
+      k3 = c(0.5, 1.5),      # Based on prior: mean = 1, sd = 0.1
+      k4 = c(0.5, 1.5),      # Based on prior: mean = 1, sd = 0.1
+      k5 = c(0.5, 1.5),      # Based on prior: mean = 1, sd = 0.1
+      k7 = c(0.0001, 0.0002),# Based on prior: mean = 0.000112, sd = 0.00001
+
+      # Additive constants (c parameters)
+      c1 = c(-0.5, 0.5),     # Based on prior: mean = 0, sd = 0.1
+      c3 = c(-0.5, 0.5),     # Based on prior: mean = 0, sd = 0.1
+      c4 = c(-0.5, 0.5),     # Based on prior: mean = 0, sd = 0.1
+      c5 = c(-0.5, 0.5),     # Based on prior: mean = 0, sd = 0.1
+      c6 = c(30, 45),      # Based on prior: mean = 1, sd = 0.05
+      c7 = c(15, 16),        # Based on prior: mean = 15.384, sd = 0.1
+      c8 = c(34, 36),        # Based on prior: mean = 35, sd = 0.5
+      c9 = c(0.005, 0.02)    # Based on prior: mean = 0.01, sd = 0.005
     )
   }
 

@@ -37,7 +37,7 @@ rain_path <- paste0(path_to_data, "chirps_11051418.rds")
 # Processing climate data to be used in the model
 # `D' controls the number of previous days used for the rainfall rolling average
 # calculation and `months_30_days` determines if years are 360 or 365 days
-met_360 <- process_climate_data(lon, lat, years, D = 30, temp_path = temp_path,
+met_360 <- process_climate_data(lon, lat, years, D = 60, temp_path = temp_path,
                             rain_path = rain_path, path_to_data, months_30_days = TRUE)
 colnames(met_360)[1] <- "date"
 met <- process_climate_data(lon, lat, years, D = 30, temp_path = temp_path,
@@ -70,7 +70,7 @@ smc_schedule <- smc_schedule_from_data(smc_cov = SMC_clean, months_30_days = TRU
 climate_model_1 <- load_model("model_det_1")  # Load the deterministic climate model
 climate_model_2 <- load_model("model_det_2")  # Load the deterministic climate model
 climate_model_3 <- load_model("model_det_3")  # Load the deterministic climate model
-
+climate_model_4 <- load_model("model_det_4")  # Load the deterministic climate model
 
 # Extract climate vectors
 rain <- met_360$anom  # Rainfall anomaly data
@@ -87,19 +87,20 @@ param_inputs <- list(
   mu_TS = 1/30, mu_IR = 1/5, eta = 1, mu_RS_C = 1/130, size = 1,
   mu_EI = 1/8, delta_b = 1/(21*365), delta_d = 1/(21*365),
   delta_a = 1/(5 * 365), phi = 1, p_HM = 0.125, p_MH_C = 0.5,
-  rho = 1, fT_C = 0.27, z = 1, qR = 0.01, a_R = 0.5, b_R = 2, N = 10e5,
-  s = 0.9, p_surv = 0.91, percAdult = 0.81, steps_per_day = 1, SC0 = 0.301,
-  EC0 = 0.071, IC0 = 0.042, TC0 = 0.054, RC0 = 0.533, SA0 = 0.281, kappa = 1,
+  rho = 1, fT_C = 0.27, z = 1, qR = 0.17, a_R = 0.4, b_R = 3, N = 5e5,
+  s = 0.9, p_surv = 0.934, percAdult = 0.81, steps_per_day = 1, SC0 = 0.301,
+  EC0 = 0.071, IC0 = 0.042, TC0 = 0.054, RC0 = 0.533, SA0 = 0.281,
   EA0 = 0.067, IA0 = 0.040, TA0 = 0.051, RA0 = 0.562, size_inv = 0,
-  eff_SMC = 1, decay = decay, SMC = SMC, cov_SMC = cov,
-  c_R_D = rain, temp = temp  # Inputs for rainfall and temperature
+  eff_SMC = 0, decay = decay, SMC = SMC, cov_SMC = cov,
+  c_R_D = rain_rwa, temp = temp_rwa  # Inputs for rainfall and temperature
 )
+
 
 # Run the climate-malaria model simulation
 start_date <- ymd("2014-01-01")  # Start date of the simulation
 end_date <- ymd("2022-12-31")  # End date of the simulation
 results <- data_sim(
-  climate_model_1, param_inputs = param_inputs, start_date, end_date,
+  climate_model_4, param_inputs = param_inputs, start_date, end_date,
   month = TRUE, round = FALSE, save = FALSE, month_unequal_days = FALSE
 )
 
@@ -143,6 +144,25 @@ params_to_estimate <- c(a_R = "a_R", b_R = "b_R",
                         qR = "qR", z = "z", eff_SMC = "eff_SMC", phi = "phi",
                         size = "size", s = "s")
 
+params_to_estimate <- c(a_R = "a_R", b_R = "b_R",
+                        qR = "qR", z = "z", eff_SMC = "eff_SMC", phi = "phi",
+                        size = "size", s = "s", c1 = "c1", c3 = "c3", c4 = "c4",
+                        c5 = "c5", c6 = "c6", c7 = "c7", c8 = "c8", c9 = "c9",
+                        k1 = "k1", k2 = "k2", k3 = "k3", k4 = "k4", k5 = "k5", k7 = "k7")
+
+params_to_estimate <- c(a_R = "a_R", b_R = "b_R",
+                        qR = "qR", z = "z", eff_SMC = "eff_SMC", phi = "phi",
+                        size = "size", c1 = "c1", k1 = "k1",
+                        k2 = "k2", delta_temp = "delta_temp", c4 = "c4",
+                        k4 = "k4", k5 = "k5", c5 = "c5", c6 = "c6", k7 = "k7",
+                        c7 = "c7", c8 = "c8", p_surv = "p_surv", k3 = "k3", c3 = "c3",
+                        s = "s")
+
+params_to_estimate <- c(a_R = "a_R", b_R = "b_R",
+                        qR = "qR", z = "z", eff_SMC = "eff_SMC", phi = "phi",
+                        size = "size", c6 = "c6", c7 = "c7", c8 = "c8",
+                        p_surv = "p_surv", s = "s", k1 = "k1", c1 = "c1")
+
 ################################################################################
 ### ----------------------- DEFINING MCMC PARAMETERS ----------------------- ###
 ################################################################################
@@ -164,11 +184,11 @@ control_params_2 <- params_custom$control_params
 ################################################################################
 # defining starting values for chains
 start_values <- create_start_values(params_to_estimate, params_default$control_params,
-                                    model = climate_model, param_inputs = param_inputs)
+                                    model = climate_model_4, param_inputs = param_inputs, random = TRUE, seed = NULL)
 
 # choose proposal matrix
 proposal_matrix <- create_proposal_matrix(params_to_estimate = params_to_estimate,
-                                          model = climate_model, param_inputs = param_inputs)
+                                          model = climate_model_4, param_inputs = param_inputs)
 
 
 # Default behavior with predefined param_names, min_max_start_values, and proposal_variance
@@ -193,8 +213,8 @@ updated_priors <- update_priors(param_inputs, proposal_matrix, params_to_estimat
 ################################################################################
 ### --------------- RUNNING MCMC (Random Walk Metropolis) ------------------ ###
 ################################################################################
-dates_for_inf <- c("2014-01-01", "2014-12-31") # this isn't really doing anything
-results <- inf_run(model = climate_model_1, param_inputs = param_inputs,
+dates_for_inf <- c("2014-01-01", "2022-12-31") # this isn't really doing anything
+results <- inf_run(model = climate_model_4, param_inputs = param_inputs,
                            control_params = params_default$control_params,
                            params_to_estimate = params_to_estimate,
                            proposal_matrix = proposal_matrix,
@@ -202,14 +222,14 @@ results <- inf_run(model = climate_model_1, param_inputs = param_inputs,
                            start_values = start_values, month = TRUE,
                            dates = dates_for_inf, age_for_inf = 'u5',
                            synthetic = FALSE, incidence_df = obs_cases,
-                           save_trajectories = FALSE,
+                           save_trajectories = FALSE, noise = FALSE,
                            rerun_n = 1000, rerun_random = TRUE,
-                   param_priors = updated_priors)
+                   param_priors = NULL)
 
 ################################################################################
 ### ----------------------- SOME MCMC DIAGNOSTICS ------------------------- ####
 ################################################################################
-MCMC_diag(inf_results)
+MCMC_diag(results)
 
 ################################################################################
 ### -------------------- EVALUATING MODEL ERROR --------------------------- ####
@@ -219,8 +239,8 @@ max_ll_post(results)
 
 # Posterior predictive check
 plot_observed_vs_simulated(results = results, obs_cases,
-                           start_date = "2014-01-01", end_date = "2020-12-01",
-                           model = climate_model, add_ribbon = TRUE, n_samples = 5,
+                           start_date = "2014-01-01", end_date = "2022-12-31",
+                           model = climate_model_4, add_ribbon = TRUE, n_samples = 5,
                            groups = c("inc_C"), met = met_360, climate_facet = TRUE)
 
 
