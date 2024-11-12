@@ -84,6 +84,20 @@ standardize_rainfall <- function(avg_rain, save = TRUE, file = "") {
   return(avg_rain)  # Return the updated data frame
 }
 
+#' Save ERA5 Reanalysis Data
+#'
+#' Downloads ERA5 reanalysis data for specified years and saves it to the specified path.
+#'
+#' @param years A vector of years for which the data is to be downloaded (e.g., \code{c(2000, 2001)}).
+#' @param path A string specifying the path where the downloaded data file should be stored.
+#'
+#' @return The path to the downloaded NetCDF file.
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' save_era5(years = c(2000, 2001), path = "./data")
+#' }
 save_era5 <- function(years, path){
   current_datetime <- Sys.time()
   formatted_datetime <- format(current_datetime, "%m%d%H%M")
@@ -112,6 +126,21 @@ save_era5 <- function(years, path){
   )
 }
 
+#' Extract Temperature Data from ERA5 File
+#'
+#' Extracts temperature data for a specified longitude and latitude from a NetCDF ERA5 file.
+#'
+#' @param lon A numeric value specifying the longitude of the location.
+#' @param lat A numeric value specifying the latitude of the location.
+#' @param path_to_file A string specifying the path to the NetCDF file containing ERA5 data.
+#'
+#' @return A dataframe containing two columns: \code{Date} (POSIXct) and \code{Temperature} (in Celsius).
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' extract_era5(lon = 10.5, lat = -25.3, path_to_file = "./data/era5_011220.nc")
+#' }
 extract_era5 <- function(lon, lat, path_to_file){
   nc <- ncdf4::nc_open(path_to_file)
   temp_values <- ncdf4::ncvar_get(nc, "t2m")
@@ -134,6 +163,7 @@ extract_era5 <- function(lon, lat, path_to_file){
   )
   return(temp_df)
 }
+
 
 daily_smooth_temp <- function(temp_df) {
   # Convert the Date column to Date type

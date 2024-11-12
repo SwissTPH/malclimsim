@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_visualizations.R
 \name{plot_observed_vs_simulated}
 \alias{plot_observed_vs_simulated}
-\title{Plot Observed vs Simulated Data with Quantiles Ribbon for Each Group}
+\title{Plot Observed vs Simulated Data with Quantiles Ribbon and Optional Climate Data Facet}
 \usage{
 plot_observed_vs_simulated(
   results,
@@ -12,7 +12,9 @@ plot_observed_vs_simulated(
   model,
   add_ribbon = FALSE,
   n_samples = 100,
-  groups = c("inc_A", "inc_C", "inc")
+  groups = c("inc_A", "inc_C", "inc"),
+  met = NULL,
+  climate_facet = FALSE
 )
 }
 \arguments{
@@ -31,6 +33,10 @@ plot_observed_vs_simulated(
 \item{n_samples}{The number of samples to draw from the MCMC results for the quantiles ribbon.}
 
 \item{groups}{A character vector specifying which groups to include in the plot (\code{inc_A}, \code{inc_C}, \code{inc}).}
+
+\item{met}{Optional climate data frame to be included as a separate facet.}
+
+\item{climate_facet}{Logical; if TRUE, adds climate data as a separate facet in the plot.}
 }
 \value{
 A ggplot object displaying observed data as points, simulated data as a line, and an optional ribbon for quantiles.
@@ -39,10 +45,12 @@ A ggplot object displaying observed data as points, simulated data as a line, an
 This function simulates data from a model using parameters that maximize the log posterior,
 then plots the observed and simulated incidence data for comparison. Optionally, a ribbon
 representing the 1st and 99th quantiles of additional simulations can be included to visualize uncertainty.
+It also allows for optional inclusion of climate data as a separate facet.
 }
 \examples{
 # Assuming `results` contains MCMC output and `obs_cases` is the observed cases data
 plot_observed_vs_simulated(results, obs_cases, start_date = "2014-01-01",
                            end_date = "2014-12-31", model = data_sim,
-                           add_ribbon = TRUE, n_samples = 100, groups = c("inc_A", "inc_C", "inc"))
+                           add_ribbon = TRUE, n_samples = 100, groups = c("inc_A", "inc_C", "inc"),
+                           met = met_data, climate_facet = TRUE)
 }
