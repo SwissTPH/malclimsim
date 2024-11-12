@@ -1,14 +1,38 @@
-# Function to generate an SMC deployment schedule and calculate efficacy decay.
-# This function simulates an SMC schedule based on given parameters and calculates efficacy decay.
-# Args:
-#   - start_date: The start date of the SMC deployment (format: "YYYY-MM-DD").
-#   - end_date: The end date of the SMC deployment (format: "YYYY-MM-DD").
-#   - years: A vector of years for which SMC will be deployed.
-#   - months_active: A matrix where each row corresponds to a year and columns represent months (1 = active, 0 = inactive).
-#   - months_30_days: A boolean flag to simulate a 360-day calendar (default = FALSE).
-#   - coverage: The coverage rate of SMC (default = 0.90).
-# Returns:
-#   - A dataframe with dates, SMC schedule, and efficacy decay over time.
+#' Generate an SMC Deployment Schedule and Calculate Efficacy Decay
+#'
+#' This function simulates an SMC (Seasonal Malaria Chemoprevention) schedule based on given parameters
+#' and calculates efficacy decay over time.
+#'
+#' @param start_date A string specifying the start date of the SMC deployment (format: "YYYY-MM-DD").
+#' @param end_date A string specifying the end date of the SMC deployment (format: "YYYY-MM-DD").
+#' @param years A numeric vector of years for which SMC will be deployed.
+#' @param months_active A matrix where each row corresponds to a year and columns represent months
+#' (1 = active, 0 = inactive).
+#' @param months_30_days A logical flag to simulate a 360-day calendar. Default is \code{FALSE}.
+#' @param coverage A numeric value specifying the coverage rate of SMC. Default is \code{0.90}.
+#'
+#' @return A dataframe with columns:
+#' \item{dates}{The sequence of dates for the given period.}
+#' \item{SMC}{Binary values indicating SMC deployment (1 = deployed, 0 = not deployed).}
+#' \item{cov}{The coverage rate of SMC over the period.}
+#' \item{decay}{The calculated efficacy decay over time.}
+#'
+#' @details
+#' The function generates a sequence of dates and assigns SMC deployments based on active months
+#' provided for each year. It also calculates the decay in efficacy over time for the deployed SMC.
+#'
+#' @examples
+#' # Example usage:
+#' years <- 2023:2024
+#' months_active <- matrix(c(1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0,  # Year 2023
+#'                           1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0), # Year 2024
+#'                         nrow = 2, byrow = TRUE)
+#' start_date <- "2023-01-01"
+#' end_date <- "2024-12-31"
+#' schedule <- gen_smc_schedule(start_date, end_date, years, months_active, coverage = 0.85)
+#' head(schedule)
+#'
+#' @export
 gen_smc_schedule <- function(start_date, end_date, years, months_active, months_30_days = FALSE, coverage = 0.90) {
   # Generate the sequence of dates
   if (months_30_days) {
