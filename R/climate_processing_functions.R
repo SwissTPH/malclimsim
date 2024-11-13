@@ -227,9 +227,9 @@ daily_smooth_temp <- function(temp_df) {
 
 
 
-#' Title
+#' Saving Climate Data From ERA5 and CHIRTSdaily
 #'
-#' @param long - longitude coordinate
+#' @param lon - longitude coordinate
 #' @param lat - latitude coordinate
 #' @param years - vector containing each year for data to be downloaded
 #' @param path_to_data - folder where data is to be saved
@@ -245,7 +245,7 @@ daily_smooth_temp <- function(temp_df) {
 #' lat <- 8.3
 #' path_to_data <- "C:/Users/putnni/Documents/r-packages/data/"
 #' save_climate_data(lon, lat, years, path_to_data)
-save_climate_data <- function(long, lat, years, path_to_data, rain = TRUE, temp = TRUE){
+save_climate_data <- function(lon, lat, years, path_to_data, rain = TRUE, temp = TRUE){
   if(temp){
     save_era5(years, path = path_to_data)
   }
