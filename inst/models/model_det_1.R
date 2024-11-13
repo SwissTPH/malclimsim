@@ -78,11 +78,11 @@ update(month_inc_A) <- if ((step) %% steps_per_month == 0) mu_EI * EA * fT_A els
 initial(month_inc_total) <- 0
 update(month_inc_total) <- if ((step) %% steps_per_month == 0) mu_EI * (EC * fT_C + EA * fT_A) else month_inc_total + mu_EI * (EC * fT_C + EA * fT_A)
 
-size <- user()
+size <- user(10)
 
 # User defined parameters
 #dt <- user(1)
-phi <- user()
+phi <- user(1)
 
 mu_SE_C <- 1 - exp(-p_MH_C * EIR)
 mu_SE_A <- phi * (1 - exp(-rho * p_MH_C * EIR))
@@ -94,7 +94,7 @@ update(mu_SE_C_up) <- mu_SE_C
 #mu_RS_C <- mu_RS_C_0 * dt
 mu_RS_C <- user()
 mu_RS_A <- eta * mu_RS_C
-eta <- user()
+eta <- user(1)
 #mu_EI_0 <- user()
 #mu_EI <- mu_EI_0 * dt
 mu_EI <- user()
@@ -107,8 +107,8 @@ mu_IR <- user()
 #fT <- user()
 fT_C <- user()
 fT_A <- z * fT_C
-z <- user() # z < 1, reporting rate of adults vs. children
-rho <- user()
+z <- user(1) # z < 1, reporting rate of adults vs. children
+rho <- user(1)
 p_MH_C <- user()
 #p_MH_A <- rho * p_MH_C
 #delta_b_0 <- user()
