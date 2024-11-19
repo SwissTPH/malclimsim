@@ -8,7 +8,8 @@ process_climate_data(
   lon,
   lat,
   years,
-  D,
+  D1,
+  D2,
   temp_path,
   rain_path,
   path_to_data,
@@ -28,8 +29,12 @@ process_climate_data(
 \item vector containing each year for the analysis
 }}
 
-\item{D}{\itemize{
+\item{D1}{\itemize{
 \item the number of previous days to take an average over for the rainfall rolling mean
+}}
+
+\item{D2}{\itemize{
+\item the number of previous days to take an average over for the temperature rolling mean
 }}
 
 \item{temp_path}{\itemize{
@@ -54,6 +59,6 @@ path_to_data <- "C:/Users/putnni/Documents/r-packages/data/"
 save_climate_data(lon, lat, years, path_to_data)
 temp_path <- paste0(path_to_data, "era5_11051417.nc")
 rain_path <- paste0(path_to_data, "chirps_11051418.rds")
-met <- process_climate_data(lon, lat, years, D = 30, temp_path = temp_path,
+met <- process_climate_data(lon, lat, years, D1 = 30, D2 = 30, temp_path = temp_path,
 rain_path = rain_path, path_to_data
 }

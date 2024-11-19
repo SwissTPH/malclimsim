@@ -89,7 +89,27 @@ initialize_priors <- function(param_inputs = NULL, proposal_matrix = NULL, param
     tau = list(initial = 0.2, min = 0, max = 1, prior = function(p) dbeta(p, 40, 12, log = TRUE)),
     kappa = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dbeta(p, 0.125, 0.125, log = TRUE)),
     z_A = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dbeta(p, 0.125, 0.125, log = TRUE)),
-    z_C2 = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dbeta(p, 0.125, 0.125, log = TRUE))
+    z_C2 = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dbeta(p, 0.125, 0.125, log = TRUE)),
+    D <- list(initial = 2, min = 1, max = 200, integer = TRUE, prior = function(p) dunif(p, min = 1, max = 200, log = TRUE)),
+    lag_R = list(initial = 0, min = 0, max = 100, integer = TRUE, prior = function(p) dunif(p, min = 0, max = 100, log = TRUE)),
+    lag_T = list(initial = 0, min = 0, max = 100, integer = TRUE, prior = function(p) dunif(p, min = 0, max = 100, log = TRUE)),
+
+    # Gamma distribution to ensure positivity
+    alpha = list(initial = 2.5, min = 0, max = 10, prior = function(p) dgamma(p, shape = 2, rate = 0.5, log = TRUE)),
+
+    # T_opt - Must be greater than 0, likely between 24 and 32
+    T_opt = list(initial = 28, min = 0, max = 40, prior = function(p) dnorm(p, mean = 28, sd = 3, log = TRUE)),
+
+    # R_opt - Can be negative, likely between -5 and 5
+    R_opt = list(initial = 0, min = -10, max = 10, prior = function(p) dnorm(p, mean = 0, sd = 5, log = TRUE)), # Normal distribution symmetric around 0
+
+    # k1 - Can be negative but likely positive and less than 2
+    k1 = list(initial = 1, min = -5, max = 5, prior = function(p) dnorm(p, mean = 1, sd = 1, log = TRUE)), # Normal distribution with bias towards positive values
+
+    # sigma_T - Must be positive, value is uncertain
+    sigma_T = list(initial = 1, min = 0, max = 10, prior = function(p) dgamma(p, shape = 2, rate = 1, log = TRUE)), # Gamma distribution to ensure positivity
+
+    b = list(initial = 1, min = 0.001, max = 50, prior = function(p) dgamma(p, shape = 2, rate = 1, log = TRUE))
   )
 
 
@@ -106,12 +126,14 @@ initialize_priors <- function(param_inputs = NULL, proposal_matrix = NULL, param
       initial_value <- param_info$initial
       min_value <- param_info$min
       max_value <- param_info$max
+      integer <- if (!is.null(param_info$integer)) param_info$integer else FALSE
     } else {
       # Apply a generic default prior if none specified
       prior_function <- function(p) dunif(p, min = 0, max = 1, log = TRUE)
       initial_value <- 0.2
       min_value <- 0.01
       max_value <- 1
+      integer <- FALSE
     }
 
     # Initialize the parameter with the appropriate prior, setting bounds and initial values
@@ -120,7 +142,8 @@ initialize_priors <- function(param_inputs = NULL, proposal_matrix = NULL, param
       initial = initial_value,
       min = min_value,
       max = max_value,
-      prior = prior_function
+      prior = prior_function,
+      integer = integer
     )
   }
 

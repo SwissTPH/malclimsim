@@ -156,7 +156,7 @@ plot_residuals <- function(observed_df, simulated_df, date_column, groups = c("i
 
 #' Calculate Error Metrics for Model Assessment
 #'
-#' This function calculates various error metrics (MAE, RMSE, MAPE, R^2) between observed and simulated data.
+#' This function calculates various error metrics (MAE, RMSE, MAPE, R^2, Bias) between observed and simulated data.
 #'
 #' @param observed_df Data frame containing the observed data.
 #' @param simulated_df Data frame containing the simulated data.
@@ -183,14 +183,16 @@ calculate_error_metrics <- function(observed_df, simulated_df, date_column, grou
     rmse <- sqrt(mean(residuals^2, na.rm = TRUE))
     mape <- mean(abs(residuals / combined_data[[paste0(group, "_obs")]]), na.rm = TRUE) * 100
     r2 <- 1 - (sum(residuals^2, na.rm = TRUE) / sum((combined_data[[paste0(group, "_obs")]] - mean(combined_data[[paste0(group, "_obs")]], na.rm = TRUE))^2, na.rm = TRUE))
+    bias <- sum(residuals, na.rm = TRUE) # Sum of residuals
 
-    data.frame(Group = group, MAE = mae, RMSE = rmse, MAPE = mape, R2 = r2)
+    data.frame(Group = group, MAE = mae, RMSE = rmse, MAPE = mape, R2 = r2, Bias = bias)
   })
 
   # Combine error metrics into a data frame
   error_metrics_df <- do.call(rbind, error_metrics_list)
   return(error_metrics_df)
 }
+
 
 #' Assess Model Performance
 #'
@@ -214,5 +216,54 @@ assess_model_performance <- function(observed_df, simulated_df, date_column, gro
   return(list(error_metrics = error_metrics, residual_plot = residual_plot))
 }
 
+# Function to calculate the bias per year
+calculate_bias_per_year <- function(simulated_df, obs_cases) {
+  # Merge the simulated and observed data
+  combined_df <- merge(simulated_df, obs_cases, by = "date_ymd", suffixes = c("_sim", "_obs"))
 
+  # Extract the year from the date
+  combined_df$year <- as.numeric(format(as.Date(combined_df$date_ymd), "%Y"))
 
+  # Calculate bias for each metric
+  combined_df$bias_inc_A <- combined_df$inc_A_obs - combined_df$inc_A_sim
+  combined_df$bias_inc_C <- combined_df$inc_C_obs - combined_df$inc_C_sim
+  combined_df$bias_inc <- combined_df$inc_obs - combined_df$inc_sim
+
+  # Group by year and calculate the mean bias per year
+  library(dplyr)
+  bias_per_year <- combined_df %>%
+    group_by(year) %>%
+    summarise(
+      total_bias_inc_A = sum(bias_inc_A, na.rm = TRUE),
+      total_bias_inc_C = sum(bias_inc_C, na.rm = TRUE),
+      total_bias_inc = sum(bias_inc, na.rm = TRUE)
+    )
+
+  return(bias_per_year)
+}
+
+# Function to compare the mean bias of 2019 (SMC) vs other years (non-SMC)
+compare_bias_2019_vs_other_years <- function(simulated_df, obs_cases) {
+  # Get the bias per year
+  bias_per_year <- calculate_bias_per_year(simulated_df, obs_cases)
+
+  # Separate the biases into 2019 (SMC) and non-2019 (non-SMC)
+  smc_bias <- bias_per_year %>% filter(year == 2019)
+  non_smc_bias <- bias_per_year %>% filter(year != 2019)
+
+  # Calculate the mean bias for non-SMC years
+  mean_non_smc_bias <- non_smc_bias %>%
+    summarise(
+      mean_bias_inc_A = mean(total_bias_inc_A, na.rm = TRUE),
+      mean_bias_inc_C = mean(total_bias_inc_C, na.rm = TRUE),
+      mean_bias_inc = mean(total_bias_inc, na.rm = TRUE)
+    )
+
+  # Return a list comparing SMC (2019) vs non-SMC (other years)
+  comparison <- list(
+    smc_bias = smc_bias,
+    mean_non_smc_bias = mean_non_smc_bias
+  )
+
+  return(comparison)
+}

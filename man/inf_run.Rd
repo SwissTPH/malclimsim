@@ -23,7 +23,8 @@ inf_run(
   save_trajectories = TRUE,
   rerun_n = Inf,
   rerun_random = FALSE,
-  param_priors = NULL
+  param_priors = NULL,
+  n_years_warmup = 3
 )
 }
 \arguments{

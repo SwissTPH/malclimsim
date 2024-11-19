@@ -30,7 +30,7 @@ create_start_values <- function(params_to_estimate, control_params, min_max_star
       mu_EI = c(1/14, 1/8), qR = c(0.001, 0.2), a_R = c(0.4, 0.8), b_R = c(1, 3),
       eff_SMC = c(0.2, 0.8), s = c(0.2, 0.8), phi = c(0.2, 0.6), k_par = c(0.6, 0.8),
       delta_temp = c(-4, 0), mu_RS_C = c(1/350, 1/250), z = c(0.2, 0.6), z_A = c(0.2, 0.6),
-      z_C2 = c(0.2, 0.6), rho = c(0.3, 0.9), eta = c(0.1, 0.9), size = c(6, 7),
+      z_C2 = c(0.2, 0.6), rho = c(0.3, 0.9), eta = c(0.1, 0.9), size = c(5, 100),
       phi_C2 = c(0.2, 0.6), phi_A = c(0.2, 0.6), tau = c(0.2, 0.6), p_surv = c(0.89, 0.92),
       mu_IR = c(1/10, 1/2), shift1 = c(1, 30), shift2 = c(1, 30), kappa = c(0.2, 0.6),
       # Multiplicative constants (k parameters)
@@ -49,7 +49,16 @@ create_start_values <- function(params_to_estimate, control_params, min_max_star
       c6 = c(30, 45),      # Based on prior: mean = 1, sd = 0.05
       c7 = c(15, 16),        # Based on prior: mean = 15.384, sd = 0.1
       c8 = c(34, 36),        # Based on prior: mean = 35, sd = 0.5
-      c9 = c(0.005, 0.02)    # Based on prior: mean = 0.01, sd = 0.005
+      c9 = c(0.005, 0.02),    # Based on prior: mean = 0.01, sd = 0.005
+
+      alpha = c(0.01, 5),         # Based on prior: Gamma distribution, most likely values < 5
+      T_opt = c(24, 32),       # Based on prior: Normal distribution centered at 28, sd = 3
+      R_opt = c(-5, 5),        # Based on prior: Normal distribution centered at 0, sd = 5
+      k1 = c(0.5, 5),            # Based on prior: Normal distribution centered at 1, sd = 0.5
+      sigma_T = c(0.01, 10),       # Based on prior: Gamma distribution, allows positive values up to 10
+      b = c(1, 5),
+      lag_R = c(5, 30),
+      lag_T = c(5,30)
     )
   }
 

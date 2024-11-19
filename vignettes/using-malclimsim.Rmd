@@ -38,7 +38,7 @@ lon <- 30.63
 
 Next, "save_climate_data" will download the raw data from the specified coordinates into the directory given by 'path_to_data', where the data can be loaded from for future uses. The temperature data comes from 'ERA5-Land' (<https://cds.climate.copernicus.eu/datasets/derived-era5-land-daily-statistics?tab=overview>) and the rainfall data comes from 'CHIRTSdaily' (<https://www.chc.ucsb.edu/data/chirtsdaily>).
 
-```{r}
+```{r, echo = FALSE}
 path_to_data <- "C:/Users/putnni/Documents/r-packages/data/"
 
 # Saving the rainfall data locally based on specified path
@@ -49,16 +49,22 @@ Now the data is processed using the 'process_climate_data' function. A few thing
 
 For more details, look at the code found in "climate_processing_functions.R".
 
-```{r}
+```{r, each = FALSE}
 # Reading in climate data saved by `save_climate_data`
 temp_path <- paste0(path_to_data, "era5_11051417.nc")
 rain_path <- paste0(path_to_data, "chirps_11051418.rds")
 
 # Processing climate data to be used in the model
-# `D' controls the number of previous days used for the rainfall rolling average
+# `D1' and `D2' controls the number of previous days used for the rainfall rolling average and temperature rolling average
 # calculation and `months_30_days` determines if years are 360 or 365 days
-met_360 <- process_climate_data(lon, lat, years, D = 60, temp_path = temp_path,
+met_360 <- process_climate_data(lon, lat, years, D1 = 60, D2 = 1, temp_path = temp_path,
                             rain_path = rain_path, path_to_data, months_30_days = TRUE)
+```
+
+
+```{r}
+data("met_360", package = "malclimsim")
+
 colnames(met_360)[1] <- "date"
 
 # Extract rainfall and temperature data
@@ -164,6 +170,6 @@ plot_time_series(results = results, met = met_360, plot_title = "Malaria Inciden
 
 # Example 3: Plotting both malaria incidence (only "total") and climate data (both "temp" and "rollmean")
 plot_time_series(results = results, met = met_360, plot_title = "Malaria Incidence and Climate Data",
-                 select_incidence = "total", select_climate = c("temp", "rollmean"), climate_facet = TRUE)
+                 select_incidence = "total", select_climate = c("temp", "rollrain"), climate_facet = TRUE)
 
 ```

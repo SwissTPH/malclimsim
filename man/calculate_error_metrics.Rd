@@ -19,7 +19,7 @@ calculate_error_metrics(observed_df, simulated_df, date_column, groups)
 A data frame containing the calculated error metrics for each group.
 }
 \description{
-This function calculates various error metrics (MAE, RMSE, MAPE, R^2) between observed and simulated data.
+This function calculates various error metrics (MAE, RMSE, MAPE, R^2, Bias) between observed and simulated data.
 }
 \examples{
 error_metrics <- calculate_error_metrics(obs_cases, simulated_df, date_column = "date_ymd", groups = c("inc_A", "inc_C", "inc"))

@@ -16,6 +16,14 @@
 #' comparison_fn <- generate_incidence_comparison(month = TRUE, age_for_inf = "total", incidence_df = incidence_data)
 #' # Then use the returned function in MCMC or other model fitting tasks
 generate_incidence_comparison <- function(month, age_for_inf, incidence_df) {
+  # Helper function to calculate rolling average
+  calculate_rolling_average <- function(rainfall, D) {
+    D <- round(D)  # Ensure D is an integer
+    rolling_avg <- zoo::rollapply(rainfall, width = D, FUN = mean, align = "right", fill = NA)
+    # Handle edge cases
+    rolling_avg[is.na(rolling_avg)] <- mean(rainfall[1:D], na.rm = TRUE)
+    return(rolling_avg)
+  }
 
   # Set up the comparison function based on conditions
   if(month && age_for_inf == 'total') {
@@ -27,6 +35,7 @@ generate_incidence_comparison <- function(month, age_for_inf, incidence_df) {
       return(dnbinom(x = incidence_observed_total, mu = mu_total, size = size, log = TRUE))
     })
   }
+
 
   if(month && age_for_inf == 'sep_ages') {
     return(function(state, observed, pars = c("size")) {
@@ -59,13 +68,21 @@ generate_incidence_comparison <- function(month, age_for_inf, incidence_df) {
 
   if(month && age_for_inf == 'u5') {
     return(function(state, observed, pars = c("size")) {
-      incidence_observed_C <- observed$inc_C
-      mu_C <- state["month_inc_C", , drop = TRUE]
+      incidence_observed_C <- observed$inc_C # this is the observed data
+      mu_C <- state["month_inc_C", , drop = TRUE] # this is "x"
       size <- pars$size
       if (size == 0) { size <- 1e30 }
       return(dnbinom(x = incidence_observed_C, mu = mu_C, size = size, log = TRUE))
     })
   }
+
+  # if(month && age_for_inf == 'u5') {
+  #   return(function(state, observed, pars) {
+  #     incidence_observed_C <- observed$inc_C # this is the observed data
+  #     mu_C <- state["month_inc_C", , drop = TRUE] # this is "x"
+  #     return(dpois(x = incidence_observed_C, lambda = mu_C, log = TRUE))
+  #   })
+  # }
 
   if(month && age_for_inf == 'o5') {
     return(function(state, observed, pars = c("size")) {

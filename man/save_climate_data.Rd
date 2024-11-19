@@ -2,12 +2,12 @@
 % Please edit documentation in R/climate_processing_functions.R
 \name{save_climate_data}
 \alias{save_climate_data}
-\title{Title}
+\title{Saving Climate Data From ERA5 and CHIRTSdaily}
 \usage{
-save_climate_data(long, lat, years, path_to_data, rain = TRUE, temp = TRUE)
+save_climate_data(lon, lat, years, path_to_data, rain = TRUE, temp = TRUE)
 }
 \arguments{
-\item{long}{\itemize{
+\item{lon}{\itemize{
 \item longitude coordinate
 }}
 
@@ -37,7 +37,7 @@ save_climate_data(long, lat, years, path_to_data, rain = TRUE, temp = TRUE)
 }
 }
 \description{
-Title
+Saving Climate Data From ERA5 and CHIRTSdaily
 }
 \examples{
 years <- 2014:2023

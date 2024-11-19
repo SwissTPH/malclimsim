@@ -7,7 +7,7 @@
 climate_to_30_day_months(clim_df, start_year = 2014, end_year = 2022)
 }
 \arguments{
-\item{clim_df}{A data frame of climate data, which must include columns for \code{date}, \code{month}, \code{day}, \code{anom}, \code{temp}, and \code{rollmean}.}
+\item{clim_df}{A data frame of climate data, which must include columns for \code{date}, \code{month}, \code{day}, \code{anom}, \code{temp}, and \code{rollrain}.}
 
 \item{start_year}{The starting year of the conversion (default is 2014).}
 

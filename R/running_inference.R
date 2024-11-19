@@ -27,10 +27,11 @@ generate_comparison_function <- function(month, age_for_inf, incidence_observed)
 
 # Initialize observation time for alignment of observed and simulated data
 initialize_observation_time <- function(simulated_result, incidence_df) {
-  initial_time_obs <- simulated_result$month_no[simulated_result$date_ymd == incidence_df$month[1]]
+  initial_time_obs <- incidence_df$month_no[simulated_result$date_ymd == incidence_df$date_ymd[1]]
   if (length(initial_time_obs) == 0) initial_time_obs <- 0
   incidence_df$month_no <- seq(initial_time_obs, (nrow(incidence_df) + initial_time_obs - 1))
-  return(initial_time_obs)
+  #return(initial_time_obs)
+  return(0)
 }
 
 # Setup filtered data
@@ -43,24 +44,6 @@ filter_data_setup <- function(incidence_observed, month, initial_time_obs) {
 define_transformations <- function(temp, c_R_D, SMC, decay, cov_SMC) {
   transform_fn <- make_transform(temp = temp, c_R_D = c_R_D, SMC = SMC, decay = decay, cov_SMC = cov_SMC)
   return(transform_fn)
-}
-
-# Define priors and proposal parameters
-define_priors_and_proposals <- function(param_inputs, proposal_matrix, params_to_estimate, transform_fn, param_priors = NULL) {
-  if(is.null(param_priors)){
-    param_priors <- initialize_priors(param_inputs, proposal_matrix, params_to_estimate)
-  }
-
-  valid_params <- names(param_inputs)[names(param_inputs) %in% names(param_priors)]
-  paramFix <- param_inputs[valid_params]
-  paramFix <- paramFix[setdiff(names(paramFix), params_to_estimate)]
-  paramFix <- paramFix[sapply(paramFix, function(x) length(x) == 1)]
-  paramFix <- unlist(paramFix)
-
-  mcmc_pars <- mcstate::pmcmc_parameters$new(param_priors, proposal_matrix, transform_fn)
-  mcmc_pars <- mcmc_pars$fix(paramFix)
-
-  return(list(mcmc_pars = mcmc_pars, paramFix = paramFix, param_priors = param_priors))
 }
 
 define_priors_and_proposals <- function(param_inputs, proposal_matrix, params_to_estimate, transform_fn, param_priors = NULL) {
@@ -184,18 +167,24 @@ filter_incidence_by_dates <- function(incidence_df, dates) {
 inf_run <- function(model, param_inputs, control_params, params_to_estimate, proposal_matrix,
                     adaptive_params, start_values, noise = FALSE, seed = 24, month = FALSE,
                     month_unequal_days = FALSE, dates, age_for_inf, synthetic = TRUE, incidence_df = NULL,
-                    save_trajectories = TRUE, rerun_n = Inf, rerun_random = FALSE, param_priors = NULL) {
+                    save_trajectories = TRUE, rerun_n = Inf, rerun_random = FALSE, param_priors = NULL,
+                    n_years_warmup = 3) {
 
+  # Setup for allowing model to run some prior to inference (comparing to observations)
+  param_inputs_ext <- extend_time_varying_inputs(param_inputs, days_per_year = 360,
+                                             years_to_extend = n_years_warmup)
+  dates[1] <- paste0(year(as.Date(dates[1])) - n_years_warmup, "-", format(as.Date(dates[1]), "%m-%d"))
   # Filter Incidence Data by Date Range
   incidence_df <- filter_incidence_by_dates(incidence_df, dates)
+
   # Generate synthetic data if necessary
   if(synthetic){
-    incidence_df <- generate_synthetic_data(model, param_inputs, dates, month, month_unequal_days, noise, seed, synthetic, incidence_df)
+    incidence_df <- generate_synthetic_data(model, param_inputs_ext, dates, month, month_unequal_days, noise, seed, synthetic, incidence_df)
   }
 
   # Define parameters and initialize transformation function
-  transform_fn <- define_transformations(temp = param_inputs$temp, c_R_D = param_inputs$c_R_D, SMC = param_inputs$SMC,
-                                         decay = param_inputs$decay, cov_SMC = param_inputs$cov_SMC)
+  transform_fn <- define_transformations(temp = param_inputs_ext$temp, c_R_D = param_inputs_ext$c_R_D, SMC = param_inputs_ext$SMC,
+                                         decay = param_inputs_ext$decay, cov_SMC = param_inputs_ext$cov_SMC)
   priors_and_proposals <- define_priors_and_proposals(param_inputs, proposal_matrix, params_to_estimate, transform_fn)
   mcmc_pars <- priors_and_proposals$mcmc_pars
   paramFix <- priors_and_proposals$paramFix
@@ -203,11 +192,13 @@ inf_run <- function(model, param_inputs, control_params, params_to_estimate, pro
   # Set up comparison function and initial time
   incidence_observed <- incidence_df[-1]
   comparison_fn <- generate_comparison_function(month, age_for_inf, incidence_observed)
-  simulated_result <- data_sim_for_inference(model, param_inputs = param_inputs, dates = dates, noise = FALSE, month = month)
+  simulated_result <- data_sim_for_inference(model, param_inputs = param_inputs_ext, dates = dates, noise = FALSE, month = month)
+  simulated_result <- filter_by_year(simulated_result, "date_ymd", min(year(incidence_df$date_ymd)) : max(year(incidence_df$date_ymd)))
+  simulated_result$month_no <- 0: (nrow(simulated_result) - 1)
   initial_time_obs <- initialize_observation_time(simulated_result, incidence_df)
   filt_data <- filter_data_setup(incidence_observed, month, initial_time_obs)
 
-  # Define and set up filter for MCMC
+    # Define and set up filter for MCMC
   filter <- mcstate::particle_deterministic$new(data = filt_data, model = model, index = index, compare = comparison_fn)
   filter$run(c(param_inputs))
 
@@ -228,3 +219,47 @@ inf_run <- function(model, param_inputs, control_params, params_to_estimate, pro
 
   return(results)
 }
+
+extend_time_varying_inputs <- function(param_inputs, days_per_year = 360, years_to_extend = 2) {
+  # Identify the time-varying inputs
+  time_varying_keys <- c("cov_SMC", "SMC", "decay", "c_R_D", "temp")
+
+  # Initialize an empty list to store the extended inputs
+  extended_inputs <- list()
+
+  # Loop through each parameter in the input list
+  for (key in names(param_inputs)) {
+    if (key %in% time_varying_keys) {
+      # Repeat the first year's data backwards for the specified number of years
+      first_year_data <- head(param_inputs[[key]], days_per_year)
+      extended_data <- do.call(c, replicate(years_to_extend, first_year_data, simplify = FALSE))
+      # Combine the extended data with the original data
+      extended_inputs[[key]] <- c(extended_data, param_inputs[[key]])
+    } else {
+      # Leave constants unchanged
+      extended_inputs[[key]] <- param_inputs[[key]]
+    }
+  }
+
+  return(extended_inputs)
+}
+
+run_simulation_with_prewarm <- function(model, param_inputs, dates, prewarm_years = 2, days_per_year = 360) {
+  # Extend time-varying inputs
+  extended_param_inputs <- extend_time_varying_inputs(param_inputs, days_per_year, prewarm_years)
+
+  # Adjust the start date to account for the pre-warm period
+  extended_start_date <- as.Date(dates[1]) - (prewarm_years * days_per_year)
+
+  # Run the model simulation with extended inputs
+  extended_results <- data_sim(model, param_inputs = extended_param_inputs,
+                               start_date = extended_start_date,
+                               end_date = dates[2],
+                               month = FALSE)
+
+  # Filter the results to only include dates starting from the original start date
+  filtered_results <- extended_results[extended_results$date_ymd >= dates[1], ]
+
+  return(filtered_results)
+}
+

@@ -261,35 +261,69 @@ update_param_list <- function(param_inputs, param_values) {
 #' Simulate Model Using Parameters with Maximum Log Posterior
 #'
 #' This function takes the MCMC results, extracts the parameter values corresponding to the maximum
-#' log posterior, updates the parameter list, and runs a simulation from the model.
+#' log posterior, updates the parameter list, and runs a simulation from the model. Additionally,
+#' the function includes a pre-warm period, where the simulation starts earlier than the specified
+#' `start_date` to allow the model to stabilize before the output period.
 #'
 #' @param results The MCMC results object containing parameter samples, including `log_posterior`.
-#' @param start_date The start date for the simulation, as a `Date` object or character string.
+#' @param start_date The start date for the desired simulation output, as a `Date` object or character string.
 #' @param end_date The end date for the simulation, as a `Date` object or character string.
-#' @param model The model function to simulate from.
-#' @return A data frame containing the simulation results.
+#' @param model The model function to simulate from. This function should accept parameters, start/end dates,
+#'              and additional arguments for the simulation.
+#' @param prewarm_years Integer, the number of years to simulate before `start_date` as a pre-warm period
+#'                      (default is 2 years).
+#' @param days_per_year Integer, the number of days in a year for the simulation (default is 360 days).
+#'
+#' @return A data frame containing the simulation results, filtered to include only the period
+#'         from `start_date` to `end_date`.
 #' @export
+#'
 #' @examples
-#' # Assuming `results` contains the MCMC output, and `param_inputs` is the parameter list
+#' # Assuming `results` contains the MCMC output, and `data_sim` is the simulation function
 #' simulation_output <- simulate_with_max_posterior_params(
-#'   results = results, start_date = "2021-01-01", end_date = "2021-12-31",
-#'   model = data_sim
+#'   results = results,
+#'   start_date = "2021-01-01",
+#'   end_date = "2021-12-31",
+#'   model = data_sim,
+#'   prewarm_years = 3,
+#'   days_per_year = 360
 #' )
-simulate_with_max_posterior_params <- function(results, start_date, end_date, model) {
+simulate_with_max_posterior_params <- function(results, start_date, end_date, model, prewarm_years = 2, days_per_year = 360) {
+
   param_inputs <- results$param_inputs
+
+  # Setup for allowing model to run some prior to inference (comparing to observations)
+  param_inputs_ext <- extend_time_varying_inputs(param_inputs, days_per_year = 360,
+                                                 years_to_extend = prewarm_years)
 
   # Extract parameters with maximum log posterior
   max_posterior_params <- extract_max_posterior_params(results)
 
   # Update parameter list with the extracted parameters
-  updated_params <- update_param_list(param_inputs, max_posterior_params)
+  updated_params <- update_param_list(param_inputs_ext, max_posterior_params)
 
-  # Run the model simulation with the updated parameters
-  simulation_output <- data_sim(model, updated_params, start_date, end_date,
-                                month = TRUE, round = FALSE, save = FALSE,
-                                month_unequal_days = FALSE)
+  # Extend the start date backward by the pre-warm period
+  prewarm_start_date <- paste0(year(as.Date(start_date)) - prewarm_years, "-", format(as.Date(start_date), "%m-%d"))
+
+  # Run the model simulation for the pre-warm period + desired period
+  extended_simulation_output <- data_sim(
+    model = model,
+    param_inputs = updated_params,
+    start_date = prewarm_start_date,
+    end_date = end_date,
+    month = TRUE,
+    round = FALSE,
+    save = FALSE,
+    month_unequal_days = FALSE
+  )
+
+  # Filter the simulation results to include only the desired period
+  simulation_output <- extended_simulation_output[extended_simulation_output$date_ymd >= as.Date(start_date), ]
+
   return(simulation_output)
 }
+
+
 
 #' Sample Parameters from MCMC Results
 #'

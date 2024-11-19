@@ -22,12 +22,12 @@
 #' @param select_incidence A vector of incidence types to include in the plot.
 #'                         Options are `">=5"`, `"<5"`, and `"total"`. Default is all three.
 #' @param select_climate A vector of climate variables to include in the plot.
-#'                       Options are `"temp"` (temperature) and `"rollmean"` (rolling mean).
-#'                       Default is both `"temp"` and `"rollmean"`.
+#'                       Options are `"temp"` (temperature) and `"rollrain"` (rolling mean).
+#'                       Default is both `"temp"` and `"rollrain"`.
 #' @param incidence_colors A named vector of colors for the selected incidence types.
 #'                         Default is `">=5" = "blue"`, `"<5" = "red"`, `"total" = "green"`.
 #' @param climate_colors A named vector of colors for the selected climate variables.
-#'                       Default is `"temp" = "orange"`, `"rollmean" = "purple"`.
+#'                       Default is `"temp" = "orange"`, `"rollrain" = "purple"`.
 #' @param climate_alpha A numeric value controlling the transparency of the climate data
 #'                      lines. Default is 0.7 (semi-transparent).
 #' @param base_size A numeric value controlling the base font size of the plot.
@@ -46,7 +46,7 @@
 #'
 #' # Example 3: Plotting both incidence and climate data with faceting
 #' plot_time_series(results = results, met = met, plot_title = "Malaria and Climate Data",
-#'                  select_incidence = "total", select_climate = c("temp", "rollmean"),
+#'                  select_incidence = "total", select_climate = c("temp", "rollrain"),
 #'                  climate_facet = TRUE)
 
 plot_time_series <- function(results, met = NULL,
@@ -55,9 +55,9 @@ plot_time_series <- function(results, met = NULL,
                              climate_y_label = "Temperature (°C)",
                              climate_facet = FALSE,
                              select_incidence = c(">=5", "<5", "total"),
-                             select_climate = c("temp", "rollmean"),
+                             select_climate = c("temp", "rollrain"),
                              incidence_colors = c(">=5" = "blue", "<5" = "red", "total" = "green"),
-                             climate_colors = c("temp" = "orange", "rollmean" = "purple"),
+                             climate_colors = c("temp" = "orange", "rollrain" = "purple"),
                              climate_alpha = 0.7,
                              base_size = 15) {
 
@@ -77,7 +77,7 @@ plot_time_series <- function(results, met = NULL,
     # Ensure `met` data's `zoo` columns are converted to numeric for plotting
     met <- met %>%
       mutate(
-        rollmean = as.numeric(rollmean),  # Convert rollmean to numeric
+        rollrain = as.numeric(rollrain),  # Convert rollrain to numeric
         anom = as.numeric(anom),          # Convert anomaly to numeric (if necessary)
         dates = as.Date(date)  # Convert date to proper format for merging
       )
@@ -239,8 +239,8 @@ create_sim_df <- function(results, n, dates_sim, dates_obs, model){
 #' It also allows for optional inclusion of climate data as a separate facet.
 #'
 #' @param results The MCMC results object containing the parameter samples.
-#' @param obs_cases A data frame of observed cases with columns for `month` (date), `inc_A`, `inc_C`, and `inc`.
-#' @param start_date The start date for the simulation as a `Date` object or character string.
+#' @param obs_cases A data frame of observed cases with columns for `date_ymd` (date), `inc_A`, `inc_C`, and `inc`.
+#' @param start_date The start date for the simulation output as a `Date` object or character string.
 #' @param end_date The end date for the simulation as a `Date` object or character string.
 #' @param model The model function to simulate from.
 #' @param add_ribbon Logical; if TRUE, adds a ribbon to the plot representing the 1st and 99th quantiles of the incidence data from additional simulations.
@@ -248,6 +248,8 @@ create_sim_df <- function(results, n, dates_sim, dates_obs, model){
 #' @param groups A character vector specifying which groups to include in the plot (`inc_A`, `inc_C`, `inc`).
 #' @param met Optional climate data frame to be included as a separate facet.
 #' @param climate_facet Logical; if TRUE, adds climate data as a separate facet in the plot.
+#' @param prewarm_years Integer; the number of years to simulate before the `start_date` for stabilization (default is 2 years).
+#' @param days_per_year Integer; the number of days per year in the simulation (default is 360).
 #' @return A ggplot object displaying observed data as points, simulated data as a line, and an optional ribbon for quantiles.
 #' @export
 #' @examples
@@ -255,11 +257,21 @@ create_sim_df <- function(results, n, dates_sim, dates_obs, model){
 #' plot_observed_vs_simulated(results, obs_cases, start_date = "2014-01-01",
 #'                            end_date = "2014-12-31", model = data_sim,
 #'                            add_ribbon = TRUE, n_samples = 100, groups = c("inc_A", "inc_C", "inc"),
-#'                            met = met_data, climate_facet = TRUE)
-plot_observed_vs_simulated <- function(results, obs_cases, start_date, end_date, model, add_ribbon = FALSE, n_samples = 100, groups = c("inc_A", "inc_C", "inc"), met = NULL, climate_facet = FALSE) {
+#'                            met = met_data, climate_facet = TRUE, prewarm_years = 2)
+plot_observed_vs_simulated <- function(results, obs_cases, start_date, end_date, model,
+                                       add_ribbon = FALSE, n_samples = 100, groups = c("inc_A", "inc_C", "inc"),
+                                       met = NULL, climate_facet = FALSE, prewarm_years = 2, days_per_year = 360) {
+
+  prewarm_start_date <- paste0(year(as.Date(start_date)) - prewarm_years, "-", format(as.Date(start_date), "%m-%d"))
 
   # Run the simulation with parameters that maximize log posterior
-  sim_data <- simulate_with_max_posterior_params(results, start_date, end_date, model)
+  sim_data <- simulate_with_max_posterior_params(results, start_date = start_date,
+                                                 end_date = end_date, model = model,
+                                                 prewarm_years = prewarm_years,
+                                                 days_per_year = days_per_year)
+
+  # Filter simulation data to the desired period
+  sim_data <- sim_data[sim_data$date_ymd >= as.Date(start_date), ]
 
   # Ensure date column compatibility with observed data
   sim_data$month <- as.Date(sim_data$month)
@@ -274,7 +286,8 @@ plot_observed_vs_simulated <- function(results, obs_cases, start_date, end_date,
     sampled_params <- sample_params(results, n_samples)
 
     # Step 2: Simulate models using the sampled parameters
-    simulations <- simulate_models(model, results$param_inputs, sampled_params, start_date, end_date)
+    simulations <- simulate_models(model, results$param_inputs, sampled_params,
+                                   start_date = start_date, end_date = end_date)
 
     # Step 3: Calculate incidence quantiles for each group
     incidence_quantiles <- calculate_incidence_quantiles(simulations)
@@ -285,7 +298,9 @@ plot_observed_vs_simulated <- function(results, obs_cases, start_date, end_date,
 
   # Melt the combined data for plotting observed vs simulated on the same panel
   library(reshape2)
-  combined_data_long <- melt(combined_data, id.vars = "date_ymd", measure.vars = c("inc_A_obs", "inc_C_obs", "inc_obs", "inc_A_sim", "inc_C_sim", "inc_sim"))
+  combined_data_long <- melt(combined_data, id.vars = "date_ymd",
+                             measure.vars = c("inc_A_obs", "inc_C_obs", "inc_obs",
+                                              "inc_A_sim", "inc_C_sim", "inc_sim"))
 
   # Filter selected groups for both observed and simulated
   selected_groups <- unlist(lapply(groups, function(group) c(paste0(group, "_obs"), paste0(group, "_sim"))))
@@ -297,8 +312,10 @@ plot_observed_vs_simulated <- function(results, obs_cases, start_date, end_date,
   # Plotting observed and simulated data on the same panels
   library(ggplot2)
   p <- ggplot(combined_data_long, aes(x = date_ymd)) +
-    geom_point(data = subset(combined_data_long, grepl("_obs$", variable)), aes(y = value), color = "blue", size = 2, alpha = 0.7) +  # Observed data as points
-    geom_line(data = subset(combined_data_long, grepl("_sim$", variable)), aes(y = value), color = "red", size = 1) +                # Simulated data as line
+    geom_point(data = subset(combined_data_long, grepl("_obs$", variable)), aes(y = value),
+               color = "blue", size = 2, alpha = 0.7) +  # Observed data as points
+    geom_line(data = subset(combined_data_long, grepl("_sim$", variable)), aes(y = value),
+              color = "red", size = 1) +                # Simulated data as line
     facet_wrap(~ gsub("(_obs|_sim)", "", variable), scales = "free", ncol = 1, labeller = as_labeller(facet_labels)) +
     labs(title = "Observed vs Simulated Monthly Malaria Cases",
          x = "Date",
@@ -340,7 +357,7 @@ plot_observed_vs_simulated <- function(results, obs_cases, start_date, end_date,
     # Plot climate data in separate facets
     p_climate <- ggplot(met_long, aes(x = date, y = value, color = variable)) +
       geom_line(size = 1.2) +
-      scale_color_manual(values = c("temp" = "red", "rollmean" = "blue")) +
+      scale_color_manual(values = c("temp" = "red", "rollrain" = "blue")) +
       facet_wrap(~ variable, scales = "free_y", ncol = 1) +
       theme_minimal() +
       labs(y = "Climate Data", x = "Date", color = "Climate Variable") +
@@ -361,14 +378,16 @@ plot_observed_vs_simulated <- function(results, obs_cases, start_date, end_date,
 }
 
 
-# Update create_clim_df function to include temp and rollmean
+
+
+# Update create_clim_df function to include temp and rollrain
 create_clim_df <- function(clim_df){
   # Repeat the dates twice, once for each climate variable
   month_clim <- rep(as.Date(clim_df$date), 2)
 
   # Define the variable names and values for each climate variable
-  variable <- c(rep("rollmean", nrow(clim_df)), rep("temp", nrow(clim_df)))
-  value <- c(clim_df$rollmean, clim_df$temp)
+  variable <- c(rep("rollrain", nrow(clim_df)), rep("temp", nrow(clim_df)))
+  value <- c(clim_df$rollrain, clim_df$temp)
 
   # Create the data frame with climate data
   clim_plot_df <- data.frame(date = month_clim, variable = variable, value = value)

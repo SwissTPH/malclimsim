@@ -4,28 +4,48 @@
 \alias{simulate_with_max_posterior_params}
 \title{Simulate Model Using Parameters with Maximum Log Posterior}
 \usage{
-simulate_with_max_posterior_params(results, start_date, end_date, model)
+simulate_with_max_posterior_params(
+  results,
+  start_date,
+  end_date,
+  model,
+  prewarm_years = 2,
+  days_per_year = 360
+)
 }
 \arguments{
 \item{results}{The MCMC results object containing parameter samples, including \code{log_posterior}.}
 
-\item{start_date}{The start date for the simulation, as a \code{Date} object or character string.}
+\item{start_date}{The start date for the desired simulation output, as a \code{Date} object or character string.}
 
 \item{end_date}{The end date for the simulation, as a \code{Date} object or character string.}
 
-\item{model}{The model function to simulate from.}
+\item{model}{The model function to simulate from. This function should accept parameters, start/end dates,
+and additional arguments for the simulation.}
+
+\item{prewarm_years}{Integer, the number of years to simulate before \code{start_date} as a pre-warm period
+(default is 2 years).}
+
+\item{days_per_year}{Integer, the number of days in a year for the simulation (default is 360 days).}
 }
 \value{
-A data frame containing the simulation results.
+A data frame containing the simulation results, filtered to include only the period
+from \code{start_date} to \code{end_date}.
 }
 \description{
 This function takes the MCMC results, extracts the parameter values corresponding to the maximum
-log posterior, updates the parameter list, and runs a simulation from the model.
+log posterior, updates the parameter list, and runs a simulation from the model. Additionally,
+the function includes a pre-warm period, where the simulation starts earlier than the specified
+\code{start_date} to allow the model to stabilize before the output period.
 }
 \examples{
-# Assuming `results` contains the MCMC output, and `param_inputs` is the parameter list
+# Assuming `results` contains the MCMC output, and `data_sim` is the simulation function
 simulation_output <- simulate_with_max_posterior_params(
-  results = results, start_date = "2021-01-01", end_date = "2021-12-31",
-  model = data_sim
+  results = results,
+  start_date = "2021-01-01",
+  end_date = "2021-12-31",
+  model = data_sim,
+  prewarm_years = 3,
+  days_per_year = 360
 )
 }

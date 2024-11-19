@@ -207,3 +207,40 @@ calculate_360_day_difference <- function(date1, date2) {
   return(total_days)
 }
 
+#' Filter a dataset by a range of years
+#'
+#' This function filters a dataset to include only rows where the year extracted
+#' from a specified date column falls within a given range of years. The date column
+#' should be in the format "YYYY-MM-DD" as a string.
+#'
+#' @param data A data frame containing the dataset to filter.
+#' @param date_column A string specifying the name of the column that contains dates as strings.
+#' @param years_range A numeric vector specifying the range of years to include in the filtered dataset.
+#'
+#' @return A filtered data frame containing only rows within the specified year range.
+#'
+#' @examples
+#' # Example dataset
+#' met_360 <- data.frame(
+#'   date = c("2012-01-01", "2015-06-15", "2020-03-22"),
+#'   temp = c(26.3, 27.5, 28.1)
+#' )
+#'
+#' # Filter data for the years 2014 to 2023
+#' years_analysis <- 2014:2023
+#' met_360_filtered <- filter_by_year(met_360, "date", years_analysis)
+#'
+#' @export
+filter_by_year <- function(data, date_column, years_range) {
+  # Extract the year from the specified date column
+  data$year <- as.numeric(substr(data[[date_column]], 1, 4))
+
+  # Filter the dataset to include only rows within the specified years range
+  filtered_data <- subset(data, year %in% years_range)
+
+  # Remove the temporary 'year' column
+  filtered_data$year <- NULL
+
+  # Return the filtered dataset
+  return(filtered_data)
+}

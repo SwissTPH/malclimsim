@@ -214,7 +214,6 @@ extract_era5 <- function(lon, lat, path_to_file){
 #' daily_smooth_temp(temp_data)
 #'
 #' @importFrom stats smooth.spline predict
-#' @importFrom lubridate months
 #' @export
 daily_smooth_temp <- function(temp_df) {
   # Convert the Date column to Date type
@@ -298,7 +297,7 @@ save_climate_data <- function(lon, lat, years, path_to_data, rain = TRUE, temp =
 #' save_climate_data(lon, lat, years, path_to_data)
 #' temp_path <- paste0(path_to_data, "era5_11051417.nc")
 #' rain_path <- paste0(path_to_data, "chirps_11051418.rds")
-#' met <- process_climate_data(lon, lat, years, D = 30, temp_path = temp_path,
+#' met <- process_climate_data(lon, lat, years, D1 = 30, D2 = 30, temp_path = temp_path,
 #' rain_path = rain_path, path_to_data
 process_climate_data <- function(lon, lat, years, D1, D2, temp_path, rain_path, path_to_data, months_30_days = TRUE){
   temp_df <- extract_era5(lat = lat, lon = lon, path_to_file = temp_path)
@@ -330,7 +329,7 @@ process_climate_data <- function(lon, lat, years, D1, D2, temp_path, rain_path, 
   # - The data is saved as an RDS file, which is an efficient format for storing R objects
   current_datetime <- Sys.time()
   formatted_datetime <- format(current_datetime, "%m%d%H%M")
-  saveRDS(met, paste0(path_to_data, "met_", D, "_", formatted_datetime, ".rds"))
+  saveRDS(met, paste0(path_to_data, "met_", D1, "_", formatted_datetime, ".rds"))
 
   return(met)
 }

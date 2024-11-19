@@ -138,7 +138,7 @@ C <- a
 #p_HM_A <- theta * p_HM_C
 # initial(EIR) <- (A * p_HM * X / (B + (C * p_HM * X)))
 # update(EIR) <- (A * p_HM * X / (B + (C * p_HM * X)))
-EIR <- (A * p_HM * X / (B + (C * p_HM)))
+EIR <- (A * p_HM * X / (B + (C * p_HM * X)))
 #update(EIR) <- (A * p_HM * X / (B + (C * p_HM * X)))
 initial(EIR2) <- EIR
 update(EIR2) <- EIR

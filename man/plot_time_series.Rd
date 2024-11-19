@@ -12,9 +12,9 @@ plot_time_series(
   climate_y_label = "Temperature (°C)",
   climate_facet = FALSE,
   select_incidence = c(">=5", "<5", "total"),
-  select_climate = c("temp", "rollmean"),
+  select_climate = c("temp", "rollrain"),
   incidence_colors = c(`>=5` = "blue", `<5` = "red", total = "green"),
-  climate_colors = c(temp = "orange", rollmean = "purple"),
+  climate_colors = c(temp = "orange", rollrain = "purple"),
   climate_alpha = 0.7,
   base_size = 15
 )
@@ -44,14 +44,14 @@ Default is \code{FALSE} (plots will be overlaid).}
 Options are \code{">=5"}, \code{"<5"}, and \code{"total"}. Default is all three.}
 
 \item{select_climate}{A vector of climate variables to include in the plot.
-Options are \code{"temp"} (temperature) and \code{"rollmean"} (rolling mean).
-Default is both \code{"temp"} and \code{"rollmean"}.}
+Options are \code{"temp"} (temperature) and \code{"rollrain"} (rolling mean).
+Default is both \code{"temp"} and \code{"rollrain"}.}
 
 \item{incidence_colors}{A named vector of colors for the selected incidence types.
 Default is \code{">=5" = "blue"}, \code{"<5" = "red"}, \code{"total" = "green"}.}
 
 \item{climate_colors}{A named vector of colors for the selected climate variables.
-Default is \code{"temp" = "orange"}, \code{"rollmean" = "purple"}.}
+Default is \code{"temp" = "orange"}, \code{"rollrain" = "purple"}.}
 
 \item{climate_alpha}{A numeric value controlling the transparency of the climate data
 lines. Default is 0.7 (semi-transparent).}
@@ -78,6 +78,6 @@ plot_time_series(results = results, met = met, plot_title = "Malaria and Tempera
 
 # Example 3: Plotting both incidence and climate data with faceting
 plot_time_series(results = results, met = met, plot_title = "Malaria and Climate Data",
-                 select_incidence = "total", select_climate = c("temp", "rollmean"),
+                 select_incidence = "total", select_climate = c("temp", "rollrain"),
                  climate_facet = TRUE)
 }

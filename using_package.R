@@ -19,7 +19,7 @@ library(mcstate)
 library(malclimsim)
 
 # Years used for the analysis
-years <- 2014:2023
+years <- 2012:2023
 
 # Latitude and longitude where climate data (rainfall and temperature) is to be saved
 # Rainfall data is from CHIRPS and temperature data is from ERA5
@@ -37,7 +37,7 @@ rain_path <- paste0(path_to_data, "chirps_11051418.rds")
 # Processing climate data to be used in the model
 # `D' controls the number of previous days used for the rainfall rolling average
 # calculation and `months_30_days` determines if years are 360 or 365 days
-met_360 <- process_climate_data(lon, lat, years, D = 60, temp_path = temp_path,
+met_360 <- process_climate_data(lon, lat, years, D1 = 30, D2 = 1, temp_path = temp_path,
                             rain_path = rain_path, path_to_data, months_30_days = TRUE)
 colnames(met_360)[1] <- "date"
 met <- process_climate_data(lon, lat, years, D = 30, temp_path = temp_path,
@@ -86,12 +86,14 @@ cov <- smc_schedule$cov  # SMC coverage over time
 param_inputs <- list(
   mu_TS = 1/30, mu_IR = 1/5, eta = 1, mu_RS_C = 1/130, size = 1,
   mu_EI = 1/8, delta_b = 1/(21*365), delta_d = 1/(21*365),
-  delta_a = 1/(5 * 365), phi = 1, p_HM = 0.125, p_MH_C = 0.5,
-  rho = 1, fT_C = 0.27, z = 1, qR = 0.17, a_R = 0.4, b_R = 3, N = 5e5,
+  delta_a = 1/(5 * 365), phi = 1, p_MH_C = 0.5,
+  rho = 1, fT_C = 0.27, z = 1, qR = 0.17, N = 5e5,
   s = 0.9, p_surv = 0.934, percAdult = 0.81, steps_per_day = 1, SC0 = 0.301,
   EC0 = 0.071, IC0 = 0.042, TC0 = 0.054, RC0 = 0.533, SA0 = 0.281,
   EA0 = 0.067, IA0 = 0.040, TA0 = 0.051, RA0 = 0.562, size_inv = 0,
-  eff_SMC = 0, decay = decay, SMC = SMC, cov_SMC = cov,
+  eff_SMC = 0,
+
+  decay = decay, SMC = SMC, cov_SMC = cov,
   c_R_D = rain_rwa, temp = temp_rwa  # Inputs for rainfall and temperature
 )
 
