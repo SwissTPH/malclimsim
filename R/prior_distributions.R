@@ -107,7 +107,8 @@ initialize_priors <- function(param_inputs = NULL, proposal_matrix = NULL, param
     k1 = list(initial = 1, min = -5, max = 5, prior = function(p) dnorm(p, mean = 1, sd = 1, log = TRUE)), # Normal distribution with bias towards positive values
 
     # sigma_T - Must be positive, value is uncertain
-    sigma_T = list(initial = 1, min = 0, max = 10, prior = function(p) dgamma(p, shape = 2, rate = 1, log = TRUE)), # Gamma distribution to ensure positivity
+    sigma_LT = list(initial = 1, min = 0, max = 10, prior = function(p) dgamma(p, shape = 2, rate = 1, log = TRUE)), # Gamma distribution to ensure positivity
+    sigma_RT = list(initial = 1, min = 0, max = 10, prior = function(p) dgamma(p, shape = 2, rate = 1, log = TRUE)), # Gamma distribution to ensure positivity
 
     b = list(initial = 1, min = 0.001, max = 50, prior = function(p) dgamma(p, shape = 2, rate = 1, log = TRUE))
   )

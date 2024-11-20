@@ -107,7 +107,7 @@ sim_mod <- function(odin_mod, pars, time_start, n_particles, sim_time){
 #' inc_data <- data_sim(model, param_inputs, start_date = "2021-01-01", end_date = "2021-12-31", month = TRUE)
 data_sim <- function(model, param_inputs, start_date, end_date,
                      month = FALSE, round = TRUE, save = TRUE, file = "",
-                     month_unequal_days = FALSE){
+                     month_unequal_days = FALSE, return_EIR = FALSE){
   # Calculate the number of days in the SMC schedule
   n_days <- calculate_360_day_difference(start_date, end_date) + 1
 
@@ -144,7 +144,13 @@ data_sim <- function(model, param_inputs, start_date, end_date,
 
     # Create a dataframe for monthly incidence data
     month_no <- 0:(n_months - 1)
-    inc_df <- data.frame(date_ymd = month, month_no, inc_A, inc_C, inc = inc_A + inc_C)
+
+    if(return_EIR){
+      EIR <- x[mod$info()$index$EIR2,,][month_ind]
+      EIR <- EIR[1:n_months]
+      inc_df <- data.frame(date_ymd = month, month_no, inc_A, inc_C,
+                           inc = inc_A + inc_C, EIR = EIR)
+    } else{inc_df <- data.frame(date_ymd = month, month_no, inc_A, inc_C, inc = inc_A + inc_C)}
 
   } else {
     # If weekly aggregation is selected
@@ -166,7 +172,12 @@ data_sim <- function(model, param_inputs, start_date, end_date,
 
     # Create a dataframe for weekly incidence data
     week_no <- 0:(n_weeks - 1)
-    inc_df <- data.frame(week, week_no, inc_A, inc_C, inc = inc_A + inc_C)
+
+    if(return_EIR){
+      EIR <- x[mod$info()$index$EIR2,,][wk_ind]
+      EIR <- EIR[1:n_weeks]
+      inc_df <- data.frame(week, week_no, inc_A, inc_C, inc = inc_A + inc_C, EIR = EIR)
+    } else{inc_df <- data.frame(week, week_no, inc_A, inc_C, inc = inc_A + inc_C)}
   }
 
   # Round the results if specified

@@ -135,3 +135,49 @@ simulate_with_full_coverage <- function(results, start_date, end_date, model, co
 
   return(simulation_output)
 }
+
+
+#' Calculate Confidence Intervals for eff_SMC
+#'
+#' This function calculates confidence intervals for eff_SMC by sampling
+#' MCMC results, extracting parameter sets, updating them, and simulating outcomes.
+#'
+#' @param results The MCMC results object containing parameter samples.
+#' @param param_inputs A list of parameter values for the model.
+#' @param model The model function to simulate from.
+#' @param start_date The start date for the simulation.
+#' @param end_date The end date for the simulation.
+#' @param n_samples The number of parameter sets to sample from the MCMC results.
+#' @return A data frame with confidence intervals for eff_SMC effectiveness.
+#' @export
+#' @examples
+#' ci <- calculate_eff_smc_confidence_intervals(results, param_inputs, model, "2021-01-01", "2021-12-31", 100)
+calculate_eff_smc_confidence_intervals <- function(results, param_inputs, model, start_date, end_date, n_samples = 100) {
+  # Sample parameters from MCMC results
+  sampled_params <- sample_params(results, n_samples)
+
+  # Simulate outcomes with and without SMC for each parameter set
+  simulations_with_smc <- simulate_models(model, param_inputs, sampled_params, start_date, end_date)
+  simulations_without_smc <- simulate_models(model, param_inputs,
+                                             lapply(sampled_params, set_eff_smc_to_zero),
+                                             start_date, end_date)
+
+  # Calculate cases averted for each simulation
+  cases_averted_list <- mapply(calculate_cases_averted,
+                               simulations_with_smc,
+                               simulations_without_smc,
+                               SIMPLIFY = FALSE)
+
+  # Extract effectiveness estimates
+  eff_smc_estimates <- sapply(cases_averted_list, function(x) x$percent_averted)
+
+  # Calculate confidence intervals
+  ci <- quantile(eff_smc_estimates, probs = c(0.025, 0.975))
+
+  return(data.frame(
+    lower_ci = ci[1],
+    upper_ci = ci[2],
+    median = median(eff_smc_estimates)
+  ))
+}
+
