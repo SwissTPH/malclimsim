@@ -339,13 +339,3 @@ bias_smc_no_smc_month <- function(obs_cases, simulated_df, smc_data) {
   # Return the bias comparison
   return(bias_summary)
 }
-
-# Example usage
-result <- calculate_bias_comparison(obs_cases, simulated_df, smc_schedule)
-
-# Example usage
-result <- calculate_smc_bias(obs_cases, simulated_df, smc_schedule)
-
-# View results
-print(result)
-

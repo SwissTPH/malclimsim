@@ -13,7 +13,8 @@ data_sim(
   round = TRUE,
   save = TRUE,
   file = "",
-  month_unequal_days = FALSE
+  month_unequal_days = FALSE,
+  return_EIR = FALSE
 )
 }
 \arguments{

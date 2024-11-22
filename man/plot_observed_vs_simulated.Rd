@@ -14,15 +14,17 @@ plot_observed_vs_simulated(
   n_samples = 100,
   groups = c("inc_A", "inc_C", "inc"),
   met = NULL,
-  climate_facet = FALSE
+  climate_facet = FALSE,
+  prewarm_years = 2,
+  days_per_year = 360
 )
 }
 \arguments{
 \item{results}{The MCMC results object containing the parameter samples.}
 
-\item{obs_cases}{A data frame of observed cases with columns for \code{month} (date), \code{inc_A}, \code{inc_C}, and \code{inc}.}
+\item{obs_cases}{A data frame of observed cases with columns for \code{date_ymd} (date), \code{inc_A}, \code{inc_C}, and \code{inc}.}
 
-\item{start_date}{The start date for the simulation as a \code{Date} object or character string.}
+\item{start_date}{The start date for the simulation output as a \code{Date} object or character string.}
 
 \item{end_date}{The end date for the simulation as a \code{Date} object or character string.}
 
@@ -37,6 +39,10 @@ plot_observed_vs_simulated(
 \item{met}{Optional climate data frame to be included as a separate facet.}
 
 \item{climate_facet}{Logical; if TRUE, adds climate data as a separate facet in the plot.}
+
+\item{prewarm_years}{Integer; the number of years to simulate before the \code{start_date} for stabilization (default is 2 years).}
+
+\item{days_per_year}{Integer; the number of days per year in the simulation (default is 360).}
 }
 \value{
 A ggplot object displaying observed data as points, simulated data as a line, and an optional ribbon for quantiles.
@@ -52,5 +58,5 @@ It also allows for optional inclusion of climate data as a separate facet.
 plot_observed_vs_simulated(results, obs_cases, start_date = "2014-01-01",
                            end_date = "2014-12-31", model = data_sim,
                            add_ribbon = TRUE, n_samples = 100, groups = c("inc_A", "inc_C", "inc"),
-                           met = met_data, climate_facet = TRUE)
+                           met = met_data, climate_facet = TRUE, prewarm_years = 2)
 }
