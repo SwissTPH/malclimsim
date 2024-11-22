@@ -267,3 +267,85 @@ compare_bias_2019_vs_other_years <- function(simulated_df, obs_cases) {
 
   return(comparison)
 }
+
+#' Calculate and Compare Bias for SMC and Non-SMC Months
+#'
+#' This function calculates the bias (difference between observed and simulated cases)
+#' for malaria cases during months with and without Seasonal Malaria Chemoprevention (SMC).
+#' It summarizes the average bias, standard deviation, and the number of months in
+#' each category (SMC and non-SMC).
+#'
+#' @param obs_cases A data frame containing observed cases with columns:
+#'   - `date_ymd`: Date in "YYYY-MM-DD" format.
+#'   - `month_no`: Month number.
+#'   - `inc`: Total cases.
+#' @param simulated_df A data frame containing simulated cases with columns:
+#'   - `date_ymd`: Date in "YYYY-MM-DD" format.
+#'   - `month_no`: Month number.
+#'   - `inc`: Total simulated cases.
+#' @param smc_data A data frame containing SMC information with columns:
+#'   - `dates`: Date in "YYYY-MM-DD" format.
+#'   - `SMC`: Binary indicator (1 for SMC applied, 0 otherwise).
+#'
+#' @return A data frame summarizing the bias in SMC and non-SMC months, containing:
+#'   - `category`: "SMC Months" or "Non-SMC Months".
+#'   - `avg_bias`: Average bias (observed - simulated).
+#'   - `sd_bias`: Standard deviation of the bias.
+#'   - `count`: Number of months in each category.
+#'
+#' @examples
+#' result <- bias_smc_no_smc_month(obs_cases, simulated_df, smc_data)
+#' print(result)
+#'
+#' @import dplyr
+#' @import lubridate
+#' @export
+# Function to calculate and compare bias for SMC and non-SMC months
+bias_smc_no_smc_month <- function(obs_cases, simulated_df, smc_data) {
+  # Ensure 'date_ymd' is in Date format for all datasets
+  obs_cases$date_ymd <- as.Date(obs_cases$date_ymd)
+  simulated_df$date_ymd <- as.Date(simulated_df$date_ymd)
+  smc_data$dates <- as.Date(smc_data$dates)
+
+  # Aggregate the SMC data to monthly level
+  smc_monthly <- smc_data %>%
+    group_by(month = floor_date(dates, "month")) %>%
+    summarize(SMC = max(SMC, na.rm = TRUE)) %>%
+    ungroup()
+
+  # Merge the datasets on the monthly date
+  merged_data <- obs_cases %>%
+    left_join(simulated_df, by = c("date_ymd"), suffix = c("_obs", "_sim")) %>%
+    left_join(smc_monthly, by = c("date_ymd" = "month"))
+
+  # Calculate bias (observed cases - simulated cases)
+  merged_data <- merged_data %>%
+    mutate(bias = inc_obs - inc_sim)
+
+  # Compute average bias for SMC and non-SMC months
+  bias_summary <- merged_data %>%
+    group_by(SMC) %>%
+    summarize(
+      avg_bias = mean(bias, na.rm = TRUE),
+      sd_bias = sd(bias, na.rm = TRUE),
+      count = n()
+    ) %>%
+    ungroup() %>%
+    mutate(
+      category = ifelse(SMC == 1, "SMC Months", "Non-SMC Months")
+    ) %>%
+    select(category, avg_bias, sd_bias, count)
+
+  # Return the bias comparison
+  return(bias_summary)
+}
+
+# Example usage
+result <- calculate_bias_comparison(obs_cases, simulated_df, smc_schedule)
+
+# Example usage
+result <- calculate_smc_bias(obs_cases, simulated_df, smc_schedule)
+
+# View results
+print(result)
+

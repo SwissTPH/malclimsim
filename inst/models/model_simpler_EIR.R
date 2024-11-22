@@ -109,8 +109,8 @@ update(temp_shift) <- if (time > lag_T) temp[time - lag_T] else temp[time]
 
 # Defining EIR
 EIR <- alpha * (X / (b + X)) * temp_effect * rain_effect # Multiplicative effects
-temp_effect <- exp(-((temp_shift - T_opt)^2) / (2 * sigma_LT^2)) # Gaussian term for temperature
-#temp_effect <- if (temp_shift <= T_opt) exp(-((temp_shift - T_opt)^2) / (2 * sigma_LT^2)) else exp(-((temp_shift - T_opt)^2) / (2 * sigma_RT^2))
+#temp_effect <- exp(-((temp_shift - T_opt)^2) / (2 * sigma_LT^2)) # Gaussian term for temperature
+temp_effect <- if (temp_shift <= T_opt) exp(-((temp_shift - T_opt)^2) / (2 * sigma_LT^2)) else exp(-((temp_shift - T_opt)^2) / (2 * sigma_RT^2))
 rain_effect <- 1 / (1 + exp(-k1 * (c_R_D_shift - R_opt))) # Logistic term for rainfall
 X <- (IA + IC + qR * (RA + RC)) / P # Proportion of population infectious remains the same
 

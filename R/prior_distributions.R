@@ -98,7 +98,7 @@ initialize_priors <- function(param_inputs = NULL, proposal_matrix = NULL, param
     alpha = list(initial = 2.5, min = 0, max = 10, prior = function(p) dgamma(p, shape = 2, rate = 0.5, log = TRUE)),
 
     # T_opt - Must be greater than 0, likely between 24 and 32
-    T_opt = list(initial = 28, min = 0, max = 40, prior = function(p) dnorm(p, mean = 28, sd = 3, log = TRUE)),
+    T_opt = list(initial = 30.4, min = 0, max = 40, prior = function(p) dnorm(p, mean = 30.4, sd = 0.25, log = TRUE)),
 
     # R_opt - Can be negative, likely between -5 and 5
     R_opt = list(initial = 0, min = -10, max = 10, prior = function(p) dnorm(p, mean = 0, sd = 5, log = TRUE)), # Normal distribution symmetric around 0
