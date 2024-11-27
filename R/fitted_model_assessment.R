@@ -216,7 +216,36 @@ assess_model_performance <- function(observed_df, simulated_df, date_column, gro
   return(list(error_metrics = error_metrics, residual_plot = residual_plot))
 }
 
-# Function to calculate the bias per year
+#' Calculate Bias Per Year
+#'
+#' This function calculates the bias between simulated and observed data for each year.
+#'
+#' @param simulated_df A data frame containing the simulated data with a `date_ymd` column and metrics such as `inc_A`, `inc_C`, and `inc`.
+#' @param obs_cases A data frame containing the observed data with a `date_ymd` column and metrics such as `inc_A`, `inc_C`, and `inc`.
+#'
+#' @return A data frame summarizing the total bias for each metric (`inc_A`, `inc_C`, `inc`) per year.
+#' The output includes the columns:
+#' - `year`: The year.
+#' - `total_bias_inc_A`: Total bias for `inc_A` in the year.
+#' - `total_bias_inc_C`: Total bias for `inc_C` in the year.
+#' - `total_bias_inc`: Total bias for `inc` in the year.
+#'
+#' @examples
+#' simulated_df <- data.frame(
+#'   date_ymd = as.Date(c("2018-01-01", "2018-01-02", "2019-01-01")),
+#'   inc_A = c(5, 3, 4),
+#'   inc_C = c(2, 1, 3),
+#'   inc = c(7, 4, 7)
+#' )
+#' obs_cases <- data.frame(
+#'   date_ymd = as.Date(c("2018-01-01", "2018-01-02", "2019-01-01")),
+#'   inc_A = c(6, 4, 5),
+#'   inc_C = c(3, 2, 4),
+#'   inc = c(9, 6, 9)
+#' )
+#' calculate_bias_per_year(simulated_df, obs_cases)
+#'
+#' @export
 calculate_bias_per_year <- function(simulated_df, obs_cases) {
   # Merge the simulated and observed data
   combined_df <- merge(simulated_df, obs_cases, by = "date_ymd", suffixes = c("_sim", "_obs"))
@@ -242,7 +271,34 @@ calculate_bias_per_year <- function(simulated_df, obs_cases) {
   return(bias_per_year)
 }
 
-# Function to compare the mean bias of 2019 (SMC) vs other years (non-SMC)
+#' Compare Mean Bias for 2019 vs Other Years
+#'
+#' This function compares the bias of simulated data against observed data for the year 2019 (SMC)
+#' versus other years (non-SMC).
+#'
+#' @param simulated_df A data frame containing the simulated data with a `date_ymd` column and metrics such as `inc_A`, `inc_C`, and `inc`.
+#' @param obs_cases A data frame containing the observed data with a `date_ymd` column and metrics such as `inc_A`, `inc_C`, and `inc`.
+#'
+#' @return A list containing:
+#' - `smc_bias`: A data frame with total bias for 2019 (SMC).
+#' - `mean_non_smc_bias`: A data frame summarizing the mean bias for non-SMC years across all metrics.
+#'
+#' @examples
+#' simulated_df <- data.frame(
+#'   date_ymd = as.Date(c("2018-01-01", "2019-01-01", "2019-02-01")),
+#'   inc_A = c(5, 4, 6),
+#'   inc_C = c(2, 3, 5),
+#'   inc = c(7, 6, 11)
+#' )
+#' obs_cases <- data.frame(
+#'   date_ymd = as.Date(c("2018-01-01", "2019-01-01", "2019-02-01")),
+#'   inc_A = c(6, 5, 7),
+#'   inc_C = c(3, 4, 6),
+#'   inc = c(9, 9, 13)
+#' )
+#' compare_bias_2019_vs_other_years(simulated_df, obs_cases)
+#'
+#' @export
 compare_bias_2019_vs_other_years <- function(simulated_df, obs_cases) {
   # Get the bias per year
   bias_per_year <- calculate_bias_per_year(simulated_df, obs_cases)
@@ -267,6 +323,7 @@ compare_bias_2019_vs_other_years <- function(simulated_df, obs_cases) {
 
   return(comparison)
 }
+
 
 #' Calculate and Compare Bias for SMC and Non-SMC Months
 #'
