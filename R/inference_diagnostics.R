@@ -70,7 +70,7 @@ plot_corr <- function(results) {
 MCMC_diag <- function(results) {
   suppressWarnings(suppressMessages({
     # Plot trace of parameters from all chains for convergence assessment
-    plot(results[[2]])
+    #plot(results[[2]])
 
     # If multiple chains, create and plot individual chains
     if (results$n_chains > 1) {

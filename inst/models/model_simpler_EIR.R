@@ -64,8 +64,10 @@ size <- user(10)
 
 # User defined parameters
 # Growth rates
-r_C <- user(1.000071) # daily growth rate u5 Chad
-r_A <- user(1.000092) # daily growth rate o5 Chad
+#r_C <- user(1.000071) # daily growth rate u5 Chad
+#r_A <- user(1.000092) # daily growth rate o5 Chad
+r_C <- user(1.0000) # daily growth rate u5 Chad
+r_A <- user(1.0000) # daily growth rate o5 Chad
 phi <- user(1)
 mu_SE_C <- 1 - exp(-p_MH_C * EIR)
 mu_SE_A <- phi * (1 - exp(-rho * p_MH_C * EIR))
