@@ -260,7 +260,8 @@ create_sim_df <- function(results, n, dates_sim, dates_obs, model){
 #'                            met = met_data, climate_facet = TRUE, prewarm_years = 2)
 plot_observed_vs_simulated <- function(results, obs_cases, start_date, end_date, model,
                                        add_ribbon = FALSE, n_samples = 100, groups = c("inc_A", "inc_C", "inc"),
-                                       met = NULL, climate_facet = FALSE, prewarm_years = 2, days_per_year = 360) {
+                                       met = NULL, climate_facet = FALSE, prewarm_years = 2, days_per_year = 360,
+                                       title = NULL) {
 
   prewarm_start_date <- paste0(year(as.Date(start_date)) - prewarm_years, "-", format(as.Date(start_date), "%m-%d"))
 
@@ -317,7 +318,10 @@ plot_observed_vs_simulated <- function(results, obs_cases, start_date, end_date,
     geom_line(data = subset(combined_data_long, grepl("_sim$", variable)), aes(y = value),
               color = "red", size = 1) +                # Simulated data as line
     facet_wrap(~ gsub("(_obs|_sim)", "", variable), scales = "free", ncol = 1, labeller = as_labeller(facet_labels)) +
-    labs(title = "Observed vs Simulated Monthly Malaria Cases",
+    if(is.null(title)){
+      title = "Observed vs Simulated Monthly Malaria Cases"
+    }
+    labs(title = title,
          x = "Date",
          y = "Number of Monthly Malaria Cases") +
     theme_minimal() +

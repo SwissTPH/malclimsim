@@ -68,6 +68,9 @@ generate_incidence_comparison <- function(month, age_for_inf, incidence_df) {
 
   if(month && age_for_inf == 'u5') {
     return(function(state, observed, pars = c("size")) {
+      if (is.na(observed$inc_C)) {
+        return(NULL)
+      }
       incidence_observed_C <- observed$inc_C # this is the observed data
       mu_C <- state["month_inc_C", , drop = TRUE] # this is "x"
       size <- pars$size

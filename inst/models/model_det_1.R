@@ -140,6 +140,13 @@ C <- a
 # update(EIR) <- (A * p_HM * X / (B + (C * p_HM * X)))
 EIR <- (A * p_HM * X / (B + (C * p_HM * X)))
 #update(EIR) <- (A * p_HM * X / (B + (C * p_HM * X)))
+#EIR2 <- (A * p_HM * X / (B + (C * p_HM * X)))
+
+# Define monthly EIR
+initial(EIR_monthly) <- EIR
+update(EIR_monthly) <- if ((step) %% steps_per_month == 0) EIR2 else EIR_monthly + EIR
+
+# Define Daily EIR
 initial(EIR2) <- EIR
 update(EIR2) <- EIR
 

@@ -146,10 +146,10 @@ data_sim <- function(model, param_inputs, start_date, end_date,
     month_no <- 0:(n_months - 1)
 
     if(return_EIR){
-      EIR <- x[mod$info()$index$EIR2,,][month_ind]
-      EIR <- EIR[1:n_months]
+      EIR_monthly <- x[mod$info()$index$EIR_monthly,,][month_ind]
+      EIR_monthly <- EIR_monthly[1:n_months]
       inc_df <- data.frame(date_ymd = month, month_no, inc_A, inc_C,
-                           inc = inc_A + inc_C, EIR = EIR)
+                           inc = inc_A + inc_C, EIR_monthly = EIR_monthly)
     } else{inc_df <- data.frame(date_ymd = month, month_no, inc_A, inc_C, inc = inc_A + inc_C)}
 
   } else {
@@ -174,9 +174,9 @@ data_sim <- function(model, param_inputs, start_date, end_date,
     week_no <- 0:(n_weeks - 1)
 
     if(return_EIR){
-      EIR <- x[mod$info()$index$EIR2,,][wk_ind]
-      EIR <- EIR[1:n_weeks]
-      inc_df <- data.frame(week, week_no, inc_A, inc_C, inc = inc_A + inc_C, EIR = EIR)
+      EIR_monthly <- x[mod$info()$index$EIR_monthly,,][wk_ind]
+      EIR_monthly <- EIR_monthly[1:n_weeks]
+      inc_df <- data.frame(week, week_no, inc_A, inc_C, inc = inc_A + inc_C, EIR_monthly = EIR_monthly)
     } else{inc_df <- data.frame(week, week_no, inc_A, inc_C, inc = inc_A + inc_C)}
   }
 

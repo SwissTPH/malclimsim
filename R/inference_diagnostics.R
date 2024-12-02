@@ -52,53 +52,85 @@ plot_corr <- function(results) {
 #' @param results A list containing the MCMC output, typically with at least
 #' `results[[1]]` for chain data and `results[[2]]` for trace plot data.
 #' Should include an element `n_chains` for the number of chains.
+#' @param params A character vector specifying which diagnostics to display.
+#' Options include: "trace", "gelman", "corr", "ess", "acf", "quantiles", "acceptance".
+#' @param thin An integer specifying thinning interval for the chains.
+#' Thinning reduces the number of samples by keeping every `thin`th sample.
 #'
-#' @return This function returns a variety of printed diagnostic outputs:
-#' - Trace plot for parameter convergence
-#' - Gelman-Rubin statistic if multiple chains are present
-#' - Correlation plot between parameters
-#' - Effective sample size for each parameter
-#' - Autocorrelation function (ACF) plot for parameter dependence
-#' - Posterior quantiles for each parameter
-#' - Acceptance rate
+#' @return Diagnostic outputs based on the selected `params` are printed or plotted.
 #'
 #' @export
 #'
 #' @examples
 #' # Assuming 'results' is a valid MCMC result list with required structure:
-#' MCMC_diag(results)
-MCMC_diag <- function(results) {
+#' MCMC_diag(results, params = c("trace", "ess"))
+MCMC_diag <- function(results, params = c("trace", "gelman", "corr", "ess", "acf", "quantiles", "acceptance"), thin = 1) {
   suppressWarnings(suppressMessages({
-    # Plot trace of parameters from all chains for convergence assessment
-    #plot(results[[2]])
+    # Extract parameter samples and split into chains
+    pars <- results[[1]]$pars
+    n_chains <- results$n_chains
+    n_samples <- nrow(pars) / n_chains
 
-    # If multiple chains, create and plot individual chains
-    if (results$n_chains > 1) {
-      chains <- plot_chains(results[[1]])
-      plot(chains)  # Visualize convergence with individual chain traces
-      cat("\n GELMAN-RUBIN STATISTIC \n")
-      print(gelman.diag(chains))  # Numerical convergence assessment
+    # Split parameters into individual chains
+    chain_list <- split(pars, rep(1:n_chains, each = n_samples))
+    chains <- lapply(chain_list, function(x) {
+      as.mcmc(matrix(x, nrow = n_samples, ncol = ncol(pars), dimnames = list(NULL, colnames(pars))))
+    })
+    mcmc_chains <- as.mcmc.list(chains)
+
+    # Apply thinning if requested
+    if (thin > 1) {
+      mcmc_chains <- lapply(mcmc_chains, function(chain) window(chain, thin = thin))
+      mcmc_chains <- as.mcmc.list(mcmc_chains)
     }
 
-    # Display correlation plot for parameter relationships
-    print(plot_corr(results))
+    # Trace plot
+    if ("trace" %in% params) {
+      cat("\n TRACE PLOT \n")
+      plot(mcmc_chains)  # Trace plot for convergence assessment
+    }
 
-    # Print effective sample sizes to assess chain mixing
-    cat("\n EFFECTIVE SAMPLE SIZE \n")
-    print(effectiveSize(results$coda_pars))
+    # Gelman-Rubin statistic
+    if ("gelman" %in% params && n_chains > 1) {
+      cat("\n GELMAN-RUBIN STATISTIC \n")
+      print(gelman.diag(mcmc_chains))  # Numerical convergence assessment
+    }
 
-    # Plot autocorrelation function (ACF) to check for dependency in the chains
-    acf(results$coda_pars[,-c(1:3)])
+    # Correlation plot
+    if ("corr" %in% params) {
+      cat("\n CORRELATION PLOT \n")
+      print(plot_corr(results))  # Retain the previous large and clear plot
+    }
 
-    # Display posterior quantiles for each parameter
-    cat("\n POSTERIOR QUANTILES \n")
-    print(summary(results$coda_pars)$quantiles[-c(1:3),])
+    # Effective Sample Size
+    if ("ess" %in% params) {
+      cat("\n EFFECTIVE SAMPLE SIZE \n")
+      print(effectiveSize(mcmc_chains))
+    }
 
-    # Calculate and print acceptance rate
-    cat("\n ACCEPTANCE RATE \n ")
-    print(1 - rejectionRate(results$coda_pars))
+    # Autocorrelation Function (ACF)
+    if ("acf" %in% params) {
+      cat("\n AUTOCORRELATION FUNCTION \n")
+      acf(as.matrix(do.call(rbind, mcmc_chains)), main = "Autocorrelation")
+    }
+
+    # Posterior Quantiles
+    if ("quantiles" %in% params) {
+      cat("\n POSTERIOR QUANTILES \n")
+      quantiles <- apply(as.matrix(do.call(rbind, mcmc_chains)), 2, quantile, probs = c(0.025, 0.5, 0.975))
+      print(quantiles)
+    }
+
+    # Acceptance Rate
+    if ("acceptance" %in% params) {
+      cat("\n ACCEPTANCE RATE \n")
+      acceptance_rates <- 1 - rejectionRate(mcmc_chains)
+      print(acceptance_rates)
+    }
   }))
 }
+
+
 
 
 #' Plot Posterior Distributions of Estimated Parameters
@@ -125,6 +157,11 @@ MCMC_diag <- function(results) {
 #' dim_plot <- c(1, 2) # Arrange in 1 row, 2 columns
 #' post_plot(results, params_to_estimate, dim_plot, show_true = TRUE, true_value = c(param1 = 0.5, param2 = -0.2), title = "Posterior Distributions")
 post_plot <- function(results, params_to_estimate, dim_plot, show_true = TRUE, true_value = NULL, title = "") {
+  # Check if params_to_estimate is a named vector
+  if (is.null(names(params_to_estimate)) || any(names(params_to_estimate) == "")) {
+    stop("Error: 'params_to_estimate' must be a named vector where each parameter has an associated name.")
+  }
+
   # Extract posterior samples
   posterior <- data.frame(results[[1]]$pars)
   post_melt <- reshape2::melt(posterior)
@@ -135,15 +172,21 @@ post_plot <- function(results, params_to_estimate, dim_plot, show_true = TRUE, t
   quantiles <- apply(posterior, 2, function(x) quantile(x, probs = c(0.005, 0.025, 0.50, 0.975, 0.995)))
   quantiles_df <- as.data.frame(t(quantiles))
   colnames(quantiles_df) <- c("0.5%", "2.5%", "50%", "97.5%", "99.5%")
+  rownames(quantiles_df) <- colnames(posterior)
 
   # Set up true values if provided by user
-  if(show_true) {
+  if (show_true) {
     vertical_lines <- data.frame(variable = names(true_value), line_position = as.vector(true_value))
-    vertical_lines <- vertical_lines[vertical_lines$variable %in% params_to_estimate,]
+    vertical_lines <- vertical_lines[vertical_lines$variable %in% names(params_to_estimate),]
   }
 
   # Generate a histogram plot for each parameter
   plot_list <- lapply(names(params_to_estimate), function(param) {
+    if (!(param %in% colnames(posterior))) {
+      warning(sprintf("Parameter '%s' not found in posterior samples.", param))
+      return(NULL)
+    }
+
     p <- ggplot(subset(prior_post, variable == param), aes(x = value, fill = variable2)) +
       geom_histogram(data = subset(prior_post, variable2 == "posterior" & variable == param),
                      aes(y = ..density..), bins = 100) + # Histogram with density normalization
@@ -163,8 +206,16 @@ post_plot <- function(results, params_to_estimate, dim_plot, show_true = TRUE, t
                           color = "black", linetype = "solid", size = 0.8)
     }
 
+    # Remove the legend if show_true is FALSE
+    if (!show_true) {
+      p <- p + theme(legend.position = "none")
+    }
+
     p
   })
+
+  # Remove any NULL plots (if parameters are missing)
+  plot_list <- Filter(Negate(is.null), plot_list)
 
   # Combine individual parameter plots into a grid
   combined_plot <- patchwork::wrap_plots(plot_list, ncol = dim_plot[2]) +
@@ -172,3 +223,4 @@ post_plot <- function(results, params_to_estimate, dim_plot, show_true = TRUE, t
 
   return(combined_plot)
 }
+
