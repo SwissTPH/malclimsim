@@ -261,7 +261,7 @@ create_sim_df <- function(results, n, dates_sim, dates_obs, model){
 plot_observed_vs_simulated <- function(results, obs_cases, start_date, end_date, model,
                                        add_ribbon = FALSE, n_samples = 100, groups = c("inc_A", "inc_C", "inc"),
                                        met = NULL, climate_facet = FALSE, prewarm_years = 2, days_per_year = 360,
-                                       title = NULL) {
+                                       plot_title = NULL) {
 
   prewarm_start_date <- paste0(year(as.Date(start_date)) - prewarm_years, "-", format(as.Date(start_date), "%m-%d"))
 
@@ -310,6 +310,10 @@ plot_observed_vs_simulated <- function(results, obs_cases, start_date, end_date,
   # Create a mapping for facet labels to make them more descriptive
   facet_labels <- c("inc_A" = "Incidence (>=5 years)", "inc_C" = "Incidence (<5 years)", "inc" = "Total Incidence")
 
+  if(is.null(plot_title)){
+    plot_title = "Observed vs Simulated Monthly Malaria Cases"
+  }
+
   # Plotting observed and simulated data on the same panels
   library(ggplot2)
   p <- ggplot(combined_data_long, aes(x = date_ymd)) +
@@ -318,15 +322,12 @@ plot_observed_vs_simulated <- function(results, obs_cases, start_date, end_date,
     geom_line(data = subset(combined_data_long, grepl("_sim$", variable)), aes(y = value),
               color = "red", size = 1) +                # Simulated data as line
     facet_wrap(~ gsub("(_obs|_sim)", "", variable), scales = "free", ncol = 1, labeller = as_labeller(facet_labels)) +
-    if(is.null(title)){
-      title = "Observed vs Simulated Monthly Malaria Cases"
-    }
-    labs(title = title,
+    labs(title = plot_title,
          x = "Date",
          y = "Number of Monthly Malaria Cases") +
     theme_minimal() +
     theme(
-      plot.title = element_text(hjust = 0.5, size = 16, face = "bold"), # Center the plot title
+      plot.title = element_text(hjust = 0.5, size = 16, face = "bold"), # Center the plot plot_title
       axis.title.y = element_text(size = 14, face = "bold"),
       axis.text.x = element_text(size = 12),
       axis.text.y = element_text(size = 12),
@@ -370,7 +371,7 @@ plot_observed_vs_simulated <- function(results, obs_cases, start_date, end_date,
         axis.text.x = element_text(size = 12),
         axis.text.y = element_text(size = 12),
         strip.text = element_text(size = 14, face = "bold"),
-        plot.title = element_blank()
+        plot.plot_title = element_blank()
       )
 
     # Use patchwork to stack the incidence and climate plots

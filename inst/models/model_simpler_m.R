@@ -104,6 +104,15 @@ p_MH_C <- user()
 delta_b <- user()
 delta_d <- user()
 delta_a <- user()
+alpha <- user(1)
+T_opt <- user(28)
+sigma_LT <- user(4)
+sigma_RT <- user(4)
+R_opt <- user(1)
+k1 <- user(0.2)
+b <- user()
+lag_R <- user(0)  # Default lag = 0
+lag_T <- user(0)
 
 # defining SMC efficacy
 eff_SMC <- user() # SMC effectiveness
@@ -143,10 +152,6 @@ m <- alpha * (X / (b + X)) * temp_effect * rain_effect # Multiplicative effects
 temp_effect <- if (temp_shift <= T_opt) exp(-((temp_shift - T_opt)^2) / (2 * sigma_LT^2)) else exp(-((temp_shift - T_opt)^2) / (2 * sigma_RT^2))
 rain_effect <- 1 / (1 + exp(-k1 * (c_R_D_shift - R_opt))) # Logistic term for rainfall
 
-
-initial(m) <- (B_egg * p_EA) / (tau_EA * g)
-update(m) <- (B_egg * p_EA) / (tau_EA * g)
-
 # Probability of daily survival
 p_surv <- user(0.98)
 g <- -log(p_surv^dt)  # mu_M in paper
@@ -158,10 +163,8 @@ a <- (0.017 * temp[time] - 0.165) * dt
 pT <- if (temp[time] >= 35) dt * 0.01 else (dt * (0.000112 * temp[time] * (temp[time] - 15.384) * (35 - temp[time])^(1/2)))
 n <- 1 / pT
 
-a_R <- user()
-b_R <- user()
 c_R_D[] <- user() # this will be informed by data
-p_EA <- p_EA_T * p_EA_R
+temp[] <- user()
 shift <- user(1)
 
 #temp_w <- k_par * temp[time] + delta_temp
