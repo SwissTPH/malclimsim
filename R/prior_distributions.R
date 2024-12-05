@@ -95,7 +95,7 @@ initialize_priors <- function(param_inputs = NULL, proposal_matrix = NULL, param
     lag_T = list(initial = 0, min = 0, max = 100, integer = TRUE, prior = function(p) dunif(p, min = 0, max = 100, log = TRUE)),
 
     # Gamma distribution to ensure positivity
-    alpha = list(initial = 2.5, min = 0, max = 10, prior = function(p) dgamma(p, shape = 2, rate = 0.5, log = TRUE)),
+    alpha = list(initial = 2.5, min = 0, max = 1000, prior = function(p) dgamma(p, shape = 2, rate = 0.5, log = TRUE)),
 
     # T_opt - Must be greater than 0, likely between 24 and 32
     T_opt = list(initial = 30.4, min = 0, max = 40, prior = function(p) dnorm(p, mean = 26.12, sd = 0.5, log = TRUE)),
@@ -107,8 +107,8 @@ initialize_priors <- function(param_inputs = NULL, proposal_matrix = NULL, param
     k1 = list(initial = 1, min = -5, max = 5, prior = function(p) dnorm(p, mean = 1, sd = 1, log = TRUE)), # Normal distribution with bias towards positive values
 
     # sigma_T - Must be positive, value is uncertain
-    sigma_LT = list(initial = 1, min = 0, max = 10, prior = function(p) dnorm(p, mean = 5, sd = 3, log = TRUE)), # Gamma distribution to ensure positivity
-    sigma_RT = list(initial = 1, min = 0, max = 10, prior = function(p) dnorm(p, mean = 3, sd = 3, log = TRUE)), # Gamma distribution to ensure positivity
+    sigma_LT = list(initial = 1, min = 0, max = 30, prior = function(p) dnorm(p, mean = 5, sd = 3, log = TRUE)), # Gamma distribution to ensure positivity
+    sigma_RT = list(initial = 1, min = 0, max = 30, prior = function(p) dnorm(p, mean = 3, sd = 3, log = TRUE)), # Gamma distribution to ensure positivity
 
     b = list(initial = 1, min = 0.001, max = 50, prior = function(p) dgamma(p, shape = 2, rate = 1, log = TRUE))
   )

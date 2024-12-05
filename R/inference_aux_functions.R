@@ -85,6 +85,8 @@ filter_data <- function(incidence_observed, month = FALSE, initial_time_obs = 0,
     filt_data$month_no_end <- (initial_time_obs + 1) : (nrow(incidence_observed) + initial_time_obs)
     filt_data <- filt_data[-1,]
 
+    filt_data <- filt_data[!rowSums(apply(filt_data, 2, is.na)) > 0,]
+
   } else {
     # Process for weekly data
     filt_data <- mcstate::particle_filter_data(data = incidence_observed,
