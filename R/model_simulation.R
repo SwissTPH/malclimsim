@@ -8,6 +8,7 @@
 #' @export
 #'
 #' @examples
+#' load_model("model_det_1")
 load_model <- function(name){
   file <- system.file("models", paste0(name, ".R"), package = "malclimsim")
   return(odin.dust::odin_dust(file))

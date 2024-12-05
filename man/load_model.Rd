@@ -15,3 +15,6 @@ the loaded model to be used for simulation, inference, etc
 \description{
 Loading an Odin Model
 }
+\examples{
+load_model("model_det_1")
+}
