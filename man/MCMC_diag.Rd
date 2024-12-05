@@ -4,24 +4,25 @@
 \alias{MCMC_diag}
 \title{MCMC Diagnostics}
 \usage{
-MCMC_diag(results)
+MCMC_diag(
+  results,
+  params = c("trace", "gelman", "corr", "ess", "acf", "quantiles", "acceptance"),
+  thin = 1
+)
 }
 \arguments{
 \item{results}{A list containing the MCMC output, typically with at least
 \code{results[[1]]} for chain data and \code{results[[2]]} for trace plot data.
 Should include an element \code{n_chains} for the number of chains.}
+
+\item{params}{A character vector specifying which diagnostics to display.
+Options include: "trace", "gelman", "corr", "ess", "acf", "quantiles", "acceptance".}
+
+\item{thin}{An integer specifying thinning interval for the chains.
+Thinning reduces the number of samples by keeping every \code{thin}th sample.}
 }
 \value{
-This function returns a variety of printed diagnostic outputs:
-\itemize{
-\item Trace plot for parameter convergence
-\item Gelman-Rubin statistic if multiple chains are present
-\item Correlation plot between parameters
-\item Effective sample size for each parameter
-\item Autocorrelation function (ACF) plot for parameter dependence
-\item Posterior quantiles for each parameter
-\item Acceptance rate
-}
+Diagnostic outputs based on the selected \code{params} are printed or plotted.
 }
 \description{
 Provides diagnostic information for MCMC results, including trace plots,
@@ -31,5 +32,5 @@ Designed for users to assess MCMC chain convergence and parameter mixing.
 }
 \examples{
 # Assuming 'results' is a valid MCMC result list with required structure:
-MCMC_diag(results)
+MCMC_diag(results, params = c("trace", "ess"))
 }

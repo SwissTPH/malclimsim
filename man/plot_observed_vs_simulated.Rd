@@ -16,7 +16,8 @@ plot_observed_vs_simulated(
   met = NULL,
   climate_facet = FALSE,
   prewarm_years = 2,
-  days_per_year = 360
+  days_per_year = 360,
+  plot_title = NULL
 )
 }
 \arguments{
