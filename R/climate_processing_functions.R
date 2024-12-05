@@ -305,6 +305,9 @@ process_climate_data <- function(lon, lat, years, D1, D2, temp_path, rain_path, 
 
   # Rainfall
   avg_rain <- readRDS(rain_path)
+
+  temp <- temp[which(temp$Date %in% as.Date(intersect(as.character(temp$Date), as.character(avg_rain$date)))),]
+
   # - `rolling_average_D_days` calculates a rolling average of rainfall with a window size of `D1` days (30 days here)
   # - `rolling_avg_rwa$rollmean` contains the calculated rolling averages
   rolling_rain <- rolling_average_D_days(avg_rain, D1, save = FALSE)
