@@ -176,8 +176,8 @@ a <- (0.017 * temp[time] - 0.165) * dt
 
 # Sporogony (development of sporozites in mosquitos)
 pT <- if (temp[time] >= 35) dt * 0.01 else (dt * (0.000112 * temp[time] * (temp[time] - 15.384) * (35 - temp[time])^(1/2)))
-
 n <- 1 / pT
+
 # Egg to adult survivorship
 p_EA_T <- if (temp_w >= 33.3 || temp_w < 15.38) 0.01 else (-0.00924 * (temp_w)^2 + 0.453 * (temp_w) - 4.77)^dt
 p_EA_R <- (1 / (1 + exp(-a_R * (c_R_D[time] - b_R))))^dt

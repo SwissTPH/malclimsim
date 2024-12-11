@@ -15,22 +15,40 @@ time <- step + 1
 
 SMC_effect <- decay[time] * eff_SMC * cov_SMC[time]
 SMC_removal <- if (SMC[time] == 1) SMC_effect else 0
-#SMC_removal <- user(0)
 
 # Children
-update(SC) <- (SC * r_C) * (1 - delta_a - delta_d - (1 - SMC_effect) * mu_SE_C) + delta_b * P + mu_RS_C * RC + mu_TS * TrC
-update(EC) <- (EC * r_C) * (1 - delta_a - delta_d - mu_EI - SMC_removal) + (1 - SMC_effect) * mu_SE_C * SC
-update(IC) <- (IC * r_C) * (1 - delta_a - delta_d - mu_IR - SMC_removal) + (1 - fT_C) * mu_EI * EC
-update(TrC) <- (TrC * r_C) * (1 - delta_a - delta_d - mu_TS) + fT_C * mu_EI * EC + SMC_removal * (EC + IC)
-update(RC) <- (RC * r_C) * (1 - delta_a - delta_d - mu_RS_C) + mu_IR * IC
+update(SC) <- SC * (1 - delta_a - delta_d - (1 - SMC_effect) * mu_SE_C) + delta_b * P + mu_RS_C * RC + mu_TS * TrC
+update(EC) <- EC * (1 - delta_a - delta_d - mu_EI - SMC_removal) + (1 - SMC_effect) * mu_SE_C * SC
+update(IC) <- IC * (1 - delta_a - delta_d - mu_IR - SMC_removal) + (1 - fT_C) * mu_EI * EC
+update(TrC) <- TrC * (1 - delta_a - delta_d - mu_TS) + fT_C * mu_EI * EC + SMC_removal * (EC + IC)
+update(RC) <- RC * (1 - delta_a - delta_d - mu_RS_C) + mu_IR * IC
 
 
 # Adults
-update(SA) <- (SA * r_A) * (1 - delta_d - mu_SE_A) + delta_a * SC + mu_RS_A * RA + mu_TS * TrA
-update(EA) <- (EA * r_A) * (1 - delta_d - mu_EI) + delta_a * EC + mu_SE_A * SA
-update(IA) <- (IA * r_A) * (1 - delta_d - mu_IR) + delta_a * IC + (1 - fT_A) * mu_EI * EA
-update(TrA) <- (TrA * r_A) * (1 - delta_d - mu_TS) + delta_a * TrC + fT_A * mu_EI * EA
-update(RA) <- (RA * r_A) *  (1 - delta_d - mu_RS_A) + delta_a * RC + mu_IR * IA
+update(SA) <- SA * (1 - delta_d - mu_SE_A) + delta_a * SC + mu_RS_A * RA + mu_TS * TrA
+update(EA) <- EA * (1 - delta_d - mu_EI) + delta_a * EC + mu_SE_A * SA
+update(IA) <- IA * (1 - delta_d - mu_IR) + delta_a * IC + (1 - fT_A) * mu_EI * EA
+update(TrA) <- TrA * (1 - delta_d - mu_TS) + delta_a * TrC + fT_A * mu_EI * EA
+update(RA) <- RA * (1 - delta_d - mu_RS_A) + delta_a * RC + mu_IR * IA
+
+
+# SMC_effect <- decay[time] * eff_SMC * cov_SMC[time]
+#
+# # Children
+# update(SC) <- SC * (1 - delta_a - delta_d - (1 - SMC_effect) * mu_SE_C) + delta_b * P + mu_RS_C * RC + mu_TS * TrC
+# update(EC) <- EC * (1 - delta_a - delta_d - mu_EI) + (1 - SMC_effect) * mu_SE_C * SC
+# update(IC) <- IC * (1 - delta_a - delta_d - mu_IR) + (1 - fT_C) * mu_EI * EC
+# update(TrC) <- TrC * (1 - delta_a - delta_d - mu_TS) + fT_C * mu_EI * EC
+# update(RC) <- RC * (1 - delta_a - delta_d - mu_RS_C) + mu_IR * IC
+#
+# # Adults
+# update(SA) <- SA * (1 - delta_d - mu_SE_A) + delta_a * SC + mu_RS_A * RA + mu_TS * TrA
+# update(EA) <- EA * (1 - delta_d - mu_EI) + delta_a * EC + mu_SE_A * SA
+# update(IA) <- IA * (1 - delta_d - mu_IR) + delta_a * IC + (1 - fT_A) * mu_EI * EA
+# update(TrA) <- TrA * (1 - delta_d - mu_TS) + delta_a * TrC + fT_A * mu_EI * EA
+# update(RA) <- RA * (1 - delta_d - mu_RS_A) + delta_a * RC + mu_IR * IA
+
+
 
 # daily and weekly incidence
 initial(day_inc_C) <- 0
@@ -63,14 +81,15 @@ update(month_inc_total) <- if ((step) %% steps_per_month == 0) mu_EI * (EC * fT_
 size <- user(10)
 
 # User defined parameters
-# Growth rates
-#r_C <- user(1.000071) # daily growth rate u5 Chad
-#r_A <- user(1.000092) # daily growth rate o5 Chad
-r_C <- user(1.0000) # daily growth rate u5 Chad
-r_A <- user(1.0000) # daily growth rate o5 Chad
+#dt <- user(1)
 phi <- user(1)
+
 mu_SE_C <- 1 - exp(-p_MH_C * EIR)
 mu_SE_A <- phi * (1 - exp(-rho * p_MH_C * EIR))
+
+initial(mu_SE_C_up) <- mu_SE_C
+update(mu_SE_C_up) <- mu_SE_C
+
 mu_RS_C <- user()
 mu_RS_A <- eta * mu_RS_C
 eta <- user(1)
@@ -91,7 +110,6 @@ sigma_LT <- user(4)
 sigma_RT <- user(4)
 R_opt <- user(1)
 k1 <- user(0.2)
-qR <- user()
 b <- user()
 lag_R <- user(0)  # Default lag = 0
 lag_T <- user(0)
@@ -101,23 +119,61 @@ eff_SMC <- user() # SMC effectiveness
 cov_SMC[] <- user() # SMC coverage
 SMC[] <- user()
 decay[] <- user()
-temp[] <- user()
-c_R_D[] <- user() # this will be informed by data
 
+# Allowing for lag between transmission and climate changes
 initial(c_R_D_shift) <- c_R_D[time]  # Start with the first rainfall value
 update(c_R_D_shift) <- if (time > lag_R) c_R_D[time - lag_R] else c_R_D[time]
 initial(temp_shift) <- temp[time]
 update(temp_shift) <- if (time > lag_T) temp[time - lag_T] else temp[time]
 
+
+## Defining climate-driven entomological inoculation rate (EIR)
+A <- m * a^2 * exp(-g * n)
+B <- g
+C <- a
+EIR <- (A * p_HM * X / (B + (C * p_HM * X)))
+
+# Define monthly EIR
+initial(EIR_monthly) <- EIR
+update(EIR_monthly) <- if ((step) %% steps_per_month == 0) EIR2 else EIR_monthly + EIR
+
+# Define Daily EIR
+initial(EIR2) <- EIR
+update(EIR2) <- EIR
+
+p_HM <- user()
+
+qR <- user()
+X <- (IA + IC + qR * (RA + RC)) / P
+
+# Mosquito density
 # Defining EIR
-qR2 <- user(1)
-EIR <- alpha * (X / (b + X)) * temp_effect * rain_effect # Multiplicative effects
-#temp_effect <- exp(-((temp_shift - T_opt)^2) / (2 * sigma_LT^2)) # Gaussian term for temperature
+m <- alpha * (X / (b + X)) * temp_effect * rain_effect # Multiplicative effects
 temp_effect <- if (temp_shift <= T_opt) exp(-((temp_shift - T_opt)^2) / (2 * sigma_LT^2)) else exp(-((temp_shift - T_opt)^2) / (2 * sigma_RT^2))
 rain_effect <- 1 / (1 + exp(-k1 * (c_R_D_shift - R_opt))) # Logistic term for rainfall
-X <- (qR2 * IA + IC + qR * (qR2 * RA + RC)) / P # Proportion of population infectious remains the same
 
-# Egg-adult Development time due to temperature
+# Probability of daily survival
+p_surv <- user(0.98)
+g <- -log(p_surv^dt)  # mu_M in paper
+
+# Mosquito biting rate
+a <- (0.017 * temp[time] - 0.165) * dt
+
+# Sporogony (development of sporozites in mosquitos)
+k2 = 91.66156
+k3 = -0.0596445
+c1 = -7.938664
+pT = k2 / (1 + exp(-k3 * (temp[time] - c1)))
+#pT <- if (temp[time] >= 35) dt * 0.01 else (dt * (0.000112 * temp[time] * (temp[time] - 15.384) * (35 - temp[time])^(1/2)))
+n <- 1 / pT
+
+c_R_D[] <- user() # this will be informed by data
+temp[] <- user()
+shift <- user(1)
+
+#temp_w <- k_par * temp[time] + delta_temp
+#k_par <- user(1)
+#delta_temp <- user(2)
 
 # Dimensions of arrays
 dim(c_R_D) <- user()
