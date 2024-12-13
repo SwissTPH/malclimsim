@@ -32,7 +32,7 @@ create_start_values <- function(params_to_estimate, control_params, min_max_star
       delta_temp = c(-4, 0), mu_RS_C = c(1/350, 1/250), z = c(0.2, 0.6), z_A = c(0.2, 0.6),
       z_C2 = c(0.2, 0.6), rho = c(0.3, 0.9), eta = c(0.1, 0.9), size = c(5, 100),
       phi_C2 = c(0.2, 0.6), phi_A = c(0.2, 0.6), tau = c(0.2, 0.6), p_surv = c(0.89, 0.92),
-      mu_IR = c(1/10, 1/2), shift1 = c(1, 30), shift2 = c(1, 30), kappa = c(0.2, 0.6),
+      mu_IR = c(1/10, 1/2), shift1 = c(1, 30), shift2 = c(1, 30), kappa = c(0.2, 0.6), fT_C = c(0.1, 0.7),
       # Multiplicative constants (k parameters)
       k1 = c(0.5, 1.5),      # Based on prior: mean = 1, sd = 0.1
       k2 = c(0.5, 1.5),      # Based on prior: mean = 1, sd = 0.1
@@ -113,7 +113,7 @@ create_proposal_matrix <- function(params_to_estimate, proposal_variance = NULL,
       phi = 0.1, k_par = 0.1, delta_temp = 0.1, mu_RS_C = 0.1, z = 0.1,
       z_A = 0.1, z_C2 = 0.1, rho = 0.1, eta = 0.1, size = 0.1, phi_C2 = 0.1,
       phi_A = 0.1, tau = 0.1, p_surv = 0.1, mu_IR = 0.1, shift1 = 0.1,
-      shift2 = 0.1, kappa = 0.1
+      shift2 = 0.1, kappa = 0.1, fT_C = 0.1
     )
   }
 

@@ -14,8 +14,8 @@ dt <- 1 / steps_per_day
 time <- step + 1
 
 SMC_effect <- decay[time] * eff_SMC * cov_SMC[time]
-SMC_removal <- if (SMC[time] == 1) SMC_effect else 0
-#SMC_removal <- user(0)
+#SMC_removal <- if (SMC[time] == 1) SMC_effect else 0
+SMC_removal <- user(0)
 
 # Children
 update(SC) <- (SC * r_C) * (1 - delta_a - delta_d - (1 - SMC_effect) * mu_SE_C) + delta_b * P + mu_RS_C * RC + mu_TS * TrC

@@ -49,7 +49,3 @@ import(lubridate)
 importFrom(magrittr,"%>%")
 importFrom(stats,predict)
 importFrom(stats,smooth.spline)
-importFrom("stats", "acf", "cov", "dbeta", "dgamma", "dnbinom",
-                "dnorm", "dunif", "median", "quantile", "rnbinom", "rpois",
-                "runif", "sd", "window")
-importFrom("utils", "head", "modifyList")
