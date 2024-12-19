@@ -130,6 +130,86 @@ MCMC_diag <- function(results, params = c("trace", "gelman", "corr", "ess", "acf
   }))
 }
 
+MCMC_diag <- function(results, params = c("trace", "gelman", "corr", "ess", "acf", "quantiles", "acceptance"), thin = 1) {
+  suppressWarnings(suppressMessages({
+    # Extract parameter samples and split into chains
+    pars <- results[[1]]$pars
+    n_chains <- results$n_chains
+    n_samples <- nrow(pars) / n_chains
+
+    # Split parameters into individual chains
+    chain_list <- split(pars, rep(1:n_chains, each = n_samples))
+    chains <- lapply(chain_list, function(x) {
+      as.mcmc(matrix(x, nrow = n_samples, ncol = ncol(pars), dimnames = list(NULL, colnames(pars))))
+    })
+    mcmc_chains <- as.mcmc.list(chains)
+
+    # Apply thinning if requested
+    if (thin > 1) {
+      mcmc_chains <- lapply(mcmc_chains, function(chain) window(chain, thin = thin))
+      mcmc_chains <- as.mcmc.list(mcmc_chains)
+    }
+
+    # Initialize a list to store results
+    results_list <- list()
+
+    # Trace plot
+    if ("trace" %in% params) {
+      cat("\n TRACE PLOT \n")
+      plot(mcmc_chains)  # Trace plot for convergence assessment
+      results_list$trace <- mcmc_chains
+    }
+
+    # Gelman-Rubin statistic
+    if ("gelman" %in% params && n_chains > 1) {
+      cat("\n GELMAN-RUBIN STATISTIC \n")
+      gelman_result <- gelman.diag(mcmc_chains)  # Numerical convergence assessment
+      print(gelman_result)
+      results_list$gelman <- gelman_result
+    }
+
+    # Correlation plot
+    if ("corr" %in% params) {
+      cat("\n CORRELATION PLOT \n")
+      plot_corr(results)  # Retain the previous large and clear plot
+      results_list$corr <- "Correlation plot generated"
+    }
+
+    # Effective Sample Size
+    if ("ess" %in% params) {
+      cat("\n EFFECTIVE SAMPLE SIZE \n")
+      ess_result <- effectiveSize(mcmc_chains)
+      print(ess_result)
+      results_list$ess <- ess_result
+    }
+
+    # Autocorrelation Function (ACF)
+    if ("acf" %in% params) {
+      cat("\n AUTOCORRELATION FUNCTION \n")
+      acf_result <- acf(as.matrix(do.call(rbind, mcmc_chains)), main = "Autocorrelation")
+      results_list$acf <- "Autocorrelation function plotted"
+    }
+
+    # Posterior Quantiles
+    if ("quantiles" %in% params) {
+      cat("\n POSTERIOR QUANTILES \n")
+      quantiles <- apply(as.matrix(do.call(rbind, mcmc_chains)), 2, quantile, probs = c(0.025, 0.5, 0.975))
+      results_list$quantiles <- quantiles
+    }
+
+    # Acceptance Rate
+    if ("acceptance" %in% params) {
+      cat("\n ACCEPTANCE RATE \n")
+      acceptance_rates <- 1 - rejectionRate(mcmc_chains)
+      print(acceptance_rates)
+      results_list$acceptance <- acceptance_rates
+    }
+
+    # Return all results
+    return(results_list)
+  }))
+}
+
 
 
 
