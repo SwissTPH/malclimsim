@@ -231,75 +231,120 @@ create_sim_df <- function(results, n, dates_sim, dates_obs, model){
   return(sim_df)
 }
 
-#' Plot Observed vs Simulated Data with Quantiles Ribbon and Optional Climate Data Facet
-#'
-#' This function simulates data from a model using parameters that maximize the log posterior,
-#' then plots the observed and simulated incidence data for comparison. Optionally, a ribbon
-#' representing the 1st and 99th quantiles of additional simulations can be included to visualize uncertainty.
-#' It also allows for optional inclusion of climate data as a separate facet.
-#'
-#' @param results The MCMC results object containing the parameter samples.
-#' @param obs_cases A data frame of observed cases with columns for `date_ymd` (date), `inc_A`, `inc_C`, and `inc`.
-#' @param start_date The start date for the simulation output as a `Date` object or character string.
-#' @param end_date The end date for the simulation as a `Date` object or character string.
-#' @param model The model function to simulate from.
-#' @param add_ribbon Logical; if TRUE, adds a ribbon to the plot representing the 1st and 99th quantiles of the incidence data from additional simulations.
-#' @param n_samples The number of samples to draw from the MCMC results for the quantiles ribbon.
-#' @param groups A character vector specifying which groups to include in the plot (`inc_A`, `inc_C`, `inc`).
-#' @param met Optional climate data frame to be included as a separate facet.
-#' @param climate_facet Logical; if TRUE, adds climate data as a separate facet in the plot.
-#' @param prewarm_years Integer; the number of years to simulate before the `start_date` for stabilization (default is 2 years).
-#' @param days_per_year Integer; the number of days per year in the simulation (default is 360).
-#' @return A ggplot object displaying observed data as points, simulated data as a line, and an optional ribbon for quantiles.
-#' @export
-#' @examples
-#' # Assuming `results` contains MCMC output and `obs_cases` is the observed cases data
-#' plot_observed_vs_simulated(results, obs_cases, start_date = "2014-01-01",
-#'                            end_date = "2014-12-31", model = data_sim,
-#'                            add_ribbon = TRUE, n_samples = 100, groups = c("inc_A", "inc_C", "inc"),
-#'                            met = met_data, climate_facet = TRUE, prewarm_years = 2)
+#' #' Plot Observed vs Simulated Data with Quantiles Ribbon and Optional Climate Data Facet
+#' #'
+#' #' This function simulates data from a model using parameters that maximize the log posterior,
+#' #' then plots the observed and simulated incidence data for comparison. Optionally, a ribbon
+#' #' representing the 1st and 99th quantiles of additional simulations can be included to visualize uncertainty.
+#' #' It also allows for optional inclusion of climate data as a separate facet.
+#' #'
+#' #' @param results The MCMC results object containing the parameter samples.
+#' #' @param obs_cases A data frame of observed cases with columns for `date_ymd` (date), `inc_A`, `inc_C`, and `inc`.
+#' #' @param start_date The start date for the simulation output as a `Date` object or character string.
+#' #' @param end_date The end date for the simulation as a `Date` object or character string.
+#' #' @param model The model function to simulate from.
+#' #' @param add_ribbon Logical; if TRUE, adds a ribbon to the plot representing the 1st and 99th quantiles of the incidence data from additional simulations.
+#' #' @param n_samples The number of samples to draw from the MCMC results for the quantiles ribbon.
+#' #' @param groups A character vector specifying which groups to include in the plot (`inc_A`, `inc_C`, `inc`).
+#' #' @param met Optional climate data frame to be included as a separate facet.
+#' #' @param climate_facet Logical; if TRUE, adds climate data as a separate facet in the plot.
+#' #' @param prewarm_years Integer; the number of years to simulate before the `start_date` for stabilization (default is 2 years).
+#' #' @param days_per_year Integer; the number of days per year in the simulation (default is 360).
+#' #' @return A ggplot object displaying observed data as points, simulated data as a line, and an optional ribbon for quantiles.
+#' #' @export
+#' #' @examples
+#' #' # Assuming `results` contains MCMC output and `obs_cases` is the observed cases data
+#' #' plot_observed_vs_simulated(results, obs_cases, start_date = "2014-01-01",
+#' #'                            end_date = "2014-12-31", model = data_sim,
+#' #'                            add_ribbon = TRUE, n_samples = 100, groups = c("inc_A", "inc_C", "inc"),
+#' #'                            met = met_data, climate_facet = TRUE, prewarm_years = 2)
 plot_observed_vs_simulated <- function(results, obs_cases, start_date, end_date, model,
-                                       add_ribbon = FALSE, n_samples = 100, groups = c("inc_A", "inc_C", "inc"),
+                                       add_ribbon = TRUE, n_samples = 100, groups = c("inc_A", "inc_C", "inc"),
                                        met = NULL, climate_facet = FALSE, prewarm_years = 2, days_per_year = 360,
-                                       plot_title = NULL) {
+                                       plot_title = NULL,
+                                       legend_labels = c("Original Model - True Temp",
+                                                         "Original Model - Constant Temp",
+                                                         "Simplified EIR - True Temp") ) {
 
   prewarm_start_date <- paste0(year(as.Date(start_date)) - prewarm_years, "-", format(as.Date(start_date), "%m-%d"))
 
-  # Run the simulation with parameters that maximize log posterior
-  sim_data <- simulate_with_max_posterior_params(results, start_date = start_date,
-                                                 end_date = end_date, model = model,
-                                                 prewarm_years = prewarm_years,
-                                                 days_per_year = days_per_year)
-
-  # Filter simulation data to the desired period
-  sim_data <- sim_data[sim_data$date_ymd >= as.Date(start_date), ]
-
-  # Ensure date column compatibility with observed data
-  sim_data$month <- as.Date(sim_data$month)
-  colnames(obs_cases)[1] <- "date_ymd"
-
-  # Merge observed and simulated data by date
-  combined_data <- merge(obs_cases, sim_data, by = "date_ymd", suffixes = c("_obs", "_sim"))
-
-  # If add_ribbon is TRUE, generate quantiles from additional simulations
-  if (add_ribbon) {
-    # Step 1: Sample parameters from MCMC results
-    sampled_params <- sample_params(results, n_samples)
-
-    # Step 2: Simulate models using the sampled parameters
-    simulations <- simulate_models(model, results$param_inputs, sampled_params,
-                                   start_date = start_date, end_date = end_date)
-
-    # Step 3: Calculate incidence quantiles for each group
-    incidence_quantiles <- calculate_incidence_quantiles(simulations)
-
-    # Step 4: Merge quantiles with the combined observed and simulated data
-    combined_data <- merge(combined_data, incidence_quantiles, by = "date_ymd", all.x = TRUE)
+  all_sim_data <- list()
+  # Ensure `model` has the same length as `results`
+  if (length(model) != length(results)) {
+    stop("The number of model must match the number of elements in results.")
   }
 
-  # Melt the combined data for plotting observed vs simulated on the same panel
+  # Iterate through each result set and model in results and model
+  for (i in seq_along(results)) {
+    result <- results[[i]]$results
+    curr_model <- model[[i]]
+
+    # Run the simulation with parameters that maximize log posterior
+    sim_data <- simulate_with_max_posterior_params(result, start_date = start_date,
+                                                   end_date = end_date, model = curr_model,
+                                                   prewarm_years = prewarm_years,
+                                                   days_per_year = days_per_year)
+
+    # Filter simulation data to the desired period
+    sim_data <- sim_data[sim_data$date_ymd >= as.Date(start_date), ]
+    #sim_data$source <- paste0("Sim_", i) # Label each dataset with a unique source ID
+    sim_data$source <- legend_labels[i]
+    all_sim_data[[i]] <- sim_data
+  }
+
+  # Combine all simulated datasets into one
+  sim_data_combined <- do.call(rbind, all_sim_data)
+
+  # Ensure date column compatibility with observed data
+  colnames(obs_cases)[1] <- "date_ymd"
+
+  # Merge observed data with combined simulated data
+  combined_data <- merge(obs_cases, sim_data_combined, by = "date_ymd", suffixes = c("_obs", "_sim"))
+
+  # If add_ribbon is TRUE, generate quantiles for each result set
+  if (add_ribbon) {
+    # Initialize a list to store quantile data for all sources
+    all_quantiles <- list()
+
+    for (i in seq_along(results)) {
+      result <- results[[i]]$results
+      curr_model <- model[[i]]
+
+      # Sample parameters and simulate model
+      sampled_params <- sample_params(result, n_samples)
+      simulations <- simulate_models(
+        curr_model,
+        result$param_inputs,
+        sampled_params,
+        start_date = start_date,
+        end_date = end_date
+      )
+
+      # Calculate incidence quantiles for each group
+      incidence_quantiles <- calculate_incidence_quantiles(simulations)
+      incidence_quantiles$source <- legend_labels[i] # Label quantiles with source ID
+
+      # Add quantiles to the list
+      all_quantiles[[i]] <- incidence_quantiles
+    }
+
+    # Combine all quantiles into one data frame
+    all_quantiles_combined <- do.call(rbind, all_quantiles)
+
+    # Merge quantiles with combined data once
+    combined_data <- merge(
+      combined_data,
+      all_quantiles_combined,
+      by = c("date_ymd", "source"),
+      all.x = TRUE
+    )
+  }
+
+
+
+  # Melt the combined data for plotting
   library(reshape2)
-  combined_data_long <- melt(combined_data, id.vars = "date_ymd",
+  combined_data_long <- melt(combined_data, id.vars = c("date_ymd", "source"),
                              measure.vars = c("inc_A_obs", "inc_C_obs", "inc_obs",
                                               "inc_A_sim", "inc_C_sim", "inc_sim"))
 
@@ -307,78 +352,65 @@ plot_observed_vs_simulated <- function(results, obs_cases, start_date, end_date,
   selected_groups <- unlist(lapply(groups, function(group) c(paste0(group, "_obs"), paste0(group, "_sim"))))
   combined_data_long <- combined_data_long[combined_data_long$variable %in% selected_groups, ]
 
-  # Create a mapping for facet labels to make them more descriptive
+  # Create a mapping for facet labels
   facet_labels <- c("inc_A" = "Incidence (>=5 years)", "inc_C" = "Incidence (<5 years)", "inc" = "Total Incidence")
 
-  if(is.null(plot_title)){
-    plot_title = "Observed vs Simulated Monthly Malaria Cases"
+  if (is.null(plot_title)) {
+    plot_title <- "Observed vs Simulated Monthly Malaria Cases"
   }
 
   # Plotting observed and simulated data on the same panels
   library(ggplot2)
-  p <- ggplot(combined_data_long, aes(x = date_ymd)) +
+  p <- ggplot(combined_data_long, aes(x = date_ymd, group = source, color = source)) +
     geom_point(data = subset(combined_data_long, grepl("_obs$", variable)), aes(y = value),
                color = "blue", size = 2, alpha = 0.7) +  # Observed data as points
     geom_line(data = subset(combined_data_long, grepl("_sim$", variable)), aes(y = value),
-              color = "red", size = 1) +                # Simulated data as line
+              size = 1.5) +                              # Simulated data as line
     facet_wrap(~ gsub("(_obs|_sim)", "", variable), scales = "free", ncol = 1, labeller = as_labeller(facet_labels)) +
     labs(title = plot_title,
          x = "Date",
-         y = "Number of Monthly Malaria Cases") +
+         y = "Number of Monthly Malaria Cases",
+         color = "Simulation") +
     theme_minimal() +
     theme(
-      plot.title = element_text(hjust = 0.5, size = 16, face = "bold"), # Center the plot plot_title
+      plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
       axis.title.y = element_text(size = 14, face = "bold"),
       axis.text.x = element_text(size = 12),
       axis.text.y = element_text(size = 12),
-      strip.text = element_text(size = 14, face = "bold") # Facet label size
+      strip.text = element_text(size = 14, face = "bold")
     )
 
-  # Add quantile ribbon if requested
   if (add_ribbon) {
-    # For each group, add the corresponding quantile ribbon
+    ribbon_data_list <- list()  # Store ribbon data for each group separately
+
     for (group in groups) {
-      # Filter data specifically for the selected group to add the ribbon
-      ribbon_data <- combined_data[, c("date_ymd", paste0(group, "_q01"), paste0(group, "_q99"))]
-      colnames(ribbon_data) <- c("date_ymd", "q01", "q99")
-      ribbon_data$group <- group
+      # Extract relevant quantiles for the group
+      ribbon_data <- combined_data[, c("date_ymd",
+                                       "source",
+                                       paste0(group, "_q01"),
+                                       paste0(group, "_q99"))]
+      colnames(ribbon_data) <- c("date_ymd", "source", "q01", "q99")
+      ribbon_data$variable <- group  # Add the group as a variable for faceting
 
-      # Add ribbon for the corresponding group facet
-      p <- p + geom_ribbon(
-        data = subset(ribbon_data, group == group),
-        aes(x = date_ymd, ymin = q01, ymax = q99),
-        fill = "grey",
-        alpha = 0.3,
-        inherit.aes = FALSE
-      )
+      ribbon_data_list[[group]] <- ribbon_data
     }
+
+    # Combine all ribbon data into one data frame
+    ribbon_data_combined <- do.call(rbind, ribbon_data_list)
+
+    # Add ribbons to the plot, ensuring proper filtering for facets
+    p <- p + geom_ribbon(
+      data = ribbon_data_combined,
+      aes(
+        x = date_ymd,
+        ymin = q01,
+        ymax = q99,
+        fill = source
+      ),
+      alpha = 0.3,
+      inherit.aes = FALSE
+    )
   }
-
-  # Add climate data as separate facets if requested
-  if (climate_facet && !is.null(met)) {
-    # Create the climate data frame using the updated function
-    met_long <- create_clim_df(met)
-
-    # Plot climate data in separate facets
-    p_climate <- ggplot(met_long, aes(x = date, y = value, color = variable)) +
-      geom_line(size = 1.2) +
-      scale_color_manual(values = c("temp" = "red", "rollrain" = "blue")) +
-      facet_wrap(~ variable, scales = "free_y", ncol = 1) +
-      theme_minimal() +
-      labs(y = "Climate Data", x = "Date", color = "Climate Variable") +
-      theme(
-        axis.title.y = element_text(size = 14, face = "bold"),
-        axis.text.x = element_text(size = 12),
-        axis.text.y = element_text(size = 12),
-        strip.text = element_text(size = 14, face = "bold"),
-        plot.plot_title = element_blank()
-      )
-
-    # Use patchwork to stack the incidence and climate plots
-    library(patchwork)
-    p <- p / p_climate + plot_layout(heights = c(3, 1))
-  }
-
   return(p)
 }
 

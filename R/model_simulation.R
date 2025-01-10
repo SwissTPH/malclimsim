@@ -376,19 +376,54 @@ sample_params <- function(results, n) {
 #' simulations <- simulate_models(model = data_sim, param_inputs = param_inputs,
 #'                                sampled_params = sampled_params,
 #'                                start_date = "2021-01-01", end_date = "2021-12-31")
-simulate_models <- function(model, param_inputs, sampled_params, start_date, end_date) {
+# simulate_models <- function(model, param_inputs, sampled_params, start_date, end_date) {
+#   simulations <- lapply(sampled_params, function(params) {
+#     # Make a copy of param_inputs for each simulation to prevent overwriting
+#     current_params <- param_inputs
+#
+#     # Update the copied parameters with the sampled parameters
+#     updated_params <- update_param_list(current_params, params)
+#
+#     # Run the simulation with the updated parameters
+#     sim_data <- data_sim(model, updated_params, start_date = start_date, end_date = end_date,
+#                          month = TRUE, round = FALSE, save = FALSE, month_unequal_days = FALSE)
+#     return(sim_data)
+#   })
+#   return(simulations)
+# }
+simulate_models <- function(model, param_inputs, sampled_params, start_date, end_date, prewarm_years = 2, days_per_year = 360) {
+  # Extend parameter inputs to accommodate the prewarm period
+  param_inputs_ext <- extend_time_varying_inputs(param_inputs, days_per_year = days_per_year, years_to_extend = prewarm_years)
+
+  # Calculate the prewarm start date
+  prewarm_start_date <- paste0(year(as.Date(start_date)) - prewarm_years, "-", format(as.Date(start_date), "%m-%d"))
+
+  # Run simulations with prewarming
   simulations <- lapply(sampled_params, function(params) {
     # Make a copy of param_inputs for each simulation to prevent overwriting
-    current_params <- param_inputs
+    current_params <- param_inputs_ext
 
     # Update the copied parameters with the sampled parameters
     updated_params <- update_param_list(current_params, params)
 
-    # Run the simulation with the updated parameters
-    sim_data <- data_sim(model, updated_params, start_date = start_date, end_date = end_date,
-                         month = TRUE, round = FALSE, save = FALSE, month_unequal_days = FALSE)
+    # Run the simulation for the prewarm period and the desired period
+    extended_sim_data <- data_sim(
+      model = model,
+      param_inputs = updated_params,
+      start_date = prewarm_start_date,
+      end_date = end_date,
+      month = TRUE,
+      round = FALSE,
+      save = FALSE,
+      month_unequal_days = FALSE
+    )
+
+    # Filter the simulation results to include only the desired period
+    sim_data <- extended_sim_data[extended_sim_data$date_ymd >= as.Date(start_date), ]
+
     return(sim_data)
   })
+
   return(simulations)
 }
 
