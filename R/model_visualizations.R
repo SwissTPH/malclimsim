@@ -270,13 +270,16 @@ plot_observed_vs_simulated <- function(results, obs_cases, start_date, end_date,
 
   all_sim_data <- list()
   # Ensure `model` has the same length as `results`
-  if (length(model) != length(results)) {
-    stop("The number of model must match the number of elements in results.")
-  }
+  if(is.list(model) & ((length(model) != length(results)))){
+      stop("The number of model must match the number of elements in results.")
+  }else{
+    model <- list(model)
+    results <- list(results)
+    }
 
   # Iterate through each result set and model in results and model
   for (i in seq_along(results)) {
-    result <- results[[i]]$results
+    result <- results[[i]]
     curr_model <- model[[i]]
 
     # Run the simulation with parameters that maximize log posterior
@@ -307,7 +310,8 @@ plot_observed_vs_simulated <- function(results, obs_cases, start_date, end_date,
     all_quantiles <- list()
 
     for (i in seq_along(results)) {
-      result <- results[[i]]$results
+      #result <- results[[i]]$results
+      result <- results[[i]]
       curr_model <- model[[i]]
 
       # Sample parameters and simulate model

@@ -20,8 +20,10 @@ initialize_priors <- function(param_inputs = NULL, proposal_matrix = NULL, param
   default_priors <- list(
 
     # 1. Transmission and Recovery Parameters
-    phi = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dbeta(p, 40, 12, log = TRUE)),
-    qR = list(initial = 0.2, min = 1e-6, max = 1, prior = function(p) dbeta(p, 1, 150, log = TRUE)),
+    #phi = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dbeta(p, 40, 12, log = TRUE)),
+    phi = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dunif(p, min = 0.01, max = 1, log = TRUE)),
+    qR = list(initial = 0.2, min = 1e-6, max = 1, prior = function(p) dunif(p, min = 1e-7, max = 1, log = TRUE)),
+    #qR = list(initial = 0.2, min = 1e-6, max = 1, prior = function(p) dbeta(p, 1, 150, log = TRUE)),
     qR2 = list(initial = 1, min = 1e-7, max = 1, prior = function(p) dnorm(p, mean = 0.5, sd = 0.02, log = TRUE)),
     mu_RS_C = list(initial = 1/200, min = 1/400, max = 1/120, prior = function(p) dgamma(p, shape = 2, rate = 480, log = TRUE)),
     mu_EI = list(initial = 1/8, min = 1/15, max = 1/6, prior = function(p) dgamma(p, shape = 6, rate = 63, log = TRUE)),
@@ -35,16 +37,20 @@ initialize_priors <- function(param_inputs = NULL, proposal_matrix = NULL, param
     a_R = list(initial = 0.5, min = 0.01, max = 1, prior = function(p) dbeta(p, 6, 12, log = TRUE)),
     b_R = list(initial = 3, min = -Inf, max = Inf, prior = function(p) dnorm(p, mean = 2, sd = 0.25, log = TRUE)),
     p_surv = list(initial = 0.91, min = 0.88, max = 0.97, prior = function(p) dnorm(p, mean = 0.91, sd = 0.01, log = TRUE)),
-    size = list(initial = 5.5, min = 1, max = 50, prior = function(p) dnorm(p, mean = 5.5, sd = 0.5, log = TRUE)),
-
+    #size = list(initial = 5.5, min = 1, max = 50, prior = function(p) dnorm(p, mean = 5.5, sd = 0.5, log = TRUE)),
+    size = list(initial = 5.5, min = 1, max = 50, prior = function(p) dunif(p, min = 1, max = 100, log = TRUE)),
     # 3. Intervention and Effectiveness Parameters
-    eff_SMC = list(initial = 0.6, min = 0.00, max = 1, prior = function(p) dbeta(p, 2, 2, log = TRUE)),
-    z = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dbeta(p, 4, 2, log = TRUE)),
+
+    #eff_SMC = list(initial = 0.6, min = 0.00, max = 1, prior = function(p) dbeta(p, 2, 2, log = TRUE)),
+    eff_SMC = list(initial = 0.5, min = 0.00, max = 1, prior = function(p) dunif(p, min = 0, max = 1, log = TRUE)),
+    #z = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dbeta(p, 4, 2, log = TRUE)),
+    z = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dunif(p, min = 0.01, max = 1, log = TRUE)),
     p_MH_C = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dunif(p, min = 0.01, max = 1, log = TRUE)),
     rho = list(initial = 0.2, min = 0.01, max = 0.99, prior = function(p) dunif(p, min = 0.01, max = 0.99, log = TRUE)),
 
     # Multiplicative constants (k parameters)
-    k1 = list(initial = 1, min = 0.5, max = 1.5, prior = function(p) dnorm(p, mean = 1, sd = 0.1, log = TRUE)),
+    #k1 = list(initial = 1, min = 0.01, max = 5, prior = function(p) dnorm(p, mean = 1, sd = 0.1, log = TRUE)),
+    k1 = list(initial = 1, min = 0.01, max = 100, prior = function(p) dunif(p, min = 0.001, max = 100, log = TRUE)),
     k2 = list(initial = 1, min = 0.5, max = 1.5, prior = function(p) dnorm(p, mean = 1, sd = 0.1, log = TRUE)),
     k3 = list(initial = 1, min = 0.5, max = 1.5, prior = function(p) dnorm(p, mean = 1, sd = 0.1, log = TRUE)),
     k4 = list(initial = -0.00924, min = -1, max = 1.5, prior = function(p) dnorm(p, mean = -0.00924, sd = 0.01, log = TRUE)),
@@ -112,7 +118,8 @@ initialize_priors <- function(param_inputs = NULL, proposal_matrix = NULL, param
     sigma_LT = list(initial = 1, min = 0, max = 30, prior = function(p) dnorm(p, mean = 5, sd = 3, log = TRUE)), # Gamma distribution to ensure positivity
     sigma_RT = list(initial = 1, min = 0, max = 30, prior = function(p) dnorm(p, mean = 3, sd = 3, log = TRUE)), # Gamma distribution to ensure positivity
 
-    b = list(initial = 1, min = 0.001, max = 50, prior = function(p) dgamma(p, shape = 2, rate = 1, log = TRUE))
+    #b = list(initial = 1, min = 0.001, max = 50, prior = function(p) dgamma(p, shape = 2, rate = 1, log = TRUE))
+    b = list(initial = 1, min = 0.001, max = 50, prior = function(p) dunif(p, min = 0.001, max = 50, log = TRUE))
   )
 
 

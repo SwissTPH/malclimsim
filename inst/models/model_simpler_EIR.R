@@ -14,20 +14,29 @@ dt <- 1 / steps_per_day
 time <- step + 1
 
 SMC_effect <- decay[time] * eff_SMC * cov_SMC[time]
+w <- user(0)
+SMC_effect_A <- w * SMC_effect
 #SMC_removal <- if (SMC[time] == 1) SMC_effect else 0
-SMC_removal <- user(0)
+#SMC_removal <- user(0)
+
+# # Children
+# update(SC) <- (SC * r_C) * (1 - delta_a - delta_d - (1 - SMC_effect) * mu_SE_C) + delta_b * P + mu_RS_C * RC + mu_TS * TrC
+# update(EC) <- (EC * r_C) * (1 - delta_a - delta_d - mu_EI - SMC_removal) + (1 - SMC_effect) * mu_SE_C * SC
+# update(IC) <- (IC * r_C) * (1 - delta_a - delta_d - mu_IR - SMC_removal) + (1 - fT_C) * mu_EI * EC
+# update(TrC) <- (TrC * r_C) * (1 - delta_a - delta_d - mu_TS) + fT_C * mu_EI * EC + SMC_removal * (EC + IC)
+# update(RC) <- (RC * r_C) * (1 - delta_a - delta_d - mu_RS_C) + mu_IR * IC
 
 # Children
 update(SC) <- (SC * r_C) * (1 - delta_a - delta_d - (1 - SMC_effect) * mu_SE_C) + delta_b * P + mu_RS_C * RC + mu_TS * TrC
-update(EC) <- (EC * r_C) * (1 - delta_a - delta_d - mu_EI - SMC_removal) + (1 - SMC_effect) * mu_SE_C * SC
-update(IC) <- (IC * r_C) * (1 - delta_a - delta_d - mu_IR - SMC_removal) + (1 - fT_C) * mu_EI * EC
-update(TrC) <- (TrC * r_C) * (1 - delta_a - delta_d - mu_TS) + fT_C * mu_EI * EC + SMC_removal * (EC + IC)
+update(EC) <- (EC * r_C) * (1 - delta_a - delta_d - mu_EI) + (1 - SMC_effect) * mu_SE_C * SC
+update(IC) <- (IC * r_C) * (1 - delta_a - delta_d - mu_IR) + (1 - fT_C) * mu_EI * EC
+update(TrC) <- (TrC * r_C) * (1 - delta_a - delta_d - mu_TS) + fT_C * mu_EI * EC
 update(RC) <- (RC * r_C) * (1 - delta_a - delta_d - mu_RS_C) + mu_IR * IC
 
 
 # Adults
-update(SA) <- (SA * r_A) * (1 - delta_d - mu_SE_A) + delta_a * SC + mu_RS_A * RA + mu_TS * TrA
-update(EA) <- (EA * r_A) * (1 - delta_d - mu_EI) + delta_a * EC + mu_SE_A * SA
+update(SA) <- (SA * r_A) * (1 - delta_d - (1 - SMC_effect_A) * mu_SE_A) + delta_a * SC + mu_RS_A * RA + mu_TS * TrA
+update(EA) <- (EA * r_A) * (1 - delta_d - mu_EI) + delta_a * EC +  (1 - SMC_effect_A) * mu_SE_A * SA
 update(IA) <- (IA * r_A) * (1 - delta_d - mu_IR) + delta_a * IC + (1 - fT_A) * mu_EI * EA
 update(TrA) <- (TrA * r_A) * (1 - delta_d - mu_TS) + delta_a * TrC + fT_A * mu_EI * EA
 update(RA) <- (RA * r_A) *  (1 - delta_d - mu_RS_A) + delta_a * RC + mu_IR * IA
