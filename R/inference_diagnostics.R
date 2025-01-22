@@ -10,7 +10,7 @@ plot_chains <- function(mcmc_run) {
 
 # Helper function to create a correlation plot for MCMC samples
 # - Used within MCMC_diag to show correlation structure of posterior samples
-plot_corr <- function(results) {
+plot_corr <- function(results, title = NULL) {
   suppressWarnings(suppressMessages({
     # Convert the relevant portion of results to a dataframe and sample 1000 rows
     df <- as.data.frame(results[[2]][, -(1:3)])
@@ -37,10 +37,17 @@ plot_corr <- function(results) {
       ) +
       scale_x_continuous(breaks = scales::pretty_breaks(n = 2)) +
       scale_y_continuous(breaks = scales::pretty_breaks(n = 2))
+
+    # Add title if provided
+    if (!is.null(title)) {
+      p <- p + ggtitle(title) +
+        theme(plot.title = element_text(hjust = 0.5, size = 14, face = "bold"))
+    }
   }))
 
   return(p)
 }
+
 
 #' MCMC Diagnostics
 #'
@@ -224,6 +231,8 @@ MCMC_diag <- function(results, params = c("trace", "gelman", "corr", "ess", "acf
 #' @param show_true Logical; if `TRUE`, true parameter values will be indicated on the plots if provided.
 #' @param true_value A named vector of true values for parameters (optional). Must match `params_to_estimate` if used.
 #' @param title A character string specifying the title for the entire plot layout (optional).
+#' @param show_prior
+#' @param prior_n
 #'
 #' @return A combined plot object displaying histograms of posterior distributions for each parameter,
 #' with quantiles annotated. The plot includes optional lines for true values if `show_true = TRUE`
@@ -236,7 +245,7 @@ MCMC_diag <- function(results, params = c("trace", "gelman", "corr", "ess", "acf
 #' params_to_estimate <- c("param1", "param2")
 #' dim_plot <- c(1, 2) # Arrange in 1 row, 2 columns
 #' post_plot(results, params_to_estimate, dim_plot, show_true = TRUE, true_value = c(param1 = 0.5, param2 = -0.2), title = "Posterior Distributions")
-post_plot <- function(results, params_to_estimate, dim_plot, show_true = TRUE, true_value = NULL, title = "") {
+post_plot <- function(results, params_to_estimate, dim_plot, show_true = TRUE, true_value = NULL, show_prior = FALSE, prior_n = 10000, title = "") {
   # Check if params_to_estimate is a named vector
   if (is.null(names(params_to_estimate)) || any(names(params_to_estimate) == "")) {
     stop("Error: 'params_to_estimate' must be a named vector where each parameter has an associated name.")
@@ -245,62 +254,125 @@ post_plot <- function(results, params_to_estimate, dim_plot, show_true = TRUE, t
   # Extract posterior samples
   posterior <- data.frame(results[[1]]$pars)
   post_melt <- reshape2::melt(posterior)
-  post_melt$variable2 <- rep("posterior", nrow(post_melt))
-  prior_post <- post_melt # Currently set for posterior only; prior can be added if needed
+  colnames(post_melt) <- c("variable", "value")
+  post_melt$Type <- "posterior"
+  post_melt$value.x <- post_melt$value
 
-  # Calculate quantiles for posterior distributions (0.5%, 2.5%, 50%, 97.5%, 99.5%)
+  # Create prior samples if show_prior is TRUE
+  if (show_prior) {
+    default_priors <- return_default_priors()
+    default_priors <- default_priors[names(default_priors) %in% params_to_estimate]
+
+    prior_melt <- data.frame(variable = character(),
+                             value = numeric(),
+                             Type = character(),
+                             value.x = numeric())
+
+    for (param in names(params_to_estimate)) {
+      prior <- default_priors[[param]]
+      prior_fn <- prior$prior
+
+      # Restrict prior range based on 0.5th and 99.5th percentiles of posterior
+      param_values <- post_melt$value[post_melt$variable == param]
+      posterior_min <- quantile(param_values, 0.000001)
+      posterior_max <- quantile(param_values, 0.999999)
+
+      prior_x <- seq(posterior_min, posterior_max, length.out = prior_n)
+      prior_y <- prior_fn(prior_x)
+
+      # Fix potential negative values and infinities
+      prior_y[is.infinite(prior_y)] <- 0
+
+      # Estimate posterior density to help with scaling
+      density_est <- density(param_values)
+      max_posterior_density <- max(density_est$y)
+      posterior_mode <- density_est$x[which.max(density_est$y)]
+
+      # Adjust scaling of prior using posterior density estimate
+      prior_shift <- min(prior_y) - 0.2
+      prior_y <- prior_y - prior_shift  # Shift to positive if necessary
+      prior_y <- (prior_y / max(prior_y)) * max_posterior_density * 0.8  # Scale based on density
+
+      # Restrict the prior range to match posterior range
+      prior_x <- prior_x[prior_x >= posterior_min & prior_x <= posterior_max]
+      prior_y <- prior_y[1:length(prior_x)]
+
+      prior_temp <- data.frame(variable = rep(param, length(prior_x)),
+                               value = prior_y,
+                               Type = "prior",
+                               value.x = prior_x)
+      prior_melt <- rbind(prior_melt, prior_temp)
+    }
+
+    # Combine prior and posterior data correctly
+    prior_post <- rbind(prior_melt, post_melt)
+  } else {
+    prior_post <- post_melt
+  }
+
+  # Calculate quantiles for posterior distributions
   quantiles <- apply(posterior, 2, function(x) quantile(x, probs = c(0.005, 0.025, 0.50, 0.975, 0.995)))
   quantiles_df <- as.data.frame(t(quantiles))
   colnames(quantiles_df) <- c("0.5%", "2.5%", "50%", "97.5%", "99.5%")
   rownames(quantiles_df) <- colnames(posterior)
 
-  # Set up true values if provided by user
-  if (show_true) {
+  # Prepare true values if provided
+  if (show_true && !is.null(true_value)) {
     vertical_lines <- data.frame(variable = names(true_value), line_position = as.vector(true_value))
-    vertical_lines <- vertical_lines[vertical_lines$variable %in% names(params_to_estimate),]
+    vertical_lines <- vertical_lines[vertical_lines$variable %in% names(params_to_estimate), ]
   }
 
-  # Generate a histogram plot for each parameter
+  # Generate a plot for each parameter
   plot_list <- lapply(names(params_to_estimate), function(param) {
     if (!(param %in% colnames(posterior))) {
       warning(sprintf("Parameter '%s' not found in posterior samples.", param))
       return(NULL)
     }
 
-    p <- ggplot(subset(prior_post, variable == param), aes(x = value, fill = variable2)) +
-      geom_histogram(data = subset(prior_post, variable2 == "posterior" & variable == param),
-                     aes(y = ..density..), bins = 100) + # Histogram with density normalization
-      theme_bw() + labs(x = param, y = NULL) +
-      theme(axis.text.x = element_text(size = 11),
-            axis.text.y = element_text(size = 9)) +
-      xlim(quantiles_df[param, "2.5%"], quantiles_df[param, "97.5%"]) + # Restrict x-axis to 2.5%-97.5% quantiles
+    # Filter data for current parameter
+    post_data <- subset(prior_post, Type == "posterior" & variable == param)
+
+    p <- ggplot() +
+      geom_histogram(data = post_data, aes(x = value, y = ..density.., fill = Type),
+                     bins = 100, alpha = 0.5, color = "black") +
+      theme_bw() +
+      labs(x = param, y = "Density", title = param) +
+      theme(plot.title = element_text(hjust = 0.5)) +  # Center the title
+      scale_fill_manual(values = c("posterior" = "blue")) +
+      xlim(quantile(post_data$value, 0.00001), quantile(post_data$value, 0.99999)) +  # Exclude outliers
       scale_x_continuous(breaks = scales::extended_breaks(n = 3)) +
       scale_y_continuous(breaks = scales::extended_breaks(n = 3)) +
-      geom_vline(xintercept = quantiles_df[param, "2.5%"], color = "blue", linetype = "dashed", size = 0.5) + # 2.5% quantile
-      geom_vline(xintercept = quantiles_df[param, "50%"], color = "blue", linetype = "solid", size = 0.5) + # Median
-      geom_vline(xintercept = quantiles_df[param, "97.5%"], color = "blue", linetype = "dashed", size = 0.5) # 97.5% quantile
+      geom_vline(xintercept = quantiles_df[param, "2.5%"], color = "blue", linetype = "dashed", size = 0.5) +
+      geom_vline(xintercept = quantiles_df[param, "50%"], color = "blue", linetype = "solid", size = 0.5) +
+      geom_vline(xintercept = quantiles_df[param, "97.5%"], color = "blue", linetype = "dashed", size = 0.5)
 
-    # Add vertical line for true value if specified
-    if (show_true) {
-      p <- p + geom_vline(data = subset(vertical_lines, variable == param), aes(xintercept = line_position),
-                          color = "black", linetype = "solid", size = 0.8)
+    # Add prior as a shaded area if show_prior is TRUE
+    if (show_prior) {
+      prior_data <- subset(prior_post, Type == "prior" & variable == param)
+      p <- p +
+        geom_ribbon(data = prior_data, aes(x = value.x, ymin = 0, ymax = value, fill = Type), alpha = 0.3) +
+        scale_fill_manual(values = c("prior" = "red", "posterior" = "blue")) +
+        xlim(quantile(post_data$value, 0.00001), quantile(post_data$value, 0.99999)) +  # Exclude outliers
+        labs(title = param)
     }
 
-    # Remove the legend if show_true is FALSE
-    if (!show_true) {
-      p <- p + theme(legend.position = "none")
+    # Add true value line if specified
+    if (show_true && !is.null(true_value)) {
+      p <- p + geom_vline(data = subset(vertical_lines, variable == param), aes(xintercept = line_position),
+                          color = "black", linetype = "solid", size = 0.8)
     }
 
     p
   })
 
-  # Remove any NULL plots (if parameters are missing)
+  # Remove NULL plots (if parameters are missing)
   plot_list <- Filter(Negate(is.null), plot_list)
 
   # Combine individual parameter plots into a grid
   combined_plot <- patchwork::wrap_plots(plot_list, ncol = dim_plot[2]) +
-    patchwork::plot_annotation(title = title)
+    plot_annotation(title = title, theme = theme(plot.title = element_text(hjust = 0.5)))
 
   return(combined_plot)
 }
+
 

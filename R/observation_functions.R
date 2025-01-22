@@ -45,8 +45,8 @@ generate_incidence_comparison <- function(month, age_for_inf, incidence_df) {
       mu_A <- state["month_inc_A", , drop = TRUE]
       size <- pars$size
       if (size == 0) { size <- 1e30 }
-      return(0.12 * dnbinom(x = incidence_observed_C, mu = mu_C, size = size, log = TRUE) +
-               0.88 * dnbinom(x = incidence_observed_A, mu = mu_A, size = size, log = TRUE))
+      return(dnbinom(x = incidence_observed_C, mu = mu_C, size = size, log = TRUE) +
+               dnbinom(x = incidence_observed_A, mu = mu_A, size = size, log = TRUE))
     })
   }
 

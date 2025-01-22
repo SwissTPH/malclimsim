@@ -261,7 +261,7 @@ create_sim_df <- function(results, n, dates_sim, dates_obs, model){
 plot_observed_vs_simulated <- function(results, obs_cases, start_date, end_date, model,
                                        add_ribbon = TRUE, n_samples = 100, groups = c("inc_A", "inc_C", "inc"),
                                        met = NULL, climate_facet = FALSE, prewarm_years = 2, days_per_year = 360,
-                                       plot_title = NULL,
+                                       plot_title = NULL, multiple_results = TRUE,
                                        legend_labels = c("Original Model - True Temp",
                                                          "Original Model - Constant Temp",
                                                          "Simplified EIR - True Temp") ) {
@@ -269,24 +269,65 @@ plot_observed_vs_simulated <- function(results, obs_cases, start_date, end_date,
   prewarm_start_date <- paste0(year(as.Date(start_date)) - prewarm_years, "-", format(as.Date(start_date), "%m-%d"))
 
   all_sim_data <- list()
-  # Ensure `model` has the same length as `results`
-  if(is.list(model) & ((length(model) != length(results)))){
-      stop("The number of model must match the number of elements in results.")
-  }else{
-    model <- list(model)
-    results <- list(results)
-    }
+
+  # results_form_ok <- tryCatch(
+  #   {
+  #     class(results[[1]][[1]][[1]]) == "mcstate_pmcmc"
+  #   },
+  #   error = function(e) FALSE
+  # )
+  #
+  # model_form_ok <- tryCatch(
+  #   {
+  #     all(class(model[[1]]) == c("dust_generator", "R6ClassGenerator"))
+  #   },
+  #   error = function(e) FALSE
+  # )
+  #
+  # err_message <- paste(
+  #   "Results Format Okay:", results_form_ok,
+  #   "Model Format Okay:", model_form_ok,
+  #   "If single result and/or model, try putting inside a list"
+  # )
+  #
+  # if (!(results_form_ok | model_form_ok)) {
+  #   stop(err_message)
+  # }
+  # # Ensure `model` has the same length as `results`
+  # if(is.list(model) & ((length(model) != length(results)))){
+  #     stop("The number of model must match the number of elements in results.")
+  # }else{
+  #   model <- list(model)
+  #   results <- list(results)
+  #   }
 
   # Iterate through each result set and model in results and model
   for (i in seq_along(results)) {
-    result <- results[[i]]
-    curr_model <- model[[i]]
+    if(multiple_results){
+      result <- results[[i]]$results
+      curr_model <- try(model[[i]], silent = TRUE)
+      if(inherits(curr_model, "try-error")){
+        stop("Unable to extract correct model. It is possible that `model' is in the wrong format.")
+      }
+    }else{
+      result <- results[[i]]
+      curr_model <- model
+      }
 
     # Run the simulation with parameters that maximize log posterior
-    sim_data <- simulate_with_max_posterior_params(result, start_date = start_date,
-                                                   end_date = end_date, model = curr_model,
-                                                   prewarm_years = prewarm_years,
-                                                   days_per_year = days_per_year)
+    sim_data <- try(simulate_with_max_posterior_params(result, start_date = start_date,
+                                                      end_date = end_date, model = curr_model,
+                                                      prewarm_years = prewarm_years,
+                                                      days_per_year = days_per_year), silent = TRUE)
+    if(inherits(sim_data, "try-error")){
+      stop("Unable to simulate from sim_data function. It is possible that `results' is in the wrong format.")
+      return(err_sim)
+    }
+
+    #sim_data <- simulate_with_max_posterior_params(result, start_date = start_date,
+    #                                               end_date = end_date, model = curr_model,
+    #                                               prewarm_years = prewarm_years,
+    #                                               days_per_year = days_per_year)
 
     # Filter simulation data to the desired period
     sim_data <- sim_data[sim_data$date_ymd >= as.Date(start_date), ]
@@ -310,9 +351,19 @@ plot_observed_vs_simulated <- function(results, obs_cases, start_date, end_date,
     all_quantiles <- list()
 
     for (i in seq_along(results)) {
+      if(multiple_results){
+        result <- results[[i]]$results
+        curr_model <- try(model[[i]], silent = TRUE)
+        if(inherits(curr_model, "try-error")){
+          stop("Unable to extract correct model. It is possible that `model' is in the wrong format.")
+        }
+      }else{
+        result <- results[[i]]
+        curr_model <- model
+      }
       #result <- results[[i]]$results
-      result <- results[[i]]
-      curr_model <- model[[i]]
+      #result <- results[[i]]$results
+      #curr_model <- model[[i]]
 
       # Sample parameters and simulate model
       sampled_params <- sample_params(result, n_samples)

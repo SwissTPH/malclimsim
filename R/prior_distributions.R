@@ -1,28 +1,16 @@
-# Define a function to initialize priors based on parameters in the model
-initialize_priors <- function(param_inputs = NULL, proposal_matrix = NULL, params_to_estimate = NULL) {
-  if(is.null(param_inputs) | is.null(proposal_matrix) | is.null(params_to_estimate)){
-    stop("Values required for param_inputs, proposal_matrix, and params_to_estimate")
-  }
-
-  # Step 1: Extract parameter names from the proposal matrix to ensure we match the model
-  param_names <- rownames(proposal_matrix)
-
-  # Step 2: Get the valid parameters (those that exist in both param_inputs and proposal_matrix)
-  valid_params_in_model <- names(param_inputs)[names(param_inputs) %in% param_names]
-
-  # Step 3: Ensure we include parameters from params_to_estimate
-  valid_params <- unique(c(valid_params_in_model, params_to_estimate))
-
-  # Step 4: Filter out parameters that are vectors (i.e., those whose length is greater than 1)
-  valid_params <- valid_params[sapply(param_inputs[valid_params], length) == 1]
-
-  # Define the prior functions and parameter bounds as specified in the model
+#' Return Default Priors Used for Inference Procedure
+#'
+#' @return
+#' @export
+#'
+#' @examples
+return_default_priors <- function(){
   default_priors <- list(
 
     # 1. Transmission and Recovery Parameters
     #phi = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dbeta(p, 40, 12, log = TRUE)),
-    phi = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dunif(p, min = 0.01, max = 1, log = TRUE)),
-    qR = list(initial = 0.2, min = 1e-6, max = 1, prior = function(p) dunif(p, min = 1e-7, max = 1, log = TRUE)),
+    phi = list(initial = 0.2, min = 0.01, max = 2, prior = function(p) dunif(p, min = 0.01, max = 2, log = TRUE)),
+    qR = list(initial = 0.2, min = 1e-6, max = 2, prior = function(p) dunif(p, min = 1e-7, max = 2, log = TRUE)),
     #qR = list(initial = 0.2, min = 1e-6, max = 1, prior = function(p) dbeta(p, 1, 150, log = TRUE)),
     qR2 = list(initial = 1, min = 1e-7, max = 1, prior = function(p) dnorm(p, mean = 0.5, sd = 0.02, log = TRUE)),
     mu_RS_C = list(initial = 1/200, min = 1/400, max = 1/120, prior = function(p) dgamma(p, shape = 2, rate = 480, log = TRUE)),
@@ -31,7 +19,7 @@ initialize_priors <- function(param_inputs = NULL, proposal_matrix = NULL, param
     phi_A = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dbeta(p, 40, 12, log = TRUE)),
     mu_TS = list(initial = 0.2, min = 0, max = 2, prior = function(p) dunif(p, min = 0, max = 2, log = TRUE)),
     mu_IR = list(initial = 1/5, min = 0.001, max = 1, prior = function(p) dunif(p, min = 0.001, max = 1, log = TRUE)),
-    fT_C = list(initial = 0.27, min = 0.001, max = 1, prior = function(p) dunif(p, min = 0.001, max = 1, log = TRUE)),
+    fT_C = list(initial = 0.27, min = 0.001, max = 2, prior = function(p) dunif(p, min = 0.001, max = 2, log = TRUE)),
 
     # 2. Survival and Population Parameters
     a_R = list(initial = 0.5, min = 0.01, max = 1, prior = function(p) dbeta(p, 6, 12, log = TRUE)),
@@ -99,11 +87,11 @@ initialize_priors <- function(param_inputs = NULL, proposal_matrix = NULL, param
     z_A = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dbeta(p, 0.125, 0.125, log = TRUE)),
     z_C2 = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dbeta(p, 0.125, 0.125, log = TRUE)),
     D <- list(initial = 2, min = 1, max = 200, integer = TRUE, prior = function(p) dunif(p, min = 1, max = 200, log = TRUE)),
-    lag_R = list(initial = 0, min = 0, max = 100, integer = TRUE, prior = function(p) dunif(p, min = 0, max = 100, log = TRUE)),
-    lag_T = list(initial = 0, min = 0, max = 100, integer = TRUE, prior = function(p) dunif(p, min = 0, max = 100, log = TRUE)),
+    lag_R = list(initial = 0, min = 0, max = 200, integer = TRUE, prior = function(p) dunif(p, min = 0, max = 200, log = TRUE)),
+    lag_T = list(initial = 0, min = 0, max = 200, integer = TRUE, prior = function(p) dunif(p, min = 0, max = 200, log = TRUE)),
 
     # Gamma distribution to ensure positivity
-    alpha = list(initial = 2.5, min = 0, max = 1000, prior = function(p) dgamma(p, shape = 2, rate = 0.5, log = TRUE)),
+    alpha = list(initial = 2.5, min = 0, max = 1000, prior = function(p) dunif(p, min = 0, max = 1000, log = TRUE)),
 
     # T_opt - Must be greater than 0, likely between 24 and 32
     T_opt = list(initial = 30.4, min = 0, max = 40, prior = function(p) dnorm(p, mean = 26.12, sd = 0.5, log = TRUE)),
@@ -121,8 +109,31 @@ initialize_priors <- function(param_inputs = NULL, proposal_matrix = NULL, param
     #b = list(initial = 1, min = 0.001, max = 50, prior = function(p) dgamma(p, shape = 2, rate = 1, log = TRUE))
     b = list(initial = 1, min = 0.001, max = 50, prior = function(p) dunif(p, min = 0.001, max = 50, log = TRUE))
   )
+  return(default_priors)
+}
 
 
+# Define a function to initialize priors based on parameters in the model
+initialize_priors <- function(param_inputs = NULL, proposal_matrix = NULL, params_to_estimate = NULL) {
+  if(is.null(param_inputs) | is.null(proposal_matrix) | is.null(params_to_estimate)){
+    stop("Values required for param_inputs, proposal_matrix, and params_to_estimate")
+  }
+
+  # Step 1: Extract parameter names from the proposal matrix to ensure we match the model
+  param_names <- rownames(proposal_matrix)
+
+  # Step 2: Get the valid parameters (those that exist in both param_inputs and proposal_matrix)
+  valid_params_in_model <- names(param_inputs)[names(param_inputs) %in% param_names]
+
+  # Step 3: Ensure we include parameters from params_to_estimate
+  valid_params <- unique(c(valid_params_in_model, params_to_estimate))
+
+  # Step 4: Filter out parameters that are vectors (i.e., those whose length is greater than 1)
+  valid_params <- valid_params[sapply(param_inputs[valid_params], length) == 1]
+
+  # Define the prior functions and parameter bounds as specified in the model
+
+  default_priors <- return_default_priors()
 
   # Initialize an empty list to store priors for each parameter in the proposal matrix
   priors <- list()
@@ -162,12 +173,45 @@ initialize_priors <- function(param_inputs = NULL, proposal_matrix = NULL, param
 }
 
 
+#' #' View Default Priors
+#' #'
+#' #' This function displays the default priors and their details, including initial values, min/max bounds, and prior distributions.
+#' #'
+#' #' @param param_inputs List of input parameters for the model.
+#' #' @param proposal_matrix Covariance matrix for the MCMC proposal distribution.
+#' #' @param params_to_estimate Character vector specifying which parameters' priors should be viewed.
+#' #' @param priors List of priors to view. If NULL, the default priors will be displayed.
+#' #' @return A data frame containing the details of each prior specified in params_to_estimate.
+#' #' @export
+#' #' @examples
+#' #' view_priors(param_inputs, proposal_matrix, params_to_estimate = c("a_R", "b_R", "qR", "z", "eff_SMC", "phi", "size"))
+#' view_priors <- function(param_inputs, proposal_matrix, params_to_estimate, priors = NULL) {
+#'   if (is.null(priors)) {
+#'     priors <- initialize_priors(param_inputs, proposal_matrix, params_to_estimate)
+#'   }
+#'
+#'   # Filter the priors to only include those specified in params_to_estimate
+#'   filtered_priors <- priors[names(priors) %in% params_to_estimate]
+#'
+#'   # Convert the filtered priors list to a data frame for easy viewing
+#'   priors_df <- do.call(rbind, lapply(filtered_priors, function(prior) {
+#'     data.frame(
+#'       Name = prior$name,
+#'       Initial = prior$initial,
+#'       Min = prior$min,
+#'       Max = prior$max,
+#'       Description = paste(deparse(prior$prior), collapse = " ")
+#'     )
+#'   }))
+#'
+#'   return(priors_df)
+#' }
+
+
 #' View Default Priors
 #'
 #' This function displays the default priors and their details, including initial values, min/max bounds, and prior distributions.
 #'
-#' @param param_inputs List of input parameters for the model.
-#' @param proposal_matrix Covariance matrix for the MCMC proposal distribution.
 #' @param params_to_estimate Character vector specifying which parameters' priors should be viewed.
 #' @param priors List of priors to view. If NULL, the default priors will be displayed.
 #' @return A data frame containing the details of each prior specified in params_to_estimate.
