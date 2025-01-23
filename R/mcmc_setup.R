@@ -30,10 +30,9 @@ create_mcmc_params <- function(stage = "stage1",
                                acceptance_target = 0.234, forget_rate = 0.6, forget_end = Inf,
                                adapt_end = Inf, pre_diminish = 40000,
                                n_steps = 10000, n_burnin = 0, n_chains = 4,
-                               n_workers = 4, n_threads_total = 8
-) {
+                               n_workers = 4, n_threads_total = 8)
+{
   if(is.null(stage)){
-    # Define adaptive proposal control
     adaptive_param <- adaptive_proposal_control(
       initial_vcv_weight = initial_vcv_weight,
       initial_scaling = initial_scaling,
@@ -48,7 +47,6 @@ create_mcmc_params <- function(stage = "stage1",
       pre_diminish = pre_diminish
     )
 
-    # Define MCMC control parameters
     control_params <- list(
       n_steps = n_steps,
       n_burnin = n_burnin,
@@ -56,7 +54,6 @@ create_mcmc_params <- function(stage = "stage1",
       n_workers = n_workers,
       n_threads_total = n_threads_total
     )
-
   }
 
   if(stage == "stage1"){
@@ -71,13 +68,10 @@ create_mcmc_params <- function(stage = "stage1",
       forget_rate = 0.6,
       forget_end = Inf,
       adapt_end = Inf,
-      pre_diminish = 40000,
-      n_steps = 40000,
-      n_burnin = 0,
-      n_chains = 4,
-      n_workers = 4,
-      n_threads_total = 8
+      pre_diminish = 40000
     )
+
+    control_params <- list(n_steps = 40000, n_burnin = 0, n_chains = 4, n_workers = 4, n_threads_total = 8)
   }
 
   if(stage == "stage2"){
@@ -92,18 +86,15 @@ create_mcmc_params <- function(stage = "stage1",
       forget_rate = 0.4,
       forget_end = Inf,
       adapt_end = Inf,
-      pre_diminish = 20000,
-      n_steps = 40000,
-      n_burnin = 0,
-      n_chains = 4,
-      n_workers = 4,
-      n_threads_total = 8
+      pre_diminish = 20000
     )
+
+    control_params <- list(n_steps = 40000, n_burnin = 0, n_chains = 4, n_workers = 4, n_threads_total = 8)
   }
 
   if(stage == "noadapt"){
     adaptive_param <- adaptive_proposal_control(
-      initial_vcv_weight = 5000,
+      initial_vcv_weight = 500,
       initial_scaling = 1,
       initial_scaling_weight = NULL,
       min_scaling = 0,
@@ -113,20 +104,18 @@ create_mcmc_params <- function(stage = "stage1",
       forget_rate = 0.4,
       forget_end = Inf,
       adapt_end = 20000,
-      pre_diminish = 0,
-      n_steps = 100000,
-      n_burnin = 0,
-      n_chains = 1,
-      n_workers = 1
+      pre_diminish = 0
     )
+
+    control_params <- list(n_steps = 100000, n_burnin = 0, n_chains = 3, n_workers = 3, n_threads_total = 6)
   }
 
-  # Return a list with the adaptive proposal and MCMC control parameters
   return(list(
     adaptive_params = adaptive_param,
     control_params = control_params
   ))
 }
+
 
 
 #' Create Starting Values for Parameters
@@ -159,9 +148,9 @@ create_start_values <- function(params_to_estimate, control_params, min_max_star
   if (is.null(min_max_start_values)) {
     min_max_start_values <- list(
       mu_EI = c(1/14, 1/8), qR = c(0.2, 0.7), qR2 = c(0.5, 2), a_R = c(0.4, 0.8), b_R = c(1, 3),
-      eff_SMC = c(0.2, 0.8), s = c(0.2, 0.8), phi = c(0.6, 1.5), k_par = c(0.6, 0.8),
+      eff_SMC = c(0.2, 0.8), s = c(0.2, 0.8), phi = c(0.6, 0.9), k_par = c(0.6, 0.8),
       delta_temp = c(-4, 0), mu_RS_C = c(1/350, 1/250), z = c(0.1, 0.7), z_A = c(0.2, 0.6),
-      z_C2 = c(0.2, 0.6), rho = c(0.3, 0.9), eta = c(0.1, 0.9), size = c(5, 30),
+      z_C2 = c(0.2, 0.6), rho = c(0.3, 0.9), eta = c(0.1, 0.9), size = c(5,30), size_1 = c(5, 30), size_2 = c(5, 30),
       phi_C2 = c(0.2, 0.6), phi_A = c(0.2, 0.6), tau = c(0.2, 0.6), p_surv = c(0.89, 0.92),
       mu_IR = c(1/10, 1/2), shift1 = c(1, 30), shift2 = c(1, 30), kappa = c(0.2, 0.6), fT_C = c(0.1, 0.7),
       # Multiplicative constants (k parameters)
@@ -215,6 +204,42 @@ create_start_values <- function(params_to_estimate, control_params, min_max_star
   return(start_values)
 }
 
+# create_proposal_matrix <- function(params_to_estimate, proposal_variance = NULL, model, param_inputs) {
+#
+#   # Retrieve all parameter names from the model
+#   model_instance <- model$new(pars = param_inputs, time = 0, n_particles = 1)
+#   param_names <- intersect(names(param_inputs), names(model_instance$param()))
+#   param_names <- param_names[sapply(param_inputs[param_names], length) == 1]
+#
+#   # Filter params_to_estimate to include only model parameters
+#   params_to_estimate <- intersect(params_to_estimate, param_names)
+#
+#   # Default proposal_variance if NULL, providing predefined variances for each parameter
+#   if (is.null(proposal_variance)) {
+#     proposal_variance <- list(
+#       mu_EI = 0.1, qR = 0.1, qR2 = 0.1, a_R = 0.2, b_R = 0.2, eff_SMC = 0.1, s = 0.3,
+#       phi = 0.1, k_par = 0.1, delta_temp = 0.1, mu_RS_C = 0.1, z = 0.1,
+#       z_A = 0.1, z_C2 = 0.1, rho = 0.1, eta = 0.1, size = 0.1, size_1 = 0.1, size_2 = 0.1, phi_C2 = 0.1,
+#       phi_A = 0.1, tau = 0.1, p_surv = 0.1, mu_IR = 0.1, shift1 = 0.1,
+#       shift2 = 0.1, kappa = 0.1, fT_C = 0.1, lag_T = 80, lag_R = 80
+#     )
+#   }
+#
+#   # Initialize the proposal matrix with small default variance (0.01) for all parameters
+#   proposal_matrix <- diag(0.01, length(param_names))
+#   rownames(proposal_matrix) <- param_names
+#   colnames(proposal_matrix) <- param_names
+#
+#   # Update the diagonal elements with the specified proposal variances
+#   for (name in params_to_estimate) {
+#     proposal_matrix[name, name] <- proposal_variance[[name]] %||% 0.1  # Default to 0.1 if not specified
+#   }
+#
+#   return(proposal_matrix)
+# }
+
+
+
 #' Create a Proposal Matrix
 #'
 #' This function generates a proposal matrix for use in MCMC methods, where each parameter has its own proposal variance.
@@ -227,43 +252,6 @@ create_start_values <- function(params_to_estimate, control_params, min_max_star
 #' @return A square matrix with dimensions equal to the number of parameters, with diagonal elements corresponding to the proposal variances for each parameter.
 #'
 #' @export
-create_proposal_matrix <- function(params_to_estimate, proposal_variance = NULL, model, param_inputs) {
-
-  # Retrieve all parameter names from the model
-  model_instance <- model$new(pars = param_inputs, time = 0, n_particles = 1)
-  param_names <- intersect(names(param_inputs), names(model_instance$param()))
-  param_names <- param_names[sapply(param_inputs[param_names], length) == 1]
-
-  # Filter params_to_estimate to include only model parameters
-  params_to_estimate <- intersect(params_to_estimate, param_names)
-
-  # Default proposal_variance if NULL, providing predefined variances for each parameter
-  if (is.null(proposal_variance)) {
-    proposal_variance <- list(
-      mu_EI = 0.1, qR = 0.1, qR2 = 0.1, a_R = 0.2, b_R = 0.2, eff_SMC = 0.1, s = 0.3,
-      phi = 0.1, k_par = 0.1, delta_temp = 0.1, mu_RS_C = 0.1, z = 0.1,
-      z_A = 0.1, z_C2 = 0.1, rho = 0.1, eta = 0.1, size = 0.1, phi_C2 = 0.1,
-      phi_A = 0.1, tau = 0.1, p_surv = 0.1, mu_IR = 0.1, shift1 = 0.1,
-      shift2 = 0.1, kappa = 0.1, fT_C = 0.1
-    )
-  }
-
-  # Initialize the proposal matrix with small default variance (0.01) for all parameters
-  proposal_matrix <- diag(0.01, length(param_names))
-  rownames(proposal_matrix) <- param_names
-  colnames(proposal_matrix) <- param_names
-
-  # Update the diagonal elements with the specified proposal variances
-  for (name in params_to_estimate) {
-    proposal_matrix[name, name] <- proposal_variance[[name]] %||% 0.1  # Default to 0.1 if not specified
-  }
-
-  return(proposal_matrix)
-}
-
-
-
-
 create_proposal_matrix <- function(params_to_estimate, proposal_variance = NULL, correlation_matrix = NULL, model, param_inputs) {
 
   # Retrieve all parameter names from the model
@@ -279,9 +267,9 @@ create_proposal_matrix <- function(params_to_estimate, proposal_variance = NULL,
     proposal_variance <- list(
       mu_EI = 0.1, qR = 0.1, qR2 = 0.1, a_R = 0.2, b_R = 0.2, eff_SMC = 0.1, s = 0.3,
       phi = 0.1, k_par = 0.1, delta_temp = 0.1, mu_RS_C = 0.1, z = 0.1,
-      z_A = 0.1, z_C2 = 0.1, rho = 0.1, eta = 0.1, size = 0.1, phi_C2 = 0.1,
+      z_A = 0.1, z_C2 = 0.1, rho = 0.1, eta = 0.1, size = 5, size_1 = 5, size_2 = 5, phi_C2 = 0.1,
       phi_A = 0.1, tau = 0.1, p_surv = 0.1, mu_IR = 0.1, shift1 = 0.1,
-      shift2 = 0.1, kappa = 0.1, fT_C = 0.1
+      shift2 = 0.1, kappa = 0.1, fT_C = 0.1, lag_T = 800, lag_R = 800, alpha = 10
     )
   }
 
@@ -352,19 +340,6 @@ create_proposal_matrix <- function(params_to_estimate, proposal_variance = NULL,
 # proposal_file <- "C:/Users/putnni/switchdrive/Chad/Data/model-inputs/proposal_matrix_both_ages_simplified_EIR.csv"
 # proposal_matrix_simp <- read.csv(proposal_file)
 #
-#' Title
-#'
-#' @param results list: results of inf_run function
-#' @param S_prev numeric: number of previous steps to include in calculation
-#' @param save boolean: whether or not to save the results
-#' @param param_names list: list of model parameters
-#' @param file_proposal character: file path for proposal cov matrix
-#' @param file_start character: file path for chain start values
-#'
-#' @return
-#' @export
-#'
-#' @examples
 extract_vcv <- function(results, S_prev, save = TRUE, param_names,
                         file_proposal = "", file_start = "") {
   begin_i <- (nrow(results[[2]]) - S_prev)
@@ -402,6 +377,69 @@ extract_vcv <- function(results, S_prev, save = TRUE, param_names,
 
   return(list(start_values, proposal_matrix))
 }
+
+#' Title
+#'
+#' @param results list: results of inf_run function
+#' @param S_prev numeric: number of previous steps to include in calculation
+#' @param save boolean: whether or not to save the results
+#' @param param_names list: list of model parameters
+#' @param file_proposal character: file path for proposal cov matrix
+#' @param file_start character: file path for chain start values
+#'
+#' @return
+#' @export
+#'
+#' @examples
+extract_vcv <- function(results, S_prev, save = TRUE, param_names,
+                        file_proposal = "", file_start = "") {
+  # Extract the MCMC parameters and chain identifiers
+  mcmc_pars <- results$mcmc_run$pars
+  mcmc_chains <- results$mcmc_run$chain
+
+  # Get the number of chains
+  unique_chains <- unique(mcmc_chains)
+
+  # Select S_prev subset from each chain
+  selected_pars_list <- lapply(unique_chains, function(chain) {
+    chain_indices <- which(mcmc_chains == chain)
+    chain_subset <- tail(chain_indices, S_prev)
+    mcmc_pars[chain_subset, ]
+  })
+
+  selected_pars <- do.call(rbind, selected_pars_list)
+
+  # Compute the median across all chains for each parameter
+  restart_values <- apply(selected_pars, 2, median)
+
+  start_values <- matrix(NA, nrow = length(restart_values), ncol = 1)
+  start_values[, 1] <- restart_values
+  rownames(start_values) <- colnames(selected_pars)
+
+  # Compute the variance-covariance matrix considering all chains
+  int_vcv <- cov(selected_pars)
+
+  proposal_matrix <- diag(0.1, length(param_names))
+  colnames(proposal_matrix) <- param_names
+  rownames(proposal_matrix) <- param_names
+
+  for (row_name in rownames(int_vcv)) {
+    for (col_name in colnames(int_vcv)) {
+      i <- which(rownames(proposal_matrix) == row_name)
+      j <- which(colnames(proposal_matrix) == col_name)
+      proposal_matrix[i, j] <- int_vcv[row_name, col_name]
+    }
+  }
+
+  if (save) {
+    saveRDS(proposal_matrix, file_proposal)
+    saveRDS(start_values, file_start)
+  }
+
+  return(list(start_values, proposal_matrix))
+}
+
+
 
 reorder_start_values <- function(start_values, param_priors) {
   # Get the order of parameters based on names(param_priors)

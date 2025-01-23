@@ -445,24 +445,24 @@ calculate_incidence_quantiles <- function(simulations) {
 
   # Calculate quantiles along rows (for each time point) for each group
   quantiles_inc_A <- apply(inc_A_data, 1, function(x) {
-    c(quantile(x, probs = 0.01), quantile(x, probs = 0.99))
+    c(quantile(x, probs = 0.005), quantile(x, probs = 0.995))
   })
   quantiles_inc_C <- apply(inc_C_data, 1, function(x) {
-    c(quantile(x, probs = 0.01), quantile(x, probs = 0.99))
+    c(quantile(x, probs = 0.005), quantile(x, probs = 0.995))
   })
   quantiles_inc <- apply(inc_data, 1, function(x) {
-    c(quantile(x, probs = 0.01), quantile(x, probs = 0.99))
+    c(quantile(x, probs = 0.005), quantile(x, probs = 0.995))
   })
 
   # Format the output into a data frame
   quantiles_df <- data.frame(
     date_ymd = simulations[[1]]$date_ymd,
-    inc_A_q01 = quantiles_inc_A[1, ],
-    inc_A_q99 = quantiles_inc_A[2, ],
-    inc_C_q01 = quantiles_inc_C[1, ],
-    inc_C_q99 = quantiles_inc_C[2, ],
-    inc_q01 = quantiles_inc[1, ],
-    inc_q99 = quantiles_inc[2, ]
+    inc_A_q005 = quantiles_inc_A[1, ],
+    inc_A_q995 = quantiles_inc_A[2, ],
+    inc_C_q005 = quantiles_inc_C[1, ],
+    inc_C_q995 = quantiles_inc_C[2, ],
+    inc_q005 = quantiles_inc[1, ],
+    inc_q995 = quantiles_inc[2, ]
   )
 
   return(quantiles_df)

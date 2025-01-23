@@ -27,55 +27,90 @@ generate_incidence_comparison <- function(month, age_for_inf, incidence_df) {
 
   # Set up the comparison function based on conditions
   if(month && age_for_inf == 'total') {
-    return(function(state, observed, pars = c("size")) {
+    return(function(state, observed, pars = c("size_1")) {
       incidence_observed_total <- observed$inc
       mu_total <- state["month_inc_total", , drop = TRUE]  # Cumulative monthly incidence
-      size <- pars$size
-      if (size == 0) { size <- 1e30 }
-      return(dnbinom(x = incidence_observed_total, mu = mu_total, size = size, log = TRUE))
+      size_1 <- pars$size_1
+      if (size_1 == 0) { size_1 <- 1e30 }
+      return(dnbinom(x = incidence_observed_total, mu = mu_total, size = size_1, log = TRUE))
     })
   }
 
 
   if(month && age_for_inf == 'sep_ages') {
-    return(function(state, observed, pars = c("size")) {
+    return(function(state, observed, pars = c("size_1", "size_2")) {
       incidence_observed_C <- observed$inc_C
       incidence_observed_A <- observed$inc_A
       mu_C <- state["month_inc_C", , drop = TRUE]
       mu_A <- state["month_inc_A", , drop = TRUE]
-      size <- pars$size
-      if (size == 0) { size <- 1e30 }
-      return(dnbinom(x = incidence_observed_C, mu = mu_C, size = size, log = TRUE) +
-               dnbinom(x = incidence_observed_A, mu = mu_A, size = size, log = TRUE))
+      size_1 <- pars$size_1
+      size_2 <- pars$size_2
+      if (size_1 == 0) { size_1 <- 1e5 }
+      if (size_2 == 0) { size_2 <- 1e5 }
+      ll_C <- dnbinom(x = incidence_observed_C, mu = mu_C, size = size_1, log = TRUE)
+      ll_A <- dnbinom(x = incidence_observed_A, mu = mu_A, size = size_2, log = TRUE)
+      if(is.na(mu_C)){ll_C <- 0}
+      if(is.na(mu_A)){ll_A <- 0}
+      #print(paste("size_1:", round(size_1, 2), "size_2:",
+      #            round(size_2, 2), "mu_C:", round(mu_C, 2), "mu_A:",
+      #            round(mu_A, 2), "obs_C:", incidence_observed_C,
+      #            "obs_A:", incidence_observed_A))
+      return(ll_C + ll_A)
     })
   }
 
   if(month && age_for_inf == 'all_ages') {
-    return(function(state, observed, pars = c("size")) {
+    return(function(state, observed, pars = c("size_1", "size_2")) {
       incidence_observed_C1 <- observed$inc_C1
       incidence_observed_C2 <- observed$inc_C2
       incidence_observed_A <- observed$inc_A
       mu_C1 <- state["month_inc_C1", , drop = TRUE]
       mu_C2 <- state["month_inc_C2", , drop = TRUE]
       mu_A <- state["month_inc_A", , drop = TRUE]
-      size <- pars$size
-      if (size == 0) { size <- 1e30 }
-      return(dnbinom(x = incidence_observed_C1, mu = mu_C1, size = size, log = TRUE) +
-               dnbinom(x = incidence_observed_C2, mu = mu_C2, size = size, log = TRUE) +
-               dnbinom(x = incidence_observed_A, mu = mu_A, size = size, log = TRUE))
+      size_1 <- pars$size_1
+      size_2 <- pars$size_2
+      if (size_1 == 0) { size_1 <- 1e30 }
+      if (size_2 == 0) { size_2 <- 1e30 }
+      return(dnbinom(x = incidence_observed_C1, mu = mu_C1, size = size_1, log = TRUE) +
+               dnbinom(x = incidence_observed_C2, mu = mu_C2, size = size_1, log = TRUE) +
+               dnbinom(x = incidence_observed_A, mu = mu_A, size = size_2, log = TRUE))
     })
   }
 
+  # if(month && age_for_inf == 'u5') {
+  #   return(function(state, observed, pars = c("size_1")) {
+  #     if (is.na(observed$inc_C)) {
+  #       return(NULL)
+  #     }
+  #     incidence_observed_C <- observed$inc_C # this is the observed data
+  #     mu_C <- state["month_inc_C", , drop = TRUE] # this is "x"
+  #     size_1 <- pars$size_1
+  #     if (size_1 == 0) { size_1 <- 1e30 }
+  #     return(dnbinom(x = incidence_observed_C, mu = mu_C, size = size_1, log = TRUE))
+  #   })
+  # }
+
+  # if(month && age_for_inf == 'u5') {
+  #   return(function(state, observed, pars = c("size")) {
+  #     incidence_observed_C <- observed$inc_C # this is the observed data
+  #     mu_C <- state["month_inc_C", , drop = TRUE] # this is "x"
+  #     size <- pars$size
+  #     if (size == 0) { size <- 1e30 }
+  #     ll_C <- dnbinom(x = incidence_observed_C, mu = mu_C, size = size, log = TRUE)
+  #     if(is.na(ll_C)){ll_C <- 0}
+  #     return(ll_C)
+  #   })
+  # }
+
   if(month && age_for_inf == 'u5') {
-    return(function(state, observed, pars = c("size")) {
-      if (is.na(observed$inc_C)) {
-        return(NULL)
-      }
+    return(function(state, observed, pars = c("size_1")) {
       incidence_observed_C <- observed$inc_C # this is the observed data
       mu_C <- state["month_inc_C", , drop = TRUE] # this is "x"
-      size <- pars$size
-      if (size == 0) { size <- 1e30 }
-      return(dnbinom(x = incidence_observed_C, mu = mu_C, size = size, log = TRUE))
+      size_1 <- pars$size_1
+      if (size_1 == 0) { size_1 <- 1e30 }
+      ll_C <- dnbinom(x = incidence_observed_C, mu = mu_C, size = size_1, log = TRUE)
+      if(is.na(ll_C)){ll_C <- 0}
+      return(ll_C)
     })
   }
 
@@ -88,36 +123,40 @@ generate_incidence_comparison <- function(month, age_for_inf, incidence_df) {
   # }
 
   if(month && age_for_inf == 'o5') {
-    return(function(state, observed, pars = c("size")) {
+    return(function(state, observed, pars = c("size_2")) {
       incidence_observed_A <- observed$inc_A
       mu_A <- state["month_inc_A", , drop = TRUE]
-      size <- pars$size
-      if (size == 0) { size <- 1e30 }
-      return(dnbinom(x = incidence_observed_A, mu = mu_A, size = size, log = TRUE))
+      size_2 <- pars$size_2
+      if (size_2 == 0) { size_2 <- 1e30 }
+      ll_A <- dnbinom(x = incidence_observed_A, mu = mu_A, size = size_2, log = TRUE)
+      if(is.na(ll_A)){ll_A <- 0}
+      return(ll_A)
     })
   }
 
   # For weekly data
   if(!month && age_for_inf == 'total') {
-    return(function(state, observed, pars = c("size")) {
+    return(function(state, observed, pars = c("size_1")) {
       incidence_observed_total <- observed$inc
       mu_total <- state["wk_inc_total", , drop = TRUE]
-      size <- pars$size
-      if (size == 0) { size <- 1e30 }
-      return(dnbinom(x = incidence_observed_total, mu = mu_total, size = size, log = TRUE))
+      size_1 <- pars$size_1
+      if (size_1 == 0) { size_1 <- 1e30 }
+      return(dnbinom(x = incidence_observed_total, mu = mu_total, size = size_1, log = TRUE))
     })
   }
 
   if(!month && age_for_inf == 'sep_ages') {
-    return(function(state, observed, pars = c("size")) {
+    return(function(state, observed, pars = c("size_1", "size_2")) {
       incidence_observed_C <- observed$inc_C
       incidence_observed_A <- observed$inc_A
       mu_C <- state["wk_inc_C", , drop = TRUE]
       mu_A <- state["wk_inc_A", , drop = TRUE]
-      size <- pars$size
-      if (size == 0) { size <- 1e30 }
-      return(0.12 * dnbinom(x = incidence_observed_C, mu = mu_C, size = size, log = TRUE) +
-               0.88 * dnbinom(x = incidence_observed_A, mu = mu_A, size = size, log = TRUE))
+      size_1 <- pars$size_1
+      size_2 <- pars$size_2
+      if (size_1 == 0) { size_1 <- 1e30 }
+      if (size_2 == 0) { size_2 <- 1e30 }
+      return(dnbinom(x = incidence_observed_C, mu = mu_C, size = size_1, log = TRUE) +
+               dnbinom(x = incidence_observed_A, mu = mu_A, size = size_2, log = TRUE))
     })
   }
 

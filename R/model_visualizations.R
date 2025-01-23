@@ -442,9 +442,9 @@ plot_observed_vs_simulated <- function(results, obs_cases, start_date, end_date,
       # Extract relevant quantiles for the group
       ribbon_data <- combined_data[, c("date_ymd",
                                        "source",
-                                       paste0(group, "_q01"),
-                                       paste0(group, "_q99"))]
-      colnames(ribbon_data) <- c("date_ymd", "source", "q01", "q99")
+                                       paste0(group, "_q005"),
+                                       paste0(group, "_q995"))]
+      colnames(ribbon_data) <- c("date_ymd", "source", "q005", "q995")
       ribbon_data$variable <- group  # Add the group as a variable for faceting
 
       ribbon_data_list[[group]] <- ribbon_data
@@ -458,8 +458,8 @@ plot_observed_vs_simulated <- function(results, obs_cases, start_date, end_date,
       data = ribbon_data_combined,
       aes(
         x = date_ymd,
-        ymin = q01,
-        ymax = q99,
+        ymin = q005,
+        ymax = q995,
         fill = source
       ),
       alpha = 0.3,

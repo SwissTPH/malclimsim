@@ -70,6 +70,8 @@ initial(month_inc_total) <- 0
 update(month_inc_total) <- if ((step) %% steps_per_month == 0) mu_EI * (EC * fT_C + EA * fT_A) else month_inc_total + mu_EI * (EC * fT_C + EA * fT_A)
 
 size <- user(10)
+size_1 <- user(10)
+size_2 <- user(10)
 
 # User defined parameters
 # Growth rates

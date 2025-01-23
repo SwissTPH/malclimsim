@@ -106,6 +106,26 @@ standardize_rainfall <- function(avg_rain, save = TRUE, file = "") {
   return(avg_rain)  # Return the updated data frame
 }
 
+standardize_rainfall <- function(cum_rain, save = TRUE, file = "") {
+
+  # Calculate z-scores for rainfall anomalies
+  cum_rain$anom <- (cum_rain$CumulativeRainfall - mean(cum_rain$CumulativeRainfall, na.rm = TRUE)) /
+    sd(cum_rain$CumulativeRainfall, na.rm = TRUE)
+
+  # Extract date components (month, week, day) for further analysis
+  cum_rain$month <- month(cum_rain$date)
+  cum_rain$week <- week(cum_rain$date)
+  cum_rain$day <- day(cum_rain$date)
+
+  # Optionally save the updated data
+  if (save) {
+    saveRDS(cum_rain, file = paste(dir, file, sep = ""))
+  }
+
+  return(cum_rain)  # Return the updated data frame
+}
+
+
 #' Save ERA5 Reanalysis Data
 #'
 #' Downloads ERA5 reanalysis data for specified years and saves it to the specified path.
@@ -187,34 +207,34 @@ extract_era5 <- function(lon, lat, path_to_file){
 }
 
 
-#' Daily Smoothed Temperature Function
-#'
-#' This function takes a data frame with monthly temperature data and produces a daily smoothed
-#' temperature series using a smoothing spline. The resulting data frame includes predicted temperatures
-#' for every day in the range from the earliest to the latest date in the original data.
-#'
-#' @param temp_df A data frame containing two columns:
-#'   \describe{
-#'     \item{Date}{A character or numeric column representing the year and month (e.g., "2024-11").}
-#'     \item{Temperature}{A numeric column representing the temperature for the corresponding month.}
-#'   }
-#'
-#' @return A data frame with two columns:
-#'   \describe{
-#'     \item{Date}{A Date column representing daily dates.}
-#'     \item{Temperature}{A numeric column with the smoothed daily temperature predictions.}
-#'   }
-#'
-#' @examples
-#' # Example usage:
-#' temp_data <- data.frame(
-#'   Date = c("2024-01", "2024-02", "2024-03"),
-#'   Temperature = c(30.5, 28.0, 25.3)
-#' )
-#' daily_smooth_temp(temp_data)
-#'
-#' @importFrom stats smooth.spline predict
-#' @export
+#' #' Daily Smoothed Temperature Function
+#' #'
+#' #' This function takes a data frame with monthly temperature data and produces a daily smoothed
+#' #' temperature series using a smoothing spline. The resulting data frame includes predicted temperatures
+#' #' for every day in the range from the earliest to the latest date in the original data.
+#' #'
+#' #' @param temp_df A data frame containing two columns:
+#' #'   \describe{
+#' #'     \item{Date}{A character or numeric column representing the year and month (e.g., "2024-11").}
+#' #'     \item{Temperature}{A numeric column representing the temperature for the corresponding month.}
+#' #'   }
+#' #'
+#' #' @return A data frame with two columns:
+#' #'   \describe{
+#' #'     \item{Date}{A Date column representing daily dates.}
+#' #'     \item{Temperature}{A numeric column with the smoothed daily temperature predictions.}
+#' #'   }
+#' #'
+#' #' @examples
+#' #' # Example usage:
+#' #' temp_data <- data.frame(
+#' #'   Date = c("2024-01", "2024-02", "2024-03"),
+#' #'   Temperature = c(30.5, 28.0, 25.3)
+#' #' )
+#' #' daily_smooth_temp(temp_data)
+#' #'
+#' #' @importFrom stats smooth.spline predict
+#' #' @export
 daily_smooth_temp <- function(temp_df) {
   # Convert the Date column to Date type
   temp_df$Date <- as.Date(paste0(temp_df$Date, "-01"))
@@ -246,7 +266,131 @@ daily_smooth_temp <- function(temp_df) {
   return(temp_df)
 }
 
+#' Daily Smoothed Temperature Function (Linear Interpolation)
+#'
+#' This function takes a data frame with monthly temperature data and produces a daily interpolated
+#' temperature series using linear interpolation. The resulting data frame includes predicted temperatures
+#' for every day in the range from the earliest to the latest date in the original data.
+#'
+#' @param temp_df A data frame containing two columns:
+#'   \describe{
+#'     \item{Date}{A character or numeric column representing the year and month (e.g., "2024-11").}
+#'     \item{Temperature}{A numeric column representing the temperature for the corresponding month.}
+#'   }
+#'
+#' @return A data frame with two columns:
+#'   \describe{
+#'     \item{Date}{A Date column representing daily dates.}
+#'     \item{Temperature}{A numeric column with the interpolated daily temperature values.}
+#'   }
+#'
+#' @examples
+#' # Example usage:
+#' temp_data <- data.frame(
+#'   Date = c("2024-01", "2024-02", "2024-03"),
+#'   Temperature = c(30.5, 28.0, 25.3)
+#' )
+#' daily_smooth_temp(temp_data)
+#'
+#' @importFrom stats approx
+#' @export
+# daily_smooth_temp <- function(temp_df) {
+#   # Convert the Date column to Date type
+#   temp_df$Date <- as.Date(paste0(temp_df$Date, "-01"))
+#
+#   # Convert dates to numeric format (number of days since 1970-01-01)
+#   temp_df$Date_numeric <- as.numeric(temp_df$Date)
+#
+#   # Create a numeric sequence from the first date to the last date
+#   predicted_dates_numeric <- seq(min(temp_df$Date_numeric), max(temp_df$Date_numeric), by = 1)
+#
+#   # Perform linear interpolation to get daily values
+#   interpolated_temps <- approx(x = temp_df$Date_numeric, y = temp_df$Temperature, xout = predicted_dates_numeric)
+#
+#   # Convert numeric predictions back to Date format
+#   predicted_dates <- as.Date(predicted_dates_numeric, origin = "1970-01-01")
+#
+#   # Combine the predicted data into a data frame
+#   temp_df <- data.frame(Date = predicted_dates, Temperature = interpolated_temps$y)
+#
+#   return(temp_df)
+# }
 
+calculate_cumulative_rainfall <- function(rain_path, time_period = c("monthly", "weekly")) {
+  # Read the RDS file
+  avg_rain <- readRDS(rain_path)
+
+  # Ensure the date column is in Date format
+  avg_rain$date <- as.Date(avg_rain$date)
+
+  # Determine the aggregation period and calculate cumulative rainfall
+  if (time_period == "monthly") {
+    cum_rain <- avg_rain %>%
+      mutate(period = floor_date(date, "month")) %>%
+      group_by(period) %>%
+      summarise(cumulative_rainfall = sum(rainfall, na.rm = TRUE)) %>%
+      ungroup()
+  } else if (time_period == "weekly") {
+    cum_rain <- avg_rain %>%
+      mutate(period = floor_date(date, "week", week_start = 1)) %>%  # Week starts on Monday
+      group_by(period) %>%
+      summarise(cumulative_rainfall = sum(rainfall, na.rm = TRUE)) %>%
+      ungroup()
+  } else {
+    stop("Invalid time_period. Choose 'monthly' or 'weekly'.")
+  }
+  return(cum_rain)
+}
+
+#' Title
+#'
+#' @param cum_rain dataframe with two columns and rows equal to the number of weeks or months in original dataset
+#'
+#' @return
+#' @export
+#'
+#' @examples
+daily_smooth_rain <- function(cum_rain) {
+  # Convert the period to numeric format
+  cum_rain$Date_numeric <- as.numeric(cum_rain$period)
+
+  # Fit a smoothing spline using the numeric date values
+  spline_fit <- smooth.spline(x = cum_rain$Date_numeric, y = cum_rain$cumulative_rainfall)
+
+  # Create a sequence of daily dates
+  predicted_dates_numeric <- seq(min(cum_rain$Date_numeric), max(cum_rain$Date_numeric), by = 1)
+
+  # Predict daily cumulative rainfall using the smoothing spline
+  predicted_rain <- predict(spline_fit, x = predicted_dates_numeric)
+
+  # Convert numeric predictions back to Date format
+  predicted_dates <- as.Date(predicted_dates_numeric, origin = "1970-01-01")
+
+  # Combine the predicted data into a data frame
+  daily_rain_df <- data.frame(Date = predicted_dates, CumulativeRainfall = predicted_rain$y)
+
+  return(daily_rain_df)
+}
+
+# daily_smooth_rain <- function(cum_rain) {
+#   cum_rain$Date_numeric <- as.numeric(cum_rain$period)
+#   predicted_dates_numeric <- seq(min(cum_rain$Date_numeric), max(cum_rain$Date_numeric), by = 1)
+#   interpolated_rain <- approx(x = cum_rain$Date_numeric, y = cum_rain$cumulative_rainfall, xout = predicted_dates_numeric)
+#   predicted_dates <- as.Date(predicted_dates_numeric, origin = "1970-01-01")
+#   daily_rain_df <- data.frame(Date = predicted_dates, CumulativeRainfall = interpolated_rain$y)
+#   return(daily_rain_df)
+# }
+
+# Example usage
+# lat <- 8.3
+# lon <- 17.9
+# path_to_data <- "C:/Users/putnni/switchdrive/Chad/Data/climate-data/"
+# temp_path <- paste0(path_to_data, "era5_moiss.nc")
+# rain_path <- paste0(path_to_data, "chirps_moiss.rds")
+# cum_rain <- calculate_cumulative_rainfall(rain_path, time_period = "monthly")
+# daily_rain_df <- daily_smooth_rain(cum_rain)
+# temp_df <- extract_era5(lat = lat, lon = lon, path_to_file = temp_path)
+# daily_temp_df <- daily_smooth_temp(temp_df)
 
 #' Saving Climate Data From ERA5 and CHIRTSdaily
 #'
@@ -275,13 +419,52 @@ save_climate_data <- function(lon, lat, years, path_to_data, rain = TRUE, temp =
   }
 }
 
+
+# process_climate_data <- function(lon, lat, years, D1, D2, temp_path, rain_path, path_to_data, months_30_days = TRUE){
+#   temp_df <- extract_era5(lat = lat, lon = lon, path_to_file = temp_path)
+#   temp <- daily_smooth_temp(temp_df)
+#
+#   # Rainfall
+#   avg_rain <- readRDS(rain_path)
+#
+#   temp <- temp[which(temp$Date %in% as.Date(intersect(as.character(temp$Date), as.character(avg_rain$date)))),]
+#
+#   # - `rolling_average_D_days` calculates a rolling average of rainfall with a window size of `D1` days (30 days here)
+#   # - `rolling_avg_rwa$rollmean` contains the calculated rolling averages
+#   rolling_rain <- rolling_average_D_days(avg_rain, D1, save = FALSE)
+#   rolling_temp <- rolling_average_temp_D_days(temp, D2, save = FALSE)
+#   # Fill missing values in the rolling averages by extending the last available value forward
+#   # - `na.fill(..., c("extend"))` fills any NA values by extending the last non-NA value forward
+#   rolling_rain$rollrain <- zoo::na.fill(rolling_rain$rollrain, c("extend"))
+#   rolling_temp$rolltemp <- zoo::na.fill(rolling_temp$rolltemp, c("extend"))
+#
+#   # Standardize the rainfall data using z-scores (anomalies from the mean)
+#   # - `standardize_rainfall` calculates the anomaly (z-score) for rainfall to identify deviations from the norm
+#   met <- standardize_rainfall(rolling_rain, save = FALSE)
+#   # Combine rainfall and temperature
+#   # Overwrite the `rwa_met` object with average temperature data from `temp_rwa`
+#   # - `temp_rwa$tavg` contains the average daily temperature extracted earlier
+#   met$temp <- temp$Temperature
+#   met$rolltemp <- rolling_temp$rolltemp
+#   if(months_30_days){
+#     met <- climate_to_30_day_months(met, start_year = years[1], end_year = years[length(years)])
+#   }
+#   # Save the processed Rwanda climate data (rainfall and temperature) to the specified directory
+#   # - The data is saved as an RDS file, which is an efficient format for storing R objects
+#   current_datetime <- Sys.time()
+#   formatted_datetime <- format(current_datetime, "%m%d%H%M")
+#   saveRDS(met, paste0(path_to_data, "met_", D1, "_", formatted_datetime, ".rds"))
+#
+#   return(met)
+# }
+
+library(lubridate)
+
 #' Title
 #'
 #' @param lon - longitude coordinate
 #' @param lat - latitude coordinate
 #' @param years - vector containing each year for the analysis
-#' @param D1 - the number of previous days to take an average over for the rainfall rolling mean
-#' @param D2 - the number of previous days to take an average over for the temperature rolling mean
 #' @param temp_path - path to temperature data saved by save_climate_data
 #' @param rain_path path to rainfall data saved by save_climate_data
 #' @param path_to_data path to directory where the processed climate data will be stored
@@ -299,32 +482,20 @@ save_climate_data <- function(lon, lat, years, path_to_data, rain = TRUE, temp =
 #' rain_path <- paste0(path_to_data, "chirps_11051418.rds")
 #' met <- process_climate_data(lon, lat, years, D1 = 30, D2 = 30, temp_path = temp_path,
 #' rain_path = rain_path, path_to_data
-process_climate_data <- function(lon, lat, years, D1, D2, temp_path, rain_path, path_to_data, months_30_days = TRUE){
+process_climate_data <- function(lon, lat, years, temp_path, rain_path, path_to_data, months_30_days = TRUE){
   temp_df <- extract_era5(lat = lat, lon = lon, path_to_file = temp_path)
   temp <- daily_smooth_temp(temp_df)
 
   # Rainfall
   avg_rain <- readRDS(rain_path)
+  #cum_rain <- calculate_cumulative_rainfall(rain_path, time_period = "monthly") %>% daily_smooth_rain()
+  cum_rain <- calculate_cumulative_rainfall(rain_path, time_period = "monthly") %>% daily_smooth_rain() %>% filter_by_year("Date", years[1]:years[length(years)])
+  colnames(cum_rain)[[1]] <- "date"
+  temp <- temp[which(temp$Date %in% as.Date(intersect(as.character(temp$Date), as.character(cum_rain$date)))),]
 
-  temp <- temp[which(temp$Date %in% as.Date(intersect(as.character(temp$Date), as.character(avg_rain$date)))),]
-
-  # - `rolling_average_D_days` calculates a rolling average of rainfall with a window size of `D1` days (30 days here)
-  # - `rolling_avg_rwa$rollmean` contains the calculated rolling averages
-  rolling_rain <- rolling_average_D_days(avg_rain, D1, save = FALSE)
-  rolling_temp <- rolling_average_temp_D_days(temp, D2, save = FALSE)
-  # Fill missing values in the rolling averages by extending the last available value forward
-  # - `na.fill(..., c("extend"))` fills any NA values by extending the last non-NA value forward
-  rolling_rain$rollrain <- zoo::na.fill(rolling_rain$rollrain, c("extend"))
-  rolling_temp$rolltemp <- zoo::na.fill(rolling_temp$rolltemp, c("extend"))
-
-  # Standardize the rainfall data using z-scores (anomalies from the mean)
-  # - `standardize_rainfall` calculates the anomaly (z-score) for rainfall to identify deviations from the norm
-  met <- standardize_rainfall(rolling_rain, save = FALSE)
-  # Combine rainfall and temperature
-  # Overwrite the `rwa_met` object with average temperature data from `temp_rwa`
-  # - `temp_rwa$tavg` contains the average daily temperature extracted earlier
+  met <- standardize_rainfall(cum_rain, save = FALSE)
   met$temp <- temp$Temperature
-  met$rolltemp <- rolling_temp$rolltemp
+
   if(months_30_days){
     met <- climate_to_30_day_months(met, start_year = years[1], end_year = years[length(years)])
   }
@@ -332,7 +503,7 @@ process_climate_data <- function(lon, lat, years, D1, D2, temp_path, rain_path, 
   # - The data is saved as an RDS file, which is an efficient format for storing R objects
   current_datetime <- Sys.time()
   formatted_datetime <- format(current_datetime, "%m%d%H%M")
-  saveRDS(met, paste0(path_to_data, "met_", D1, "_", formatted_datetime, ".rds"))
+  saveRDS(met, paste0(path_to_data, "met_", "_", formatted_datetime, ".rds"))
 
   return(met)
 }

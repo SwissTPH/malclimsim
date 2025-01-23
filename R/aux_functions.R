@@ -126,6 +126,49 @@ climate_to_30_day_months <- function(clim_df, start_year = 2014, end_year = 2022
   return(clim_df_360_day_years)
 }
 
+climate_to_30_day_months <- function(clim_df, start_year = 2014, end_year = 2022){
+  dates_30_day_months <- generate_360_day_dates(start_year = start_year, end_year = end_year)
+  n_years <- max(year(clim_df$date)) - min(year(clim_df$date)) + 1
+  rain_360 <- rep(NA, 360 * n_years)
+  anom_360 <- rep(NA, 360 * n_years)
+  temp_360 <- rep(NA, 360 * n_years)
+  rollrain_360 <- rep(NA, 360 * n_years)
+  vec_i <- 1 # track vector position
+  months_31_days <- c(1, 3, 5, 7, 8, 10, 12)
+
+  for(date_i in 1:nrow(clim_df)){ # track date position
+    if((clim_df$month[date_i] == 2) & (clim_df$day[date_i] == 28)){
+      if(leap_year(year(clim_df$date[date_i]))){
+        anom_360[vec_i:(vec_i+1)] <- clim_df$anom[date_i]
+        temp_360[vec_i:(vec_i+1)] <- clim_df$temp[date_i]
+        rollrain_360[vec_i:(vec_i+1)] <- clim_df$CumulativeRainfall[date_i]
+        vec_i <- vec_i + 2
+      } else {
+        anom_360[vec_i:(vec_i+2)] <- clim_df$anom[date_i]
+        temp_360[vec_i:(vec_i+2)] <- clim_df$temp[date_i]
+        rollrain_360[vec_i:(vec_i+2)] <- clim_df$CumulativeRainfall[date_i]
+        vec_i <- vec_i + 3
+      }
+    } else if((clim_df$month[date_i] %in% months_31_days) & (clim_df$day[date_i] == 31)){
+      next
+    } else {
+      anom_360[vec_i] <- clim_df$anom[date_i]
+      temp_360[vec_i] <- clim_df$temp[date_i]
+      rollrain_360[vec_i] <- clim_df$CumulativeRainfall[date_i]
+      vec_i <- vec_i + 1
+    }
+  }
+
+  clim_df_360_day_years <- data.frame(dates = dates_30_day_months,
+                                      anom = anom_360,
+                                      temp = temp_360,
+                                      cumrain = rollrain_360)
+  return(clim_df_360_day_years)
+}
+
+
+
+
 #' Generate Dates for a 360-Day Year Calendar
 #'
 #' This function generates a sequence of dates assuming a 360-day year, with each month consisting of 30 days.
