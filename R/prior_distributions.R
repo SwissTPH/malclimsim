@@ -105,8 +105,8 @@ return_default_priors <- function(){
     k1 = list(initial = 1, min = -5, max = 5, prior = function(p) dnorm(p, mean = 1, sd = 1, log = TRUE)), # Normal distribution with bias towards positive values
 
     # sigma_T - Must be positive, value is uncertain
-    sigma_LT = list(initial = 1, min = 0, max = 30, prior = function(p) dnorm(p, mean = 5, sd = 3, log = TRUE)), # Gamma distribution to ensure positivity
-    sigma_RT = list(initial = 1, min = 0, max = 30, prior = function(p) dnorm(p, mean = 3, sd = 3, log = TRUE)), # Gamma distribution to ensure positivity
+    sigma_LT = list(initial = 1, min = 3.5, max = 10, prior = function(p) dnorm(p, mean = 5, sd = 1.5, log = TRUE)), # Gamma distribution to ensure positivity
+    sigma_RT = list(initial = 1, min = 2, max = 10, prior = function(p) dnorm(p, mean = 3, sd = 1.5, log = TRUE)), # Gamma distribution to ensure positivity
 
     #b = list(initial = 1, min = 0.001, max = 50, prior = function(p) dgamma(p, shape = 2, rate = 1, log = TRUE))
     b = list(initial = 1, min = 0.001, max = 50, prior = function(p) dunif(p, min = 0.001, max = 50, log = TRUE))
