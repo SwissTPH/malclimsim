@@ -175,8 +175,8 @@ create_start_values <- function(params_to_estimate, control_params, min_max_star
       T_opt = c(24, 27),       # Based on prior: Normal distribution centered at 28, sd = 3
       R_opt = c(0.5, 0.9),        # Based on prior: Normal distribution centered at 0, sd = 5
       k1 = c(1, 1.5),            # Based on prior: Normal distribution centered at 1, sd = 0.5
-      sigma_LT = c(0.01, 10),       # Based on prior: Gamma distribution, allows positive values up to 10
-      sigma_RT = c(0.01, 10),
+      sigma_LT = c(5, 9),       # Based on prior: Gamma distribution, allows positive values up to 10
+      sigma_RT = c(4, 9),
       b = c(22, 32),
       lag_R = c(15, 30),
       lag_T = c(15,30)
