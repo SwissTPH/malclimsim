@@ -10,6 +10,8 @@ post_plot(
   dim_plot,
   show_true = TRUE,
   true_value = NULL,
+  show_prior = FALSE,
+  prior_n = 10000,
   title = ""
 )
 }
@@ -23,6 +25,8 @@ post_plot(
 \item{show_true}{Logical; if \code{TRUE}, true parameter values will be indicated on the plots if provided.}
 
 \item{true_value}{A named vector of true values for parameters (optional). Must match \code{params_to_estimate} if used.}
+
+\item{prior_n}{}
 
 \item{title}{A character string specifying the title for the entire plot layout (optional).}
 }

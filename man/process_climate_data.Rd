@@ -8,8 +8,6 @@ process_climate_data(
   lon,
   lat,
   years,
-  D1,
-  D2,
   temp_path,
   rain_path,
   path_to_data,
@@ -27,14 +25,6 @@ process_climate_data(
 
 \item{years}{\itemize{
 \item vector containing each year for the analysis
-}}
-
-\item{D1}{\itemize{
-\item the number of previous days to take an average over for the rainfall rolling mean
-}}
-
-\item{D2}{\itemize{
-\item the number of previous days to take an average over for the temperature rolling mean
 }}
 
 \item{temp_path}{\itemize{

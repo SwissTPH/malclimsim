@@ -4,7 +4,15 @@
 \alias{simulate_models}
 \title{Simulate Models Using Sampled Parameters}
 \usage{
-simulate_models(model, param_inputs, sampled_params, start_date, end_date)
+simulate_models(
+  model,
+  param_inputs,
+  sampled_params,
+  start_date,
+  end_date,
+  prewarm_years = 2,
+  days_per_year = 360
+)
 }
 \arguments{
 \item{model}{The model function to simulate from.}

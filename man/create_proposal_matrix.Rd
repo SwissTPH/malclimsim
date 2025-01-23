@@ -7,6 +7,7 @@
 create_proposal_matrix(
   params_to_estimate,
   proposal_variance = NULL,
+  correlation_matrix = NULL,
   model,
   param_inputs
 )
