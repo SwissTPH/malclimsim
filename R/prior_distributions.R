@@ -93,7 +93,7 @@ return_default_priors <- function(){
     lag_T = list(initial = 0, min = 0, max = 200, integer = TRUE, prior = function(p) dunif(p, min = 0, max = 200, log = TRUE)),
 
     # Gamma distribution to ensure positivity
-    alpha = list(initial = 2.5, min = 0, max = 1000, prior = function(p) dunif(p, min = 0, max = 1000, log = TRUE)),
+    alpha = list(initial = 2.5, min = 0, max = 10, prior = function(p) dunif(p, min = 0, max = 10, log = TRUE)),
 
     # T_opt - Must be greater than 0, likely between 24 and 32
     T_opt = list(initial = 30.4, min = 0, max = 40, prior = function(p) dnorm(p, mean = 26.12, sd = 0.5, log = TRUE)),

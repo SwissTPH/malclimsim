@@ -10,6 +10,15 @@ plot_chains <- function(mcmc_run) {
 
 # Helper function to create a correlation plot for MCMC samples
 # - Used within MCMC_diag to show correlation structure of posterior samples
+#' Title
+#'
+#' @param results results from inf_run function
+#' @param title title of plot
+#'
+#' @return
+#' @export
+#'
+#' @examples
 plot_corr <- function(results, title = NULL) {
   suppressWarnings(suppressMessages({
     # Convert the relevant portion of results to a dataframe and sample 1000 rows
