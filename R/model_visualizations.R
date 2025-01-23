@@ -231,33 +231,33 @@ create_sim_df <- function(results, n, dates_sim, dates_obs, model){
   return(sim_df)
 }
 
-#' #' Plot Observed vs Simulated Data with Quantiles Ribbon and Optional Climate Data Facet
-#' #'
-#' #' This function simulates data from a model using parameters that maximize the log posterior,
-#' #' then plots the observed and simulated incidence data for comparison. Optionally, a ribbon
-#' #' representing the 1st and 99th quantiles of additional simulations can be included to visualize uncertainty.
-#' #' It also allows for optional inclusion of climate data as a separate facet.
-#' #'
-#' #' @param results The MCMC results object containing the parameter samples.
-#' #' @param obs_cases A data frame of observed cases with columns for `date_ymd` (date), `inc_A`, `inc_C`, and `inc`.
-#' #' @param start_date The start date for the simulation output as a `Date` object or character string.
-#' #' @param end_date The end date for the simulation as a `Date` object or character string.
-#' #' @param model The model function to simulate from.
-#' #' @param add_ribbon Logical; if TRUE, adds a ribbon to the plot representing the 1st and 99th quantiles of the incidence data from additional simulations.
-#' #' @param n_samples The number of samples to draw from the MCMC results for the quantiles ribbon.
-#' #' @param groups A character vector specifying which groups to include in the plot (`inc_A`, `inc_C`, `inc`).
-#' #' @param met Optional climate data frame to be included as a separate facet.
-#' #' @param climate_facet Logical; if TRUE, adds climate data as a separate facet in the plot.
-#' #' @param prewarm_years Integer; the number of years to simulate before the `start_date` for stabilization (default is 2 years).
-#' #' @param days_per_year Integer; the number of days per year in the simulation (default is 360).
-#' #' @return A ggplot object displaying observed data as points, simulated data as a line, and an optional ribbon for quantiles.
-#' #' @export
-#' #' @examples
-#' #' # Assuming `results` contains MCMC output and `obs_cases` is the observed cases data
-#' #' plot_observed_vs_simulated(results, obs_cases, start_date = "2014-01-01",
-#' #'                            end_date = "2014-12-31", model = data_sim,
-#' #'                            add_ribbon = TRUE, n_samples = 100, groups = c("inc_A", "inc_C", "inc"),
-#' #'                            met = met_data, climate_facet = TRUE, prewarm_years = 2)
+#' Plot Observed vs Simulated Data with Quantiles Ribbon and Optional Climate Data Facet
+#'
+#' This function simulates data from a model using parameters that maximize the log posterior,
+#' then plots the observed and simulated incidence data for comparison. Optionally, a ribbon
+#' representing the 1st and 99th quantiles of additional simulations can be included to visualize uncertainty.
+#' It also allows for optional inclusion of climate data as a separate facet.
+#'
+#' @param results The MCMC results object containing the parameter samples.
+#' @param obs_cases A data frame of observed cases with columns for `date_ymd` (date), `inc_A`, `inc_C`, and `inc`.
+#' @param start_date The start date for the simulation output as a `Date` object or character string.
+#' @param end_date The end date for the simulation as a `Date` object or character string.
+#' @param model The model function to simulate from.
+#' @param add_ribbon Logical; if TRUE, adds a ribbon to the plot representing the 1st and 99th quantiles of the incidence data from additional simulations.
+#' @param n_samples The number of samples to draw from the MCMC results for the quantiles ribbon.
+#' @param groups A character vector specifying which groups to include in the plot (`inc_A`, `inc_C`, `inc`).
+#' @param met Optional climate data frame to be included as a separate facet.
+#' @param climate_facet Logical; if TRUE, adds climate data as a separate facet in the plot.
+#' @param prewarm_years Integer; the number of years to simulate before the `start_date` for stabilization (default is 2 years).
+#' @param days_per_year Integer; the number of days per year in the simulation (default is 360).
+#' @return A ggplot object displaying observed data as points, simulated data as a line, and an optional ribbon for quantiles.
+#' @export
+#' @examples
+#' # Assuming `results` contains MCMC output and `obs_cases` is the observed cases data
+#' plot_observed_vs_simulated(results, obs_cases, start_date = "2014-01-01",
+#'                            end_date = "2014-12-31", model = data_sim,
+#'                            add_ribbon = TRUE, n_samples = 100, groups = c("inc_A", "inc_C", "inc"),
+#'                            met = met_data, climate_facet = TRUE, prewarm_years = 2)
 plot_observed_vs_simulated <- function(results, obs_cases, start_date, end_date, model,
                                        add_ribbon = TRUE, n_samples = 100, groups = c("inc_A", "inc_C", "inc"),
                                        met = NULL, climate_facet = FALSE, prewarm_years = 2, days_per_year = 360,
