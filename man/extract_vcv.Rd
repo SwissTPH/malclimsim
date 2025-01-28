@@ -2,7 +2,7 @@
 % Please edit documentation in R/mcmc_setup.R
 \name{extract_vcv}
 \alias{extract_vcv}
-\title{Title}
+\title{Extract Variance-Covariance Matrix and Restart Values}
 \usage{
 extract_vcv(
   results,
@@ -14,18 +14,51 @@ extract_vcv(
 )
 }
 \arguments{
-\item{results}{list: results of inf_run function}
+\item{results}{list: Results of the \code{inf_run} function containing MCMC parameters and chain identifiers.}
 
-\item{S_prev}{numeric: number of previous steps to include in calculation}
+\item{S_prev}{numeric: Number of previous steps in the MCMC chains to include in the calculation.}
 
-\item{save}{boolean: whether or not to save the results}
+\item{save}{boolean: Whether or not to save the computed results to files (default: TRUE).}
 
-\item{param_names}{list: list of model parameters}
+\item{param_names}{list: List of model parameter names, used for labeling the proposal matrix.}
 
-\item{file_proposal}{character: file path for proposal cov matrix}
+\item{file_proposal}{character: File path to save the proposal covariance matrix (if \code{save = TRUE}).}
 
-\item{file_start}{character: file path for chain start values}
+\item{file_start}{character: File path to save the start values (if \code{save = TRUE}).}
+}
+\value{
+A list containing:
+\describe{
+\item{start_values}{A matrix of restart values (medians of the selected MCMC steps) for each parameter.}
+\item{proposal_matrix}{The variance-covariance matrix for use as the proposal distribution.}
+}
 }
 \description{
-Title
+This function extracts the variance-covariance matrix and restart values from the results of an MCMC run.
+It can save the computed proposal matrix and start values to specified file paths.
+}
+\examples{
+# Example usage:
+results <- list(
+  mcmc_run = list(
+    pars = matrix(runif(1000), ncol = 10),
+    chain = rep(1:5, each = 200)
+  )
+)
+param_names <- paste0("param_", 1:10)
+S_prev <- 100
+file_proposal <- "proposal_matrix.rds"
+file_start <- "start_values.rds"
+
+output <- extract_vcv(
+  results = results,
+  S_prev = S_prev,
+  save = FALSE,
+  param_names = param_names,
+  file_proposal = file_proposal,
+  file_start = file_start
+)
+
+print(output)
+
 }

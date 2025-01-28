@@ -342,14 +342,42 @@ calculate_cumulative_rainfall <- function(rain_path, time_period = c("monthly", 
   return(cum_rain)
 }
 
-#' Title
+#' Smooth Daily Rainfall Data
 #'
-#' @param cum_rain dataframe with two columns and rows equal to the number of weeks or months in original dataset
+#' This function uses a smoothing spline to interpolate daily cumulative rainfall data from a dataset containing
+#' weekly or monthly cumulative rainfall values.
 #'
-#' @return
-#' @export
+#' @param cum_rain A data frame with two columns:
+#' \describe{
+#'   \item{period}{A column representing the time period (e.g., week or month), convertible to numeric.}
+#'   \item{cumulative_rainfall}{A column representing the cumulative rainfall for each period.}
+#' }
+#'
+#' @return A data frame with two columns:
+#' \describe{
+#'   \item{Date}{A column with daily dates, interpolated from the original period.}
+#'   \item{CumulativeRainfall}{A column with smoothed daily cumulative rainfall values.}
+#' }
 #'
 #' @examples
+#' # Example dataset with weekly cumulative rainfall
+#' cum_rain <- data.frame(
+#'   period = seq(as.Date("2023-01-01"), as.Date("2023-12-31"), by = "week"),
+#'   cumulative_rainfall = cumsum(runif(52, min = 0, max = 20))
+#' )
+#'
+#' # Smooth to daily cumulative rainfall
+#' daily_rain <- daily_smooth_rain(cum_rain)
+#'
+#' # Plot the results
+#' library(ggplot2)
+#' ggplot(daily_rain, aes(x = Date, y = CumulativeRainfall)) +
+#'   geom_line(color = "blue") +
+#'   labs(title = "Daily Smoothed Cumulative Rainfall",
+#'        x = "Date", y = "Cumulative Rainfall") +
+#'   theme_minimal()
+#'
+#' @export
 daily_smooth_rain <- function(cum_rain) {
   # Convert the period to numeric format
   cum_rain$Date_numeric <- as.numeric(cum_rain$period)
@@ -457,8 +485,6 @@ save_climate_data <- function(lon, lat, years, path_to_data, rain = TRUE, temp =
 #
 #   return(met)
 # }
-
-library(lubridate)
 
 #' Title
 #'

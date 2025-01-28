@@ -1,18 +1,36 @@
-#' Print Maximum Log-Likelihood and Log-Posterior
+#' Extract and Print Maximum Log-Likelihood and Log-Posterior
 #'
-#' This function extracts and prints the maximum values of the log-likelihood and
-#' log-posterior from the results of an MCMC run. Useful for quick evaluation of model fit.
+#' This function extracts and optionally prints the maximum values of the log-likelihood
+#' and log-posterior from the results of an MCMC run. It is useful for quickly evaluating
+#' the fit of a model.
 #'
 #' @param results A list containing the MCMC results from an inference run,
 #' including the `coda_pars` matrix with columns for `log_likelihood` and `log_posterior`.
-#' @print_ll Boolean whether or not to print the results
+#' @param print_ll Boolean. If `TRUE`, the maximum log-likelihood and log-posterior values
+#' will be printed to the console (default: `TRUE`).
 #'
-#' @return NULL. The function prints the maximum values of log-likelihood and log-posterior.
-#' @export
+#' @return A list with two named elements:
+#' \describe{
+#'   \item{max_log_likelihood}{The maximum value of the log-likelihood.}
+#'   \item{max_log_posterior}{The maximum value of the log-posterior.}
+#' }
 #'
 #' @examples
-#' # Assuming `results` is the result of an inference run with MCMC sampling:
+#' # Simulate results with coda_pars
+#' results <- list(
+#'   coda_pars = data.frame(
+#'     log_likelihood = rnorm(1000, mean = -100, sd = 10),
+#'     log_posterior = rnorm(1000, mean = -110, sd = 12)
+#'   )
+#' )
+#'
+#' # Extract and print maximum log-likelihood and log-posterior
 #' max_ll_post(results)
+#'
+#' # Suppress printing and only return the values
+#' max_ll_post(results, print_ll = FALSE)
+#'
+#' @export
 max_ll_post <- function(results, print_ll = TRUE) {
   # Check if 'coda_pars' exists and contains required columns
   if (!"coda_pars" %in% names(results)) {
@@ -264,7 +282,6 @@ calculate_bias_per_year <- function(simulated_df, obs_cases) {
   combined_df$bias_inc <- combined_df$inc_obs - combined_df$inc_sim
 
   # Group by year and calculate the mean bias per year
-  library(dplyr)
   bias_per_year <- combined_df %>%
     group_by(year) %>%
     summarise(

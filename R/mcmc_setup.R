@@ -305,92 +305,49 @@ create_proposal_matrix <- function(params_to_estimate, proposal_variance = NULL,
 }
 
 
-
-#
-# #results <- readRDS("C:/Users/putnni/switchdrive/Chad/Data/mcmc-results/simplified_EIR_fT/both-ages/Koumra_fT_simplified_EIR_both_ages_config1_Suspected_20250117_193643.rds")
-# results <- results$results
-# params_to_estimate <- c(lag_R = "lag_R", lag_T = "lag_T", qR = "qR",
-#                         alpha = "alpha", R_opt = "R_opt", phi = "phi",
-#                         z = "z", T_opt = "T_opt",
-#                         k1 = "k1", sigma_LT = "sigma_LT", sigma_RT = "sigma_RT",
-#                         eff_SMC = "eff_SMC",
-#                         size = "size", b= "b", fT_C = "fT_C")
-#
-# param_inputs <- list(
-#   mu_TS = 1/30, mu_IR = 1/5, eta = 1, mu_RS_C = 1/195, size = 1,
-#   mu_EI = 1/10, delta_b = 1/(21*365), delta_d = 1/(21*365),
-#   delta_a = 1/(5 * 365), phi = 1, p_HM = 0.125, p_MH_C = 0.5,
-#   rho = 1, fT_C = 0.27, z = 0.6, qR = 0.64, N = 3e5, b = 0.03,
-#   s = 1, percAdult = 0.81, alpha = 5, T_opt = 27, sigma_LT = 3, sigma_RT = 6,
-#   R_opt = 4, k1 = 2, eff_SMC = 0.5, decay = 1, SMC = 1, SMC_removal = 0,
-#   cov_SMC = 1, c_R_D = 1, temp = 1, lag_R = 30, w = 1,
-#   lag_T = 11, qR2 = 1 # Inputs for rainfall and temperature
-# )
-#
-# model <- load_model("model_simpler_EIR")
-#
-# test <- create_proposal_matrix(params_to_estimate, model = model, param_inputs = param_inputs)
-#
-# paramList_name <- rownames(test)
-#
-# setup <- extract_vcv(results, S_prev = 25000, save = FALSE)
-#
-# write.csv(setup[[2]], file = "C:/Users/putnni/switchdrive/Chad/Data/model-inputs/proposal_matrix_both_ages_simplified_EIR.csv")
-#
-# proposal_file <- "C:/Users/putnni/switchdrive/Chad/Data/model-inputs/proposal_matrix_both_ages_simplified_EIR.csv"
-# proposal_matrix_simp <- read.csv(proposal_file)
-#
-extract_vcv <- function(results, S_prev, save = TRUE, param_names,
-                        file_proposal = "", file_start = "") {
-  begin_i <- (nrow(results[[2]]) - S_prev)
-  end_i <- nrow(results[[2]])
-
-  if(dim(results[[2]])[2] == 4){ # corresponds to one parameter estimated
-    restart_values <- median(results[[2]][begin_i:end_i, ][, -c(1:3)])
-  } else{restart_values <-apply(results[[2]][begin_i:end_i, ][, -c(1:3)], 2, median)}
-
-  start_values <-matrix(NA, nrow = length(restart_values), ncol = 1)
-  start_values[, 1] <- restart_values
-  rownames(start_values) <- colnames(results[[2]][begin_i:end_i, ][, -c(1:3)])
-
-  # altering proposal matrix to restart chain with adaptive proposal vcv
-  if(dim(results[[2]])[2] == 4){
-    int_vcv <- as.matrix(var(results[[2]][begin_i:end_i, -c(1:3)]))
-    colnames(int_vcv) <- names(as.data.frame(results[[2]]))[4]
-    rownames(int_vcv) <- names(as.data.frame(results[[2]]))[4]
-  }else{int_vcv <- cov(results[[2]][begin_i:end_i, -c(1:3)])}
-  proposal_matrix <- diag(0.1, length(param_names))
-  colnames(proposal_matrix) <- param_names
-  rownames(proposal_matrix) <- param_names
-
-  for (row_name in rownames(int_vcv)) {
-    for (col_name in colnames(int_vcv)) {
-      i <- which(rownames(proposal_matrix) == row_name)
-      j <- which(colnames(proposal_matrix) == col_name)
-      proposal_matrix[i, j] <- int_vcv[row_name, col_name]
-    }
-  }
-  if(save){
-    saveRDS(proposal_matrix, file_proposal)
-    saveRDS(start_values, file_start)
-  }
-
-  return(list(start_values, proposal_matrix))
-}
-
-#' Title
+#' Extract Variance-Covariance Matrix and Restart Values
 #'
-#' @param results list: results of inf_run function
-#' @param S_prev numeric: number of previous steps to include in calculation
-#' @param save boolean: whether or not to save the results
-#' @param param_names list: list of model parameters
-#' @param file_proposal character: file path for proposal cov matrix
-#' @param file_start character: file path for chain start values
+#' This function extracts the variance-covariance matrix and restart values from the results of an MCMC run.
+#' It can save the computed proposal matrix and start values to specified file paths.
 #'
-#' @return
-#' @export
+#' @param results list: Results of the `inf_run` function containing MCMC parameters and chain identifiers.
+#' @param S_prev numeric: Number of previous steps in the MCMC chains to include in the calculation.
+#' @param save boolean: Whether or not to save the computed results to files (default: TRUE).
+#' @param param_names list: List of model parameter names, used for labeling the proposal matrix.
+#' @param file_proposal character: File path to save the proposal covariance matrix (if `save = TRUE`).
+#' @param file_start character: File path to save the start values (if `save = TRUE`).
+#'
+#' @return A list containing:
+#' \describe{
+#'   \item{start_values}{A matrix of restart values (medians of the selected MCMC steps) for each parameter.}
+#'   \item{proposal_matrix}{The variance-covariance matrix for use as the proposal distribution.}
+#' }
 #'
 #' @examples
+#' # Example usage:
+#' results <- list(
+#'   mcmc_run = list(
+#'     pars = matrix(runif(1000), ncol = 10),
+#'     chain = rep(1:5, each = 200)
+#'   )
+#' )
+#' param_names <- paste0("param_", 1:10)
+#' S_prev <- 100
+#' file_proposal <- "proposal_matrix.rds"
+#' file_start <- "start_values.rds"
+#'
+#' output <- extract_vcv(
+#'   results = results,
+#'   S_prev = S_prev,
+#'   save = FALSE,
+#'   param_names = param_names,
+#'   file_proposal = file_proposal,
+#'   file_start = file_start
+#' )
+#'
+#' print(output)
+#'
+#' @export
 extract_vcv <- function(results, S_prev, save = TRUE, param_names,
                         file_proposal = "", file_start = "") {
   # Extract the MCMC parameters and chain identifiers

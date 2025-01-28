@@ -1,9 +1,30 @@
 #' Return Default Priors Used for Inference Procedure
 #'
-#' @return
-#' @export
+#' This function returns a list of default priors used in the inference procedure. Each parameter has
+#' an associated prior distribution, an initial value, and range constraints.
+#'
+#' @return A list where each element corresponds to a parameter. Each parameter element is a list containing:
+#' \describe{
+#'   \item{initial}{Initial value for the parameter.}
+#'   \item{min}{Minimum value for the parameter.}
+#'   \item{max}{Maximum value for the parameter.}
+#'   \item{prior}{A function defining the prior distribution of the parameter, returning the log probability density.}
+#' }
 #'
 #' @examples
+#' # Get default priors
+#' priors <- return_default_priors()
+#'
+#' # Access the prior for a specific parameter
+#' phi_prior <- priors$phi
+#' print(phi_prior)
+#'
+#' # Evaluate the prior for phi at a specific value
+#' phi_value <- 0.5
+#' log_prior_density <- phi_prior$prior(phi_value)
+#' print(log_prior_density)
+#'
+#' @export
 return_default_priors <- function(){
   default_priors <- list(
 
@@ -173,41 +194,6 @@ initialize_priors <- function(param_inputs = NULL, proposal_matrix = NULL, param
   # Return the list of initialized priors
   return(priors)
 }
-
-
-#' #' View Default Priors
-#' #'
-#' #' This function displays the default priors and their details, including initial values, min/max bounds, and prior distributions.
-#' #'
-#' #' @param param_inputs List of input parameters for the model.
-#' #' @param proposal_matrix Covariance matrix for the MCMC proposal distribution.
-#' #' @param params_to_estimate Character vector specifying which parameters' priors should be viewed.
-#' #' @param priors List of priors to view. If NULL, the default priors will be displayed.
-#' #' @return A data frame containing the details of each prior specified in params_to_estimate.
-#' #' @export
-#' #' @examples
-#' #' view_priors(param_inputs, proposal_matrix, params_to_estimate = c("a_R", "b_R", "qR", "z", "eff_SMC", "phi", "size"))
-#' view_priors <- function(param_inputs, proposal_matrix, params_to_estimate, priors = NULL) {
-#'   if (is.null(priors)) {
-#'     priors <- initialize_priors(param_inputs, proposal_matrix, params_to_estimate)
-#'   }
-#'
-#'   # Filter the priors to only include those specified in params_to_estimate
-#'   filtered_priors <- priors[names(priors) %in% params_to_estimate]
-#'
-#'   # Convert the filtered priors list to a data frame for easy viewing
-#'   priors_df <- do.call(rbind, lapply(filtered_priors, function(prior) {
-#'     data.frame(
-#'       Name = prior$name,
-#'       Initial = prior$initial,
-#'       Min = prior$min,
-#'       Max = prior$max,
-#'       Description = paste(deparse(prior$prior), collapse = " ")
-#'     )
-#'   }))
-#'
-#'   return(priors_df)
-#' }
 
 
 #' View Default Priors

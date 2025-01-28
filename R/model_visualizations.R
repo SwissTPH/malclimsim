@@ -396,9 +396,8 @@ plot_observed_vs_simulated <- function(results, obs_cases, start_date, end_date,
 
 
 
-  # Melt the combined data for plotting
-  library(reshape2)
-  combined_data_long <- melt(combined_data, id.vars = c("date_ymd", "source"),
+  # reshape2::melt the combined data for plotting
+  combined_data_long <- reshape2::melt(combined_data, id.vars = c("date_ymd", "source"),
                              measure.vars = c("inc_A_obs", "inc_C_obs", "inc_obs",
                                               "inc_A_sim", "inc_C_sim", "inc_sim"))
 
@@ -414,7 +413,6 @@ plot_observed_vs_simulated <- function(results, obs_cases, start_date, end_date,
   }
 
   # Plotting observed and simulated data on the same panels
-  library(ggplot2)
   p <- ggplot(combined_data_long, aes(x = date_ymd, group = source, color = source)) +
     geom_point(data = subset(combined_data_long, grepl("_obs$", variable)), aes(y = value),
                color = "blue", size = 2, alpha = 0.7) +  # Observed data as points
@@ -592,7 +590,6 @@ plot_smc_scenarios <- function(observed_df, no_smc_df, current_smc_df, full_smc_
   }
 
   # Convert the combined data into long format for ggplot2
-  library(reshape2)
   measure_vars <- unlist(lapply(groups, function(group) {
     c(
       if (include_observed) paste0(group, "_obs"),
@@ -605,7 +602,7 @@ plot_smc_scenarios <- function(observed_df, no_smc_df, current_smc_df, full_smc_
   # Ensure the columns exist in the combined data
   measure_vars <- measure_vars[measure_vars %in% colnames(combined_data)]
 
-  combined_data_long <- melt(combined_data, id.vars = "date_ymd", measure.vars = measure_vars)
+  combined_data_long <- reshape2::melt(combined_data, id.vars = "date_ymd", measure.vars = measure_vars)
 
   # Extract the scenario from the variable name for easy labeling
   combined_data_long$Scenario <- gsub(".*_(obs|no_smc|current_smc|full_smc)$", "\\1", combined_data_long$variable)
@@ -631,7 +628,6 @@ plot_smc_scenarios <- function(observed_df, no_smc_df, current_smc_df, full_smc_
   )
 
   # Plot the simulated malaria cases under different scenarios (and optionally observed data)
-  library(ggplot2)
   p <- ggplot(combined_data_long, aes(x = date_ymd, y = value, color = Scenario, linetype = Scenario)) +
     geom_line(size = 1.2) +  # Increased line thickness for better visibility
     facet_wrap(~ Group, scales = "free_y", ncol = 1, labeller = as_labeller(facet_labels)) +
@@ -717,7 +713,7 @@ plot_compartments <- function(compart_df, plot_type = "line", compartments = NUL
   }
 
   # Convert data to long format for ggplot
-  compart_long <- melt(compart_df, id.vars = "date")
+  compart_long <- reshape2::melt(compart_df, id.vars = "date")
 
   # Filter for specified compartments if provided
   if (!is.null(compartments)) {

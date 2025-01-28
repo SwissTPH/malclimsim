@@ -6,6 +6,30 @@
 \usage{
 return_default_priors()
 }
+\value{
+A list where each element corresponds to a parameter. Each parameter element is a list containing:
+\describe{
+\item{initial}{Initial value for the parameter.}
+\item{min}{Minimum value for the parameter.}
+\item{max}{Maximum value for the parameter.}
+\item{prior}{A function defining the prior distribution of the parameter, returning the log probability density.}
+}
+}
 \description{
-Return Default Priors Used for Inference Procedure
+This function returns a list of default priors used in the inference procedure. Each parameter has
+an associated prior distribution, an initial value, and range constraints.
+}
+\examples{
+# Get default priors
+priors <- return_default_priors()
+
+# Access the prior for a specific parameter
+phi_prior <- priors$phi
+print(phi_prior)
+
+# Evaluate the prior for phi at a specific value
+phi_value <- 0.5
+log_prior_density <- phi_prior$prior(phi_value)
+print(log_prior_density)
+
 }

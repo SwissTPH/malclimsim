@@ -2,15 +2,29 @@
 % Please edit documentation in R/inference_diagnostics.R
 \name{plot_corr}
 \alias{plot_corr}
-\title{Title}
+\title{Plot Correlation of MCMC Samples}
 \usage{
 plot_corr(results, title = NULL)
 }
 \arguments{
-\item{results}{results from inf_run function}
+\item{results}{list: Results from the \code{inf_run} function, containing MCMC samples.}
 
-\item{title}{title of plot}
+\item{title}{character: Optional title for the plot.}
+}
+\value{
+A \code{GGally} ggpairs object visualizing the correlation structure of MCMC samples.
 }
 \description{
-Title
+This function creates a correlation plot for MCMC samples, showing the relationships between sampled parameters.
+The upper panels display correlation values, and the lower panels show smoothed plots of parameter relationships.
+}
+\examples{
+# Example usage:
+results <- list(
+  NULL,
+  matrix(rnorm(5000), ncol = 5, dimnames = list(NULL, c("param1", "param2", "param3", "param4", "param5")))
+)
+correlation_plot <- plot_corr(results, title = "MCMC Parameter Correlation")
+print(correlation_plot)
+
 }

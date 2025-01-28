@@ -2,22 +2,42 @@
 % Please edit documentation in R/fitted_model_assessment.R
 \name{max_ll_post}
 \alias{max_ll_post}
-\title{Print Maximum Log-Likelihood and Log-Posterior}
+\title{Extract and Print Maximum Log-Likelihood and Log-Posterior}
 \usage{
 max_ll_post(results, print_ll = TRUE)
 }
 \arguments{
 \item{results}{A list containing the MCMC results from an inference run,
 including the \code{coda_pars} matrix with columns for \code{log_likelihood} and \code{log_posterior}.}
+
+\item{print_ll}{Boolean. If \code{TRUE}, the maximum log-likelihood and log-posterior values
+will be printed to the console (default: \code{TRUE}).}
 }
 \value{
-NULL. The function prints the maximum values of log-likelihood and log-posterior.
+A list with two named elements:
+\describe{
+\item{max_log_likelihood}{The maximum value of the log-likelihood.}
+\item{max_log_posterior}{The maximum value of the log-posterior.}
+}
 }
 \description{
-This function extracts and prints the maximum values of the log-likelihood and
-log-posterior from the results of an MCMC run. Useful for quick evaluation of model fit.
+This function extracts and optionally prints the maximum values of the log-likelihood
+and log-posterior from the results of an MCMC run. It is useful for quickly evaluating
+the fit of a model.
 }
 \examples{
-# Assuming `results` is the result of an inference run with MCMC sampling:
+# Simulate results with coda_pars
+results <- list(
+  coda_pars = data.frame(
+    log_likelihood = rnorm(1000, mean = -100, sd = 10),
+    log_posterior = rnorm(1000, mean = -110, sd = 12)
+  )
+)
+
+# Extract and print maximum log-likelihood and log-posterior
 max_ll_post(results)
+
+# Suppress printing and only return the values
+max_ll_post(results, print_ll = FALSE)
+
 }

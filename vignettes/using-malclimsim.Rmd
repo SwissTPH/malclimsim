@@ -7,10 +7,11 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-```{r, include = FALSE}
+```{r setup, include=FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
+  comment = "#>",
+  eval = FALSE
 )
 ```
 
@@ -18,7 +19,7 @@ knitr::opts_chunk$set(
 
 The climate-driven dynamical transmission model used in this package is a slight adaptation from the one constructed by Ukawuba and Shaman in 2022 (<https://doi.org/10.1371/journal.pcbi.1010161>). The original paper calibrated the model using data at the provincial and district levels (district-level analysis found in the supplement). A few key characteristics of the model are that only humans are modeled explicitly but climate-mosquito dynamics are incorporated through the addition of several equations relating rainfall and temperature to mosquito development. It is a compartmental model with 10 total compartments across two age groups, splitting the population into those who are Susceptible to disease, those who have been Exposed and are infected by malaria parasites, those who are Infectious but untreated, those who have been Treated, and those who have Recovered. Currently, the model assumes a year is 360 days with twelve 30 day months. There are two age groups being modeled - those under 5 years old and those who are 5 years and older. Only one intervention is being considered here - seasonal malaria chemoprevention.
 
-```{r setup}
+```{r}
 library(malclimsim)
 ```
 

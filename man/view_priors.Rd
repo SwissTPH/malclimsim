@@ -2,22 +2,7 @@
 % Please edit documentation in R/prior_distributions.R
 \name{view_priors}
 \alias{view_priors}
-\title{#' View Default Priors
-#'
-#' This function displays the default priors and their details, including initial values, min/max bounds, and prior distributions.
-#'
-#' @param param_inputs List of input parameters for the model.
-#' @param proposal_matrix Covariance matrix for the MCMC proposal distribution.
-#' @param params_to_estimate Character vector specifying which parameters' priors should be viewed.
-#' @param priors List of priors to view. If NULL, the default priors will be displayed.
-#' @return A data frame containing the details of each prior specified in params_to_estimate.
-#' @export
-#' @examples
-#' view_priors(param_inputs, proposal_matrix, params_to_estimate = c("a_R", "b_R", "qR", "z", "eff_SMC", "phi", "size"))
-view_priors <- function(param_inputs, proposal_matrix, params_to_estimate, priors = NULL) {
-if (is.null(priors)) {
-priors <- initialize_priors(param_inputs, proposal_matrix, params_to_estimate)
-}}
+\title{View Default Priors}
 \usage{
 view_priors(param_inputs, proposal_matrix, params_to_estimate, priors = NULL)
 }
@@ -30,31 +15,8 @@ view_priors(param_inputs, proposal_matrix, params_to_estimate, priors = NULL)
 A data frame containing the details of each prior specified in params_to_estimate.
 }
 \description{
-#' View Default Priors
-#'
-#' This function displays the default priors and their details, including initial values, min/max bounds, and prior distributions.
-#'
-#' @param param_inputs List of input parameters for the model.
-#' @param proposal_matrix Covariance matrix for the MCMC proposal distribution.
-#' @param params_to_estimate Character vector specifying which parameters' priors should be viewed.
-#' @param priors List of priors to view. If NULL, the default priors will be displayed.
-#' @return A data frame containing the details of each prior specified in params_to_estimate.
-#' @export
-#' @examples
-#' view_priors(param_inputs, proposal_matrix, params_to_estimate = c("a_R", "b_R", "qR", "z", "eff_SMC", "phi", "size"))
-view_priors <- function(param_inputs, proposal_matrix, params_to_estimate, priors = NULL) {
-if (is.null(priors)) {
-priors <- initialize_priors(param_inputs, proposal_matrix, params_to_estimate)
+This function displays the default priors and their details, including initial values, min/max bounds, and prior distributions.
 }
-}
-\section{Filter the priors to only include those specified in params_to_estimate}{
-filtered_priors <- priors\link{names(priors) \%in\% params_to_estimate}
-}
-
-\section{Convert the filtered priors list to a data frame for easy viewing}{
-
-}
-
 \examples{
 view_priors(param_inputs, proposal_matrix, params_to_estimate = c("a_R", "b_R", "qR", "z", "eff_SMC", "phi", "size"))
 }

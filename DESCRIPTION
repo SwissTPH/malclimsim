@@ -27,7 +27,13 @@ Imports:
     sf,
     tidyr,
     withr,
-    zoo
+    zoo,
+    reshape2,
+    latex2exp,
+    GGally,
+    scales,
+    patchwork,
+    RColorBrewer
 Depends:
     ecmwfr,
     sf,

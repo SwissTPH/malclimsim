@@ -488,7 +488,6 @@ calculate_incidence_quantiles <- function(simulations) {
 #' result <- compartments_sim(model, param_inputs, start_date, end_date)
 #' head(result)
 #'
-#' @importFrom base as.Date data.frame
 #' @export
 compartments_sim <- function(model, param_inputs, start_date, end_date) {
   # Calculate the number of days in the SMC schedule

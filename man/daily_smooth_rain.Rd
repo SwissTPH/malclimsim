@@ -2,13 +2,44 @@
 % Please edit documentation in R/climate_processing_functions.R
 \name{daily_smooth_rain}
 \alias{daily_smooth_rain}
-\title{Title}
+\title{Smooth Daily Rainfall Data}
 \usage{
 daily_smooth_rain(cum_rain)
 }
 \arguments{
-\item{cum_rain}{dataframe with two columns and rows equal to the number of weeks or months in original dataset}
+\item{cum_rain}{A data frame with two columns:
+\describe{
+\item{period}{A column representing the time period (e.g., week or month), convertible to numeric.}
+\item{cumulative_rainfall}{A column representing the cumulative rainfall for each period.}
+}}
+}
+\value{
+A data frame with two columns:
+\describe{
+\item{Date}{A column with daily dates, interpolated from the original period.}
+\item{CumulativeRainfall}{A column with smoothed daily cumulative rainfall values.}
+}
 }
 \description{
-Title
+This function uses a smoothing spline to interpolate daily cumulative rainfall data from a dataset containing
+weekly or monthly cumulative rainfall values.
+}
+\examples{
+# Example dataset with weekly cumulative rainfall
+cum_rain <- data.frame(
+  period = seq(as.Date("2023-01-01"), as.Date("2023-12-31"), by = "week"),
+  cumulative_rainfall = cumsum(runif(52, min = 0, max = 20))
+)
+
+# Smooth to daily cumulative rainfall
+daily_rain <- daily_smooth_rain(cum_rain)
+
+# Plot the results
+library(ggplot2)
+ggplot(daily_rain, aes(x = Date, y = CumulativeRainfall)) +
+  geom_line(color = "blue") +
+  labs(title = "Daily Smoothed Cumulative Rainfall",
+       x = "Date", y = "Cumulative Rainfall") +
+  theme_minimal()
+
 }
