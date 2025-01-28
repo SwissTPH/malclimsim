@@ -55,9 +55,9 @@ plot_time_series <- function(results, met = NULL,
                              climate_y_label = "Temperature (°C)",
                              climate_facet = FALSE,
                              select_incidence = c(">=5", "<5", "total"),
-                             select_climate = c("temp", "rollrain"),
+                             select_climate = c("temp", "cumrain"),
                              incidence_colors = c(">=5" = "blue", "<5" = "red", "total" = "green"),
-                             climate_colors = c("temp" = "orange", "rollrain" = "purple"),
+                             climate_colors = c("temp" = "orange", "cumrain" = "purple"),
                              climate_alpha = 0.7,
                              base_size = 15) {
 
@@ -77,7 +77,7 @@ plot_time_series <- function(results, met = NULL,
     # Ensure `met` data's `zoo` columns are converted to numeric for plotting
     met <- met %>%
       mutate(
-        rollrain = as.numeric(rollrain),  # Convert rollrain to numeric
+        cumrain = as.numeric(cumrain),  # Convert rollrain to numeric
         anom = as.numeric(anom),          # Convert anomaly to numeric (if necessary)
         dates = as.Date(date)  # Convert date to proper format for merging
       )
@@ -122,7 +122,6 @@ plot_time_series <- function(results, met = NULL,
     print(p_incidence)  # If no climate data is provided, just print the incidence plot
   }
 }
-
 
 post_pred_plot <- function(results, sim_df, model, dates_sim, dates_obs, show_clim = TRUE,
                            met = NULL, title = "", ages = NULL, theme = NULL) {
@@ -673,5 +672,101 @@ plot_smc_scenarios <- function(observed_df, no_smc_df, current_smc_df, full_smc_
 }
 
 
+#' Plot Compartmental Simulation Results
+#'
+#' This function visualizes the output of a compartmental model simulation with
+#' options for line plots, stacked area plots, and faceted visualizations. Users
+#' can also plot proportions relative to the total population.
+#'
+#' @param compart_df Data frame containing compartments simulation output.
+#' @param plot_type Character string specifying the type of plot. Options are "line", "stacked", or "facet".
+#' @param compartments Optional character vector of compartments to plot (e.g., c("SC", "IC")).
+#' @param plot_proportion Logical indicating whether to plot proportions relative to the total population (`P` column).
+#' @param log_scale Logical indicating whether to apply a logarithmic scale to the y-axis.
+#' @param title Character string specifying the plot title.
+#' @param color_palette Character string specifying the color palette from RColorBrewer (default: "Set2").
+#' @param y_label Character string specifying the Y-axis label (default: "Population Count").
+#'
+#' @return A ggplot object visualizing the compartmental data.
+#'
+#' @examples
+#' # Basic line plot
+#' plot_compartments(compart_df, plot_type = "line")
+#'
+#' # Stacked area plot with selected compartments
+#' plot_compartments(compart_df, plot_type = "stacked", compartments = c("SC", "IC", "RA"))
+#'
+#' # Faceted plot with proportions and log scale
+#' plot_compartments(compart_df, plot_type = "facet", plot_proportion = TRUE, log_scale = TRUE)
+#'
+#' @import ggplot2 reshape2 patchwork
+#' @export
+plot_compartments <- function(compart_df, plot_type = "line", compartments = NULL,
+                              plot_proportion = FALSE, log_scale = FALSE,
+                              title = "Epidemic Compartments Over Time",
+                              color_palette = "Set2", y_label = "Population Count") {
+
+  # Validate plot_type
+  if (!(plot_type %in% c("line", "stacked", "facet"))) {
+    stop("Invalid plot_type. Choose from 'line', 'stacked', or 'facet'.")
+  }
+
+  # Check if 'P' column exists for proportion calculation
+  if (plot_proportion && !("P" %in% colnames(compart_df))) {
+    stop("Column 'P' (total population) must be present in the data to plot proportions.")
+  }
+
+  # Convert data to long format for ggplot
+  compart_long <- melt(compart_df, id.vars = "date")
+
+  # Filter for specified compartments if provided
+  if (!is.null(compartments)) {
+    compart_long <- compart_long[compart_long$variable %in% compartments, ]
+  }
+
+  # If plotting proportions, divide each compartment by total population (P)
+  if (plot_proportion) {
+    compart_long$value <- compart_long$value / compart_df$P[match(compart_long$date, compart_df$date)]
+    y_label <- "Proportion of Population"
+  }
+
+  # Base ggplot object
+  p <- ggplot(compart_long, aes(x = date, y = value, color = variable, fill = variable))
+
+  # Choose plot type
+  if (plot_type == "line") {
+    p <- p + geom_line(size = 1.2) +
+      scale_color_brewer(palette = color_palette) +
+      labs(title = title, y = y_label, x = "Date")
+  } else if (plot_type == "stacked") {
+    p <- p + geom_area(alpha = 0.6, position = "stack") +
+      scale_fill_brewer(palette = color_palette) +
+      labs(title = title, y = y_label, x = "Date")
+  } else if (plot_type == "facet") {
+    p <- p + geom_line(size = 1) +
+      facet_wrap(~ variable, scales = "free_y") +
+      scale_color_brewer(palette = color_palette) +
+      labs(title = title, y = y_label, x = "Date")
+  }
+
+  # Apply logarithmic scale if specified
+  if (log_scale) {
+    p <- p + scale_y_log10() +
+      annotation_logticks(sides = "l")  # Add log ticks on the left
+  }
+
+  # Add additional theme modifications
+  p <- p + theme_minimal(base_size = 14) +
+    theme(
+      legend.title = element_blank(),
+      legend.position = "right",
+      plot.title = element_text(hjust = 0.5, face = "bold", size = 16),
+      axis.title = element_text(size = 14),
+      axis.text = element_text(size = 12),
+      strip.text = element_text(size = 14, face = "bold")
+    )
+
+  return(p)
+}
 
 

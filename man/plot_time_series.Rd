@@ -12,9 +12,9 @@ plot_time_series(
   climate_y_label = "Temperature (°C)",
   climate_facet = FALSE,
   select_incidence = c(">=5", "<5", "total"),
-  select_climate = c("temp", "rollrain"),
+  select_climate = c("temp", "cumrain"),
   incidence_colors = c(`>=5` = "blue", `<5` = "red", total = "green"),
-  climate_colors = c(temp = "orange", rollrain = "purple"),
+  climate_colors = c(temp = "orange", cumrain = "purple"),
   climate_alpha = 0.7,
   base_size = 15
 )

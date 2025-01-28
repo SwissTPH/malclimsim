@@ -108,7 +108,8 @@ sim_mod <- function(odin_mod, pars, time_start, n_particles, sim_time){
 #' inc_data <- data_sim(model, param_inputs, start_date = "2021-01-01", end_date = "2021-12-31", month = TRUE)
 data_sim <- function(model, param_inputs, start_date, end_date,
                      month = FALSE, round = TRUE, save = TRUE, file = "",
-                     month_unequal_days = FALSE, return_EIR = FALSE){
+                     month_unequal_days = FALSE, return_EIR = FALSE, return_compartments = FALSE){
+
   # Calculate the number of days in the SMC schedule
   n_days <- calculate_360_day_difference(start_date, end_date) + 1
 
@@ -152,6 +153,21 @@ data_sim <- function(model, param_inputs, start_date, end_date,
       inc_df <- data.frame(date_ymd = month, month_no, inc_A, inc_C,
                            inc = inc_A + inc_C, EIR_monthly = EIR_monthly)
     } else{inc_df <- data.frame(date_ymd = month, month_no, inc_A, inc_C, inc = inc_A + inc_C)}
+    if(return_compartments){
+      SC_monthly <- x[mod$info()$index$SC,,][month_ind]
+      EC_monthly <- x[mod$info()$index$EC,,][month_ind]
+      IC_monthly <- x[mod$info()$index$IC,,][month_ind]
+      TrC_monthly <- x[mod$info()$index$TrC,,][month_ind]
+      RC_monthly <- x[mod$info()$index$RC,,][month_ind]
+      SA_monthly <- x[mod$info()$index$SA,,][month_ind]
+      EA_monthly <- x[mod$info()$index$EA,,][month_ind]
+      IA_monthly <- x[mod$info()$index$IA,,][month_ind]
+      TrA_monthly <- x[mod$info()$index$TrA,,][month_ind]
+      RA_monthly <- x[mod$info()$index$RA,,][month_ind]
+      PC_monthly <- x[mod$info()$index$P_C,,][month_ind]
+      PA_monthly <- x[mod$info()$index$P_A,,][month_ind]
+      P_monthly <- PC_monthly + PA_monthly
+    }
 
   } else {
     # If weekly aggregation is selected
@@ -193,28 +209,6 @@ data_sim <- function(model, param_inputs, start_date, end_date,
 
   # Return the resulting incidence dataframe
   return(inc_df)
-}
-
-
-data_sim_for_inference <- function(model, param_inputs,
-                                   dates, noise = FALSE, month = FALSE,
-                                   month_unequal_days = FALSE){
-
-  # incidence dataframe in specific format from data_sim
-  if(month){
-    incidence_df <- data_sim(model, param_inputs, start_date = dates[1],
-                             end_date = dates[2], month = TRUE, save = FALSE,
-                             month_unequal_days = month_unequal_days)
-  }else{incidence_df <- data_sim(model, param_inputs, start_date = dates[1],
-                                 end_date = dates[2], month = FALSE, save = FALSE,
-                                 month_unequal_days = month_unequal_days)}
-
-  if(noise){
-    set.seed(seed)
-    #incidence_df$inc <- rpois(nrow(incidence_df), lambda = incidence_df$inc)
-    incidence_df$inc <- rnbinom(nrow(incidence_df), mu = incidence_df$inc, size = 100)
-  }
-  return(incidence_df)
 }
 
 #' Extract Parameters with Maximum Log Posterior
@@ -468,3 +462,104 @@ calculate_incidence_quantiles <- function(simulations) {
   return(quantiles_df)
 }
 
+#' Simulate Compartments Over Time
+#'
+#' This function simulates the compartments of an epidemiological model over a specified time period
+#' using the provided model and parameter inputs.
+#'
+#' @param model An epidemiological model object used for simulation.
+#' @param param_inputs A named list or vector of model parameters to be used in the simulation.
+#' @param start_date A character string or Date object specifying the start date of the simulation (e.g., "2014-01-01").
+#' @param end_date A character string or Date object specifying the end date of the simulation (e.g., "2022-12-31").
+#'
+#' @return A data frame containing the simulated values of each compartment (SC, EC, IC, etc.)
+#' over the simulation period with a weekly time resolution.
+#'
+#' @details The function simulates the dynamics of susceptible, exposed, infected, treated, and recovered
+#' compartments for both children and adults. It aggregates data at weekly intervals and generates
+#' a time series data frame.
+#'
+#' @examples
+#' # Example usage
+#' param_inputs <- list(beta = 0.3, gamma = 0.1)
+#' start_date <- "2014-01-01"
+#' end_date <- "2022-12-31"
+#' model <- create_model()  # Assuming a function to create the model
+#' result <- compartments_sim(model, param_inputs, start_date, end_date)
+#' head(result)
+#'
+#' @importFrom base as.Date data.frame
+#' @export
+compartments_sim <- function(model, param_inputs, start_date, end_date) {
+  # Calculate the number of days in the SMC schedule
+  n_days <- calculate_360_day_difference(start_date, end_date) - 1
+
+  # Run the simulation using the model and parameters
+  results <- sim_mod(model, pars = c(param_inputs), time_start = 0,
+                     n_particles = 1, sim_time = n_days)
+
+  # Extract the simulation output and the model
+  x <- results[[1]]
+  mod <- results[[2]]
+
+  # Select weekly indices from the simulation results
+  wk_ind <- seq(1, n_days, by = 7)
+
+  # Extract compartment data using model index references
+  SC <- x[mod$info()$index$SC,,][wk_ind]
+  EC <- x[mod$info()$index$EC,,][wk_ind]
+  IC <- x[mod$info()$index$IC,,][wk_ind]
+  TrC <- x[mod$info()$index$TrC,,][wk_ind]
+  RC <- x[mod$info()$index$RC,,][wk_ind]
+  SA <- x[mod$info()$index$SA,,][wk_ind]
+  EA <- x[mod$info()$index$EA,,][wk_ind]
+  IA <- x[mod$info()$index$IA,,][wk_ind]
+  TrA <- x[mod$info()$index$TrA,,][wk_ind]
+  RA <- x[mod$info()$index$RA,,][wk_ind]
+  PC <- x[mod$info()$index$P_C,,][wk_ind]
+  PA <- x[mod$info()$index$P_A,,][wk_ind]
+  EIR <- x[mod$info()$index$EIR2,,][wk_ind]
+  mu_SE_C <- x[mod$info()$index$mu_SE_C_2,,][wk_ind]
+  mu_SE_A <- x[mod$info()$index$mu_SE_A_2,,][wk_ind]
+  P <- PC + PA  # Total population size
+  eff_SMC_cov <- x[mod$info()$index$SMC_effect_2,,][wk_ind]
+  prev_total_with_R <- x[mod$info()$index$prev_total_1,,][wk_ind]
+  prev_C_with_R <- x[mod$info()$index$prev_C_1,,][wk_ind]
+  prev_A_with_R <- x[mod$info()$index$prev_A_1,,][wk_ind]
+  prev_total_no_R <- x[mod$info()$index$prev_total_2,,][wk_ind]
+  prev_C_no_R <- x[mod$info()$index$prev_C_2,,][wk_ind]
+  prev_A_no_R <- x[mod$info()$index$prev_A_2,,][wk_ind]
+
+  # Generate weekly dates for the compartments
+  compart_dates <- generate_360_day_dates(2014, 2022)[wk_ind]
+
+  # Create a data frame with compartment values
+  compart_df <- data.frame(
+    date = as.Date(compart_dates),
+    SC = SC,
+    EC = EC,
+    IC = IC,
+    TrC = TrC,
+    RC = RC,
+    SA = SA,
+    EA = EA,
+    IA = IA,
+    TrA = TrA,
+    RA = RA,
+    PC = PC,
+    PA = PA,
+    P = P,
+    EIR = EIR,
+    mu_SE_C = mu_SE_C,
+    mu_SE_A = mu_SE_A,
+    eff_SMC_cov = eff_SMC_cov,
+    prev_total_with_R = prev_total_with_R,
+    prev_C_with_R = prev_C_with_R,
+    prev_A_with_R = prev_A_with_R,
+    prev_total_no_R = prev_total_no_R,
+    prev_C_no_R = prev_C_no_R,
+    prev_A_no_R = prev_A_no_R
+  )
+
+  return(compart_df)
+}

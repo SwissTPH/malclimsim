@@ -14,6 +14,8 @@ dt <- 1 / steps_per_day
 time <- step + 1
 
 SMC_effect <- decay[time] * eff_SMC * cov_SMC[time]
+initial(SMC_effect_2) <- SMC_effect
+update(SMC_effect_2) <- SMC_effect
 w <- user(0)
 SMC_effect_A <- w * SMC_effect
 #SMC_removal <- if (SMC[time] == 1) SMC_effect else 0
@@ -69,6 +71,25 @@ update(month_inc_A) <- if ((step) %% steps_per_month == 0) mu_EI * EA * fT_A els
 initial(month_inc_total) <- 0
 update(month_inc_total) <- if ((step) %% steps_per_month == 0) mu_EI * (EC * fT_C + EA * fT_A) else month_inc_total + mu_EI * (EC * fT_C + EA * fT_A)
 
+# Calculating Prevalence
+initial(prev_total_1) <- (IA + RA + TrA + IC + RC + TrC) / N
+update(prev_total_1) <- (IA + RA + TrA + IC + RC + TrC) / N
+
+initial(prev_C_1) <- (IC + TrC + RC) / N_C
+update(prev_C_1) <- (IC + TrC + RC) / N_C
+
+initial(prev_A_1) <- (IA + RA) / N_A
+update(prev_A_1) <- (IA + RA) / N_A
+
+initial(prev_total_2) <- (IA  + TrA + IC + TrC) / N
+update(prev_total_2) <- (IA  + TrA + IC + TrC) / N
+
+initial(prev_C_2) <- (IC + TrC) / N_C
+update(prev_C_2) <- (IC + TrC)  / N_C
+
+initial(prev_A_2) <- (IA + TrA) / N_A
+update(prev_A_2) <- (IA + TrA) / N_A
+
 size <- user(10)
 size_1 <- user(10)
 size_2 <- user(10)
@@ -81,7 +102,13 @@ r_C <- user(1.0000) # daily growth rate u5 Chad
 r_A <- user(1.0000) # daily growth rate o5 Chad
 phi <- user(1)
 mu_SE_C <- 1 - exp(-p_MH_C * EIR)
+initial(mu_SE_C_2) <- mu_SE_C
+update(mu_SE_C_2) <- mu_SE_C
+
 mu_SE_A <- phi * (1 - exp(-rho * p_MH_C * EIR))
+initial(mu_SE_A_2) <- mu_SE_A
+update(mu_SE_A_2) <- mu_SE_A
+
 mu_RS_C <- user()
 mu_RS_A <- eta * mu_RS_C
 eta <- user(1)
@@ -123,6 +150,8 @@ update(temp_shift) <- if (time > lag_T) temp[time - lag_T] else temp[time]
 # Defining EIR
 qR2 <- user(1)
 EIR <- alpha * (X / (b + X)) * temp_effect * rain_effect # Multiplicative effects
+initial(EIR2) <- EIR
+update(EIR2) <- EIR
 #temp_effect <- exp(-((temp_shift - T_opt)^2) / (2 * sigma_LT^2)) # Gaussian term for temperature
 temp_effect <- if (temp_shift <= T_opt) exp(-((temp_shift - T_opt)^2) / (2 * sigma_LT^2)) else exp(-((temp_shift - T_opt)^2) / (2 * sigma_RT^2))
 rain_effect <- 1 / (1 + exp(-k1 * (c_R_D_shift - R_opt))) # Logistic term for rainfall

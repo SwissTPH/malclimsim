@@ -14,7 +14,8 @@ data_sim(
   save = TRUE,
   file = "",
   month_unequal_days = FALSE,
-  return_EIR = FALSE
+  return_EIR = FALSE,
+  return_compartments = FALSE
 )
 }
 \arguments{

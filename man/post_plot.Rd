@@ -5,18 +5,20 @@
 \title{Plot Posterior Distributions of Estimated Parameters}
 \usage{
 post_plot(
-  results,
+  results_list,
   params_to_estimate,
   dim_plot,
   show_true = TRUE,
   true_value = NULL,
   show_prior = FALSE,
   prior_n = 10000,
-  title = ""
+  title = "",
+  run_labels = NULL,
+  plot_type = "histogram"
 )
 }
 \arguments{
-\item{results}{A list containing MCMC results, where \code{results[[1]]} includes sampled parameter values.}
+\item{results_list}{A list containing MCMC results from multiple runs. Each element should contain posterior samples.}
 
 \item{params_to_estimate}{A character vector of parameter names to include in the plot.}
 
@@ -24,24 +26,30 @@ post_plot(
 
 \item{show_true}{Logical; if \code{TRUE}, true parameter values will be indicated on the plots if provided.}
 
-\item{true_value}{A named vector of true values for parameters (optional). Must match \code{params_to_estimate} if used.}
+\item{true_value}{A named numeric vector of true values for parameters (optional). Must match \code{params_to_estimate} if used.}
 
-\item{prior_n}{}
+\item{show_prior}{Logical; if \code{TRUE}, prior distributions will be overlaid on the plots.}
+
+\item{prior_n}{Integer; the number of points to sample from the prior distribution.}
 
 \item{title}{A character string specifying the title for the entire plot layout (optional).}
+
+\item{run_labels}{A character vector specifying labels for each MCMC run (optional). Must match the length of \code{results_list}.}
+
+\item{plot_type}{A character string specifying the type of plot: \code{"histogram"} or \code{"density"}.}
 }
 \value{
-A combined plot object displaying histograms of posterior distributions for each parameter,
-with quantiles annotated. The plot includes optional lines for true values if \code{show_true = TRUE}
-and \code{true_value} is provided.
+A combined plot object displaying posterior distributions for each parameter.
+The plot includes optional lines for true values if \code{show_true = TRUE}, and prior distributions if \code{show_prior = TRUE}.
 }
 \description{
-Generates histogram plots for each estimated parameter in the MCMC output, with annotated quantiles and
-optional true values if available. Designed for users to visualize the posterior distribution of model parameters.
+Generates density or histogram plots for each estimated parameter from MCMC output, with annotated quantiles
+and optional true values if available. It helps users visualize the posterior distribution of model parameters.
 }
 \examples{
-# Assuming 'results' contains MCMC posterior samples and parameter names are specified:
+# Example usage:
 params_to_estimate <- c("param1", "param2")
-dim_plot <- c(1, 2) # Arrange in 1 row, 2 columns
-post_plot(results, params_to_estimate, dim_plot, show_true = TRUE, true_value = c(param1 = 0.5, param2 = -0.2), title = "Posterior Distributions")
+dim_plot <- c(1, 2)  # Arrange in 1 row, 2 columns
+post_plot(results_list, params_to_estimate, dim_plot, show_prior = TRUE,
+          run_labels = c("Experiment A", "Experiment B"), plot_type = "density")
 }

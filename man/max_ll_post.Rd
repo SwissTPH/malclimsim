@@ -4,7 +4,7 @@
 \alias{max_ll_post}
 \title{Print Maximum Log-Likelihood and Log-Posterior}
 \usage{
-max_ll_post(results)
+max_ll_post(results, print_ll = TRUE)
 }
 \arguments{
 \item{results}{A list containing the MCMC results from an inference run,
