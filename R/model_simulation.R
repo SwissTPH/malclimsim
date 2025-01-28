@@ -211,6 +211,64 @@ data_sim <- function(model, param_inputs, start_date, end_date,
   return(inc_df)
 }
 
+#' Simulate Data for Inference
+#'
+#' This function generates a simulated dataset for inference, based on the specified model and parameters.
+#' It can include optional features such as monthly aggregation, unequal days in months, and adding noise to the simulated data.
+#'
+#' @param model The model to use for simulation. This should be a valid model object that `data_sim` can process.
+#' @param param_inputs A list or vector of parameters required by the model for simulation.
+#' @param dates A vector of two dates (`start_date` and `end_date`) specifying the time range for the simulation.
+#' @param noise Logical. If `TRUE`, random noise is added to the simulated incidence data using a negative binomial distribution.
+#' @param month Logical. If `TRUE`, incidence data is aggregated by month. Defaults to `FALSE`.
+#' @param month_unequal_days Logical. If `TRUE`, the function accounts for months with unequal days in the simulation. Defaults to `FALSE`.
+#'
+#' @return A data frame containing simulated incidence data, formatted according to the output of `data_sim`.
+#'         If `noise` is enabled, the `inc` column will include added noise.
+#'
+#' @details
+#' - When `month = TRUE`, the simulation aggregates incidence by month, and the `month_unequal_days` parameter can control
+#'   whether or not to adjust for months with different numbers of days.
+#' - If `noise = TRUE`, a negative binomial distribution is used to add random noise to the incidence values.
+#'   The size parameter for the negative binomial distribution is fixed at 100.
+#'
+#' @examples
+#' # Example usage
+#' model <- some_model_object
+#' param_inputs <- list(beta = 0.3, gamma = 0.1)
+#' dates <- c("2022-01-01", "2022-12-31")
+#'
+#' # Simulate data with no noise, not aggregated by month
+#' sim_data <- data_sim_for_inference(model, param_inputs, dates, noise = FALSE, month = FALSE)
+#'
+#' # Simulate data with noise, aggregated by month
+#' sim_data_with_noise <- data_sim_for_inference(model, param_inputs, dates, noise = TRUE, month = TRUE)
+#'
+#' @seealso
+#' - `data_sim`: The underlying function used for simulation.
+#'
+#' @export
+data_sim_for_inference <- function(model, param_inputs,
+                                   dates, noise = FALSE, month = FALSE,
+                                   month_unequal_days = FALSE){
+
+  # incidence dataframe in specific format from data_sim
+  if(month){
+    incidence_df <- data_sim(model, param_inputs, start_date = dates[1],
+                             end_date = dates[2], month = TRUE, save = FALSE,
+                             month_unequal_days = month_unequal_days)
+  }else{incidence_df <- data_sim(model, param_inputs, start_date = dates[1],
+                                 end_date = dates[2], month = FALSE, save = FALSE,
+                                 month_unequal_days = month_unequal_days)}
+
+  if(noise){
+    set.seed(seed)
+    #incidence_df$inc <- rpois(nrow(incidence_df), lambda = incidence_df$inc)
+    incidence_df$inc <- rnbinom(nrow(incidence_df), mu = incidence_df$inc, size = 100)
+  }
+  return(incidence_df)
+}
+
 #' Extract Parameters with Maximum Log Posterior
 #'
 #' This function finds and extracts the parameter set corresponding to the maximum log posterior value
