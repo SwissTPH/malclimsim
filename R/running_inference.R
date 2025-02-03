@@ -20,8 +20,8 @@ generate_synthetic_data <- function(model, param_inputs, dates, month, month_une
 }
 
 # Define comparison function
-generate_comparison_function <- function(month, age_for_inf, incidence_observed) {
-  comparison_fn <- generate_incidence_comparison(month, age_for_inf, incidence_observed)
+generate_comparison_function <- function(month, age_for_inf, incidence_observed, include_prev) {
+  comparison_fn <- generate_incidence_comparison(month, age_for_inf, incidence_observed, include_prev)
   return(comparison_fn)
 }
 
@@ -168,7 +168,7 @@ inf_run <- function(model, param_inputs, control_params, params_to_estimate, pro
                     adaptive_params, start_values, noise = FALSE, seed = 24, month = FALSE,
                     month_unequal_days = FALSE, dates, age_for_inf, synthetic = TRUE, incidence_df = NULL,
                     save_trajectories = TRUE, rerun_n = Inf, rerun_random = FALSE, param_priors = NULL,
-                    n_years_warmup = 3) {
+                    n_years_warmup = 3, include_prev = TRUE) {
 
   # Setup for allowing model to run some prior to inference (comparing to observations)
   param_inputs_ext <- extend_time_varying_inputs(param_inputs, days_per_year = 360,
@@ -191,7 +191,7 @@ inf_run <- function(model, param_inputs, control_params, params_to_estimate, pro
 
   # Set up comparison function and initial time
   incidence_observed <- incidence_df[-1]
-  comparison_fn <- generate_comparison_function(month, age_for_inf, incidence_observed)
+  comparison_fn <- generate_comparison_function(month, age_for_inf, incidence_observed, include_prev = include_prev)
   simulated_result <- data_sim_for_inference(model, param_inputs = param_inputs_ext, dates = dates, noise = FALSE, month = month)
   simulated_result <- filter_by_year(simulated_result, "date_ymd", min(year(incidence_df$date_ymd)) : max(year(incidence_df$date_ymd)))
   simulated_result$month_no <- 0: (nrow(simulated_result) - 1)

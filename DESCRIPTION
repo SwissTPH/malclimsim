@@ -33,7 +33,8 @@ Imports:
     GGally,
     scales,
     patchwork,
-    RColorBrewer
+    RColorBrewer,
+    stringr
 Depends:
     ecmwfr,
     sf,

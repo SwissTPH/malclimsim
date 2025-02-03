@@ -40,15 +40,20 @@ index <- function(info) {
       month_inc_total = info$index$month_inc_total,
       wk_inc_C = info$index$wk_inc_C,
       wk_inc_A = info$index$wk_inc_A,
-      wk_inc_total = info$index$wk_inc_total
+      wk_inc_total = info$index$wk_inc_total,
+      prev_C_2 = info$index$prev_C_2,
+      prev_A_2 = info$index$prev_A_2
     ),
     state = c(
       info$index$month_inc_total,
       info$index$month_inc_A,
       info$index$month_inc_C,
       info$index$wk_inc_total,
+      info$index$wk_inc_C,
       info$index$wk_inc_A,
-      info$index$wk_inc_C
+      info$index$prev_C_2,
+      info$index$prev_A_2
+
     )
   )
 }
@@ -85,7 +90,7 @@ filter_data <- function(incidence_observed, month = FALSE, initial_time_obs = 0,
     filt_data$month_no_end <- (initial_time_obs + 1) : (nrow(incidence_observed) + initial_time_obs)
     filt_data <- filt_data[-1,]
 
-    filt_data <- filt_data[!rowSums(apply(filt_data, 2, is.na)) > 0,]
+    #filt_data <- filt_data[!rowSums(apply(filt_data, 2, is.na)) > 0,]
 
   } else {
     # Process for weekly data

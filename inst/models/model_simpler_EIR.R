@@ -14,31 +14,40 @@ dt <- 1 / steps_per_day
 time <- step + 1
 
 SMC_effect <- decay[time] * eff_SMC * cov_SMC[time]
-initial(SMC_effect_2) <- SMC_effect
-update(SMC_effect_2) <- SMC_effect
-w <- user(0)
-SMC_effect_A <- w * SMC_effect
-#SMC_removal <- if (SMC[time] == 1) SMC_effect else 0
+initial(SMC_effect_2) <- decay[time] * eff_SMC * cov_SMC[time]
+update(SMC_effect_2) <- decay[time] * eff_SMC * cov_SMC[time]
+w1 <- user(0) # Gives some SMC to adults
+w2 <- user(0) # Controls removal effect
+SMC_effect_A <- w1 * SMC_effect
+SMC_removal <- if (SMC[time] == 1) w2 * SMC_effect else 0
 #SMC_removal <- user(0)
 
+mu_SE_C <- (1 - exp(-p_MH_C * EIR)) * (1 - SMC_effect)
+initial(mu_SE_C_2) <- (1 - exp(-p_MH_C * EIR)) * (1 - SMC_effect)
+update(mu_SE_C_2) <- (1 - exp(-p_MH_C * EIR)) * (1 - SMC_effect)
+
+mu_SE_A <- phi * (1 - exp(-rho * p_MH_C * EIR)) * (1 - SMC_effect_A)
+initial(mu_SE_A_2) <- phi * (1 - exp(-rho * p_MH_C * EIR)) * (1 - SMC_effect_A)
+update(mu_SE_A_2) <- phi * (1 - exp(-rho * p_MH_C * EIR)) * (1 - SMC_effect_A)
+
 # # Children
-# update(SC) <- (SC * r_C) * (1 - delta_a - delta_d - (1 - SMC_effect) * mu_SE_C) + delta_b * P + mu_RS_C * RC + mu_TS * TrC
-# update(EC) <- (EC * r_C) * (1 - delta_a - delta_d - mu_EI - SMC_removal) + (1 - SMC_effect) * mu_SE_C * SC
-# update(IC) <- (IC * r_C) * (1 - delta_a - delta_d - mu_IR - SMC_removal) + (1 - fT_C) * mu_EI * EC
-# update(TrC) <- (TrC * r_C) * (1 - delta_a - delta_d - mu_TS) + fT_C * mu_EI * EC + SMC_removal * (EC + IC)
-# update(RC) <- (RC * r_C) * (1 - delta_a - delta_d - mu_RS_C) + mu_IR * IC
+update(SC) <- (SC * r_C) * (1 - delta_a - delta_d - mu_SE_C) + delta_b * P + mu_RS_C * RC + mu_TS * TrC
+update(EC) <- (EC * r_C) * (1 - delta_a - delta_d - mu_EI) + mu_SE_C * SC
+update(IC) <- (IC * r_C) * (1 - delta_a - delta_d - mu_IR - SMC_removal) + (1 - fT_C) * mu_EI * EC
+update(TrC) <- (TrC * r_C) * (1 - delta_a - delta_d - mu_TS) + fT_C * mu_EI * EC + SMC_removal * (IC)
+update(RC) <- (RC * r_C) * (1 - delta_a - delta_d - mu_RS_C) + mu_IR * IC
 
 # Children
-update(SC) <- (SC * r_C) * (1 - delta_a - delta_d - (1 - SMC_effect) * mu_SE_C) + delta_b * P + mu_RS_C * RC + mu_TS * TrC
-update(EC) <- (EC * r_C) * (1 - delta_a - delta_d - mu_EI) + (1 - SMC_effect) * mu_SE_C * SC
-update(IC) <- (IC * r_C) * (1 - delta_a - delta_d - mu_IR) + (1 - fT_C) * mu_EI * EC
-update(TrC) <- (TrC * r_C) * (1 - delta_a - delta_d - mu_TS) + fT_C * mu_EI * EC
-update(RC) <- (RC * r_C) * (1 - delta_a - delta_d - mu_RS_C) + mu_IR * IC
+# update(SC) <- (SC * r_C) * (1 - delta_a - delta_d - (1 - SMC_effect) * mu_SE_C) + delta_b * P + mu_RS_C * RC + mu_TS * TrC
+# update(EC) <- (EC * r_C) * (1 - delta_a - delta_d - mu_EI) + (1 - SMC_effect) * mu_SE_C * SC
+# update(IC) <- (IC * r_C) * (1 - delta_a - delta_d - mu_IR) + (1 - fT_C) * mu_EI * EC
+# update(TrC) <- (TrC * r_C) * (1 - delta_a - delta_d - mu_TS) + fT_C * mu_EI * EC
+# update(RC) <- (RC * r_C) * (1 - delta_a - delta_d - mu_RS_C) + mu_IR * IC
 
 
 # Adults
-update(SA) <- (SA * r_A) * (1 - delta_d - (1 - SMC_effect_A) * mu_SE_A) + delta_a * SC + mu_RS_A * RA + mu_TS * TrA
-update(EA) <- (EA * r_A) * (1 - delta_d - mu_EI) + delta_a * EC +  (1 - SMC_effect_A) * mu_SE_A * SA
+update(SA) <- (SA * r_A) * (1 - delta_d - mu_SE_A) + delta_a * SC + mu_RS_A * RA + mu_TS * TrA
+update(EA) <- (EA * r_A) * (1 - delta_d - mu_EI) + delta_a * EC +  mu_SE_A * SA
 update(IA) <- (IA * r_A) * (1 - delta_d - mu_IR) + delta_a * IC + (1 - fT_A) * mu_EI * EA
 update(TrA) <- (TrA * r_A) * (1 - delta_d - mu_TS) + delta_a * TrC + fT_A * mu_EI * EA
 update(RA) <- (RA * r_A) *  (1 - delta_d - mu_RS_A) + delta_a * RC + mu_IR * IA
@@ -72,27 +81,29 @@ initial(month_inc_total) <- 0
 update(month_inc_total) <- if ((step) %% steps_per_month == 0) mu_EI * (EC * fT_C + EA * fT_A) else month_inc_total + mu_EI * (EC * fT_C + EA * fT_A)
 
 # Calculating Prevalence
-initial(prev_total_1) <- (IA + RA + TrA + IC + RC + TrC) / N
-update(prev_total_1) <- (IA + RA + TrA + IC + RC + TrC) / N
+initial(prev_total_1) <- (IA + RA  + IC + RC) / N
+update(prev_total_1) <- (IA + RA  + IC + RC) / N
 
-initial(prev_C_1) <- (IC + TrC + RC) / N_C
-update(prev_C_1) <- (IC + TrC + RC) / N_C
+initial(prev_C_1) <- (IC + RC) / N_C
+update(prev_C_1) <- (IC + RC) / N_C
 
 initial(prev_A_1) <- (IA + RA) / N_A
 update(prev_A_1) <- (IA + RA) / N_A
 
-initial(prev_total_2) <- (IA  + TrA + IC + TrC) / N
-update(prev_total_2) <- (IA  + TrA + IC + TrC) / N
+initial(prev_total_2) <- (IA  + IC) / N
+update(prev_total_2) <- (IA  + IC) / N
 
-initial(prev_C_2) <- (IC + TrC) / N_C
-update(prev_C_2) <- (IC + TrC)  / N_C
+initial(prev_C_2) <- IC / N_C
+update(prev_C_2) <- IC  / N_C
 
-initial(prev_A_2) <- (IA + TrA) / N_A
-update(prev_A_2) <- (IA + TrA) / N_A
+initial(prev_A_2) <- IA / N_A
+update(prev_A_2) <- IA / N_A
 
 size <- user(10)
 size_1 <- user(10)
 size_2 <- user(10)
+kappa_C <- user(30)
+kappa_A <- user(30)
 
 # User defined parameters
 # Growth rates
@@ -101,25 +112,22 @@ size_2 <- user(10)
 r_C <- user(1.0000) # daily growth rate u5 Chad
 r_A <- user(1.0000) # daily growth rate o5 Chad
 phi <- user(1)
-mu_SE_C <- 1 - exp(-p_MH_C * EIR)
-initial(mu_SE_C_2) <- mu_SE_C
-update(mu_SE_C_2) <- mu_SE_C
 
-mu_SE_A <- phi * (1 - exp(-rho * p_MH_C * EIR))
-initial(mu_SE_A_2) <- mu_SE_A
-update(mu_SE_A_2) <- mu_SE_A
-
+# To be fitted for better reproducing prevalence
 mu_RS_C <- user()
+duration_infection <- user(200)
+mu_IR <- 1 / (duration_infection -  1 / mu_RS_C) # I to R is a maximum of 200 days
+
 mu_RS_A <- eta * mu_RS_C
 eta <- user(1)
 mu_EI <- user()
 mu_TS <- user()
-mu_IR <- user()
+#mu_IR <- user()
 fT_C <- user()
 fT_A <- z * fT_C
 z <- user(1) # z < 1, reporting rate of adults vs. children
 rho <- user(1)
-p_MH_C <- user()
+p_MH_C <- user(0.50)
 delta_b <- user()
 delta_d <- user()
 delta_a <- user()
@@ -150,12 +158,14 @@ update(temp_shift) <- if (time > lag_T) temp[time - lag_T] else temp[time]
 # Defining EIR
 qR2 <- user(1)
 EIR <- alpha * (X / (b + X)) * temp_effect * rain_effect # Multiplicative effects
-initial(EIR2) <- EIR
-update(EIR2) <- EIR
+initial(EIR2) <- alpha * (X / (b + X)) * temp_effect * rain_effect # Multiplicative effects
+update(EIR2) <- alpha * (X / (b + X)) * temp_effect * rain_effect # Multiplicative effects
 #temp_effect <- exp(-((temp_shift - T_opt)^2) / (2 * sigma_LT^2)) # Gaussian term for temperature
 temp_effect <- if (temp_shift <= T_opt) exp(-((temp_shift - T_opt)^2) / (2 * sigma_LT^2)) else exp(-((temp_shift - T_opt)^2) / (2 * sigma_RT^2))
 rain_effect <- 1 / (1 + exp(-k1 * (c_R_D_shift - R_opt))) # Logistic term for rainfall
 X <- (qR2 * IA + IC + qR * (qR2 * RA + RC)) / P # Proportion of population infectious remains the same
+initial(X2) <- (qR2 * IA + IC + qR * (qR2 * RA + RC)) / P # Proportion of population infectious remains the same
+update(X2) <- (qR2 * IA + IC + qR * (qR2 * RA + RC)) / P # Proportion of population infectious remains the same
 
 # Egg-adult Development time due to temperature
 

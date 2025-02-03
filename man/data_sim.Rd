@@ -9,6 +9,7 @@ data_sim(
   param_inputs,
   start_date,
   end_date,
+  prewarm_years = 2,
   month = FALSE,
   round = TRUE,
   save = TRUE,
@@ -26,6 +27,9 @@ data_sim(
 \item{start_date}{The start date for the simulation, as a \code{Date} object or character string.}
 
 \item{end_date}{The end date for the simulation, as a \code{Date} object or character string.}
+
+\item{prewarm_years}{Integer, the number of years to simulate before \code{start_date} as a pre-warm period
+(default is 2 years).}
 
 \item{month}{Logical; if \code{TRUE}, aggregate data monthly; if \code{FALSE}, aggregate weekly.}
 

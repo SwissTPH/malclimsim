@@ -693,7 +693,7 @@ plot_smc_scenarios <- function(observed_df, no_smc_df, current_smc_df, full_smc_
 #' plot_compartments(compart_df, plot_type = "stacked", compartments = c("SC", "IC", "RA"))
 #'
 #' # Faceted plot with proportions and log scale
-#' plot_compartments(compart_df, plot_type = "facet", plot_proportion = TRUE, log_scale = TRUE)
+#' plot_compartments(compart_df, plot_type = "line", plot_proportion = TRUE, log_scale = TRUE, facet = TRUE)
 #'
 #' @import ggplot2 reshape2 patchwork
 #' @export
@@ -738,9 +738,9 @@ plot_compartments <- function(compart_df, plot_type = "line", compartments = NUL
     p <- p + geom_area(alpha = 0.6, position = "stack") +
       scale_fill_brewer(palette = color_palette) +
       labs(title = title, y = y_label, x = "Date")
-  } else if (plot_type == "facet") {
+  } else if (plot_type == "facet" || facet) {
     p <- p + geom_line(size = 1) +
-      facet_wrap(~ variable, scales = "free_y") +
+      facet_wrap(~ variable, ncol = 1, scales = "free_y") +
       scale_color_brewer(palette = color_palette) +
       labs(title = title, y = y_label, x = "Date")
   }
@@ -765,4 +765,218 @@ plot_compartments <- function(compart_df, plot_type = "line", compartments = NUL
   return(p)
 }
 
+#' Plot Compartmental Simulation Results
+#'
+#' This function visualizes the output of a compartmental model simulation with
+#' options for line plots, stacked area plots, and faceted visualizations. Users
+#' can also plot proportions relative to the total population.
+#'
+#' @param compart_df Data frame containing compartments simulation output.
+#' @param plot_type Character string specifying the type of plot. Options are "line", "stacked", or "facet".
+#' @param compartments Optional character vector of compartments to plot (e.g., c("SC", "IC")).
+#' @param plot_proportion Logical indicating whether to plot proportions relative to the total population (`P` column).
+#' @param log_scale Logical indicating whether to apply a logarithmic scale to the y-axis.
+#' @param title Character string specifying the plot title.
+#' @param color_palette Character string specifying the color palette from RColorBrewer (default: "Set2").
+#' @param y_label Character string specifying the Y-axis label (default: "Population Count").
+#'
+#' @return A ggplot object visualizing the compartmental data.
+#'
+#' @examples
+#' # Basic line plot
+#' plot_compartments(compart_df, plot_type = "line")
+#'
+#' # Stacked area plot with selected compartments
+#' plot_compartments(compart_df, plot_type = "stacked", compartments = c("SC", "IC", "RA"))
+#'
+#' # Faceted plot with proportions and log scale
+#' plot_compartments(compart_df, plot_type = "line", plot_proportion = TRUE, log_scale = TRUE, facet = TRUE)
+#'
+#' @import ggplot2 reshape2 patchwork
+#' @export
+plot_compartments <- function(compart_df, plot_type = "line", compartments = NULL,
+                              plot_proportion = FALSE, log_scale = FALSE,
+                              title = "Epidemic Compartments Over Time",
+                              color_palette = "Set2", y_label = "Population Count") {
+
+  # Validate plot_type
+  if (!(plot_type %in% c("line", "stacked", "facet"))) {
+    stop("Invalid plot_type. Choose from 'line', 'stacked', or 'facet'.")
+  }
+
+  # Convert data to long format for ggplot
+  compart_long <- reshape2::melt(compart_df, id.vars = "date")
+
+  # Filter for specified compartments if provided
+  if (!is.null(compartments)) {
+    compart_long <- compart_long[compart_long$variable %in% compartments, ]
+  }
+
+  # If plotting proportions, divide each compartment by the appropriate population
+  if (plot_proportion) {
+    compart_long$value <- with(compart_long, ifelse(grepl("C$", variable),
+                                                    value / compart_df$PC[match(date, compart_df$date)],
+                                                    ifelse(grepl("A$", variable),
+                                                           value / compart_df$PA[match(date, compart_df$date)],
+                                                           value / compart_df$P[match(date, compart_df$date)])))
+    y_label <- "Proportion of Population"
+  }
+
+  # Base ggplot object
+  p <- ggplot(compart_long, aes(x = date, y = value, color = variable, fill = variable))
+
+  # Choose plot type
+  if (plot_type == "line") {
+    p <- p + geom_line(size = 1.2) +
+      scale_color_brewer(palette = color_palette) +
+      labs(title = title, y = y_label, x = "Date")
+  } else if (plot_type == "stacked") {
+    p <- p + geom_area(alpha = 0.6, position = "stack") +
+      scale_fill_brewer(palette = color_palette) +
+      labs(title = title, y = y_label, x = "Date")
+  } else if (plot_type == "facet") {
+    p <- p + geom_line(size = 1) +
+      facet_wrap(~ variable, ncol = 1, scales = "free_y") +
+      scale_color_brewer(palette = color_palette) +
+      labs(title = title, y = y_label, x = "Date")
+  }
+
+  # Apply logarithmic scale if specified
+  if (log_scale) {
+    p <- p + scale_y_log10() +
+      annotation_logticks(sides = "l")  # Add log ticks on the left
+  }
+
+  # Add additional theme modifications
+  p <- p + theme_minimal(base_size = 14) +
+    theme(
+      legend.title = element_blank(),
+      legend.position = "right",
+      plot.title = element_text(hjust = 0.5, face = "bold", size = 16),
+      axis.title = element_text(size = 14),
+      axis.text = element_text(size = 12),
+      strip.text = element_text(size = 14, face = "bold")
+    )
+
+  return(p)
+}
+
+
+#' Plot Estimated and True Prevalence Over Time
+#'
+#' This function creates a time series plot of estimated malaria prevalence.
+#' Prevalence types are plotted on the same facet, while districts are shown as separate facets.
+#' True prevalence estimates (from MAP data) can also be included and selected (`prev_A`, `prev_C`, `prev`).
+#'
+#' @param prevalence_data A data frame containing `year`, `District`, `Prevalence_Type`, and `Value` columns.
+#' @param prevalence_true (Optional) A data frame containing observed prevalence estimates with columns `District`, `Year`, `prev_A`, `prev_C`, `prev`.
+#' @param true_types A character vector specifying which of the true prevalence values to include (`prev_A`, `prev_C`, `prev`). Default is `prev`.
+#' @param districts A character vector specifying which districts to include. Default is all.
+#' @param prevalence_types A character vector specifying which prevalence types to include. Default is all.
+#' @param title A character string specifying the plot title.
+#' @param color_palette A character string specifying the color palette from RColorBrewer (default: "Set2").
+#'
+#' @return A ggplot2 object visualizing the prevalence trends over time.
+#'
+#' @details
+#' - The function allows users to compare model-estimated prevalence against true values from malaria prevalence data (MAP).
+#' - True prevalence data can be plotted for **all age groups (`prev`), only adults (`prev_A`), or only children (`prev_C`)**.
+#' - If `prevalence_true` is provided, it is plotted as **circles** (`shape = 16`), while model estimates are displayed as **lines + dots**.
+#' - If `prevalence_true` is NULL, only model estimates are plotted.
+#'
+#' @examples
+#' # Plot only model estimates
+#' plot_prevalence_over_time(prevalence_model_estimated)
+#'
+#' # Plot with true prevalence values (default = total prevalence)
+#' plot_prevalence_over_time(prevalence_model_estimated, prevalence_true)
+#'
+#' # Compare model estimates to only `prev_A` (adults)
+#' plot_prevalence_over_time(prevalence_model_estimated, prevalence_true, true_types = "prev_A")
+#'
+#' # Compare selected prevalence types
+#' plot_prevalence_over_time(prevalence_model_estimated, prevalence_true,
+#'                           prevalence_types = c("prev_total_with_R", "prev_A_with_R"),
+#'                           true_types = c("prev_A", "prev_C"))
+#'
+#' @export
+plot_prevalence_over_time <- function(prevalence_data,
+                                      prevalence_true = NULL,
+                                      true_types = "prev",  # Default to total prevalence
+                                      districts = NULL,
+                                      prevalence_types = NULL,
+                                      title = "Estimated and True Prevalence Over Time",
+                                      color_palette = "Set2") {
+
+  # Convert year column to numeric for consistency
+  prevalence_data$year <- as.numeric(prevalence_data$year)
+
+  # Filter out "with_R" values and rename "no_R" types for merging with true values
+  prevalence_data_clean <- prevalence_data %>%
+    filter(!stringr::str_detect(Prevalence_Type, "with_R")) %>%  # Remove `with_R` types
+    mutate(Prevalence_Type = case_when(
+      Prevalence_Type == "prev_A_no_R" ~ "prev_A",
+      Prevalence_Type == "prev_C_no_R" ~ "prev_C",
+      Prevalence_Type == "prev_total_no_R" ~ "prev",
+      TRUE ~ Prevalence_Type  # Keep other types unchanged
+    )) %>%
+    mutate(Source = "Model")  # Label model estimates
+
+  # Process true prevalence data if provided
+  if (!is.null(prevalence_true)) {
+    prevalence_true <- prevalence_true %>% dplyr::select(-Value)  # Remove old `Value` column if exists
+    prevalence_true$Year <- as.numeric(prevalence_true$Year)
+
+    # Convert true prevalence data to long format
+    prevalence_true_long <- prevalence_true %>%
+      pivot_longer(cols = c(prev_A, prev_C, prev),
+                   names_to = "Prevalence_Type",
+                   values_to = "Value") %>%
+      rename(year = Year) %>%
+      mutate(Source = "Observed (MAP)")  # Label true values
+
+    # Filter only selected true prevalence types
+    prevalence_true_long <- prevalence_true_long %>%
+      filter(Prevalence_Type %in% true_types)
+
+    # Merge model estimates with true values (keep all model estimates)
+    combined_data <- bind_rows(prevalence_data_clean, prevalence_true_long)
+  } else {
+    combined_data <- prevalence_data_clean  # Use only model estimates if no true data is provided
+  }
+
+  # Filter data based on user selection
+  if (!is.null(districts)) {
+    combined_data <- combined_data %>% filter(District %in% districts)
+  }
+
+  if (!is.null(prevalence_types)) {
+    combined_data <- combined_data %>% filter(Prevalence_Type %in% prevalence_types)
+  }
+
+  # Base ggplot object
+  p <- ggplot(combined_data, aes(x = year, y = Value, color = Prevalence_Type, group = interaction(Prevalence_Type, Source))) +
+    geom_line(data = combined_data %>% filter(Source == "Model"), size = 1.2) +  # Model estimates as lines
+    geom_point(data = combined_data %>% filter(Source == "Model"), size = 2, shape = 16) +  # Model estimates as dots
+    geom_point(data = combined_data %>% filter(Source == "Observed (MAP)"), aes(color = Prevalence_Type), size = 3, shape = 16, stroke = 1.5, na.rm = TRUE) +  # True values as filled circles
+    facet_wrap(~ District, scales = "free_y") +  # Separate facets by district
+    scale_color_brewer(palette = color_palette) +
+    labs(
+      title = title,
+      x = "Year",
+      y = "Average Yearly Prevalence Estimate",
+      color = "Prevalence Type"
+    ) +
+    theme_minimal(base_size = 14) +
+    theme(
+      legend.position = "right",
+      panel.grid.minor = element_blank(),
+      plot.title = element_text(hjust = 0.5, face = "bold", size = 16),
+      axis.title = element_text(size = 14),
+      axis.text = element_text(size = 12),
+      strip.text = element_text(size = 14, face = "bold")
+    )
+
+  return(p)
+}
 

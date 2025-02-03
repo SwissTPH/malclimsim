@@ -24,7 +24,8 @@ inf_run(
   rerun_n = Inf,
   rerun_random = FALSE,
   param_priors = NULL,
-  n_years_warmup = 3
+  n_years_warmup = 3,
+  include_prev = TRUE
 )
 }
 \arguments{

@@ -96,6 +96,8 @@ sim_mod <- function(odin_mod, pars, time_start, n_particles, sim_time){
 #' @param param_inputs A list of parameters required for the simulation.
 #' @param start_date The start date for the simulation, as a `Date` object or character string.
 #' @param end_date The end date for the simulation, as a `Date` object or character string.
+#' @param prewarm_years Integer, the number of years to simulate before `start_date` as a pre-warm period
+#' (default is 2 years).
 #' @param month Logical; if `TRUE`, aggregate data monthly; if `FALSE`, aggregate weekly.
 #' @param round Logical; if `TRUE`, round the results to whole numbers.
 #' @param save Logical; if `TRUE`, save the results to a file.
@@ -107,14 +109,21 @@ sim_mod <- function(odin_mod, pars, time_start, n_particles, sim_time){
 #' # Running the simulation and getting monthly data
 #' inc_data <- data_sim(model, param_inputs, start_date = "2021-01-01", end_date = "2021-12-31", month = TRUE)
 data_sim <- function(model, param_inputs, start_date, end_date,
-                     month = FALSE, round = TRUE, save = TRUE, file = "",
+                     prewarm_years = 2, month = FALSE, round = TRUE, save = TRUE, file = "",
                      month_unequal_days = FALSE, return_EIR = FALSE, return_compartments = FALSE){
 
-  # Calculate the number of days in the SMC schedule
-  n_days <- calculate_360_day_difference(start_date, end_date) + 1
+  param_inputs <- extend_time_varying_inputs(param_inputs, days_per_year = 360,
+                                                 years_to_extend = prewarm_years)
+
+  # Extend the start date backward by the pre-warm period
+  prewarm_start_date <- paste0(year(as.Date(start_date)) - prewarm_years, "-", format(as.Date(start_date), "%m-%d"))
+
+  # Calculate the number of days in the full simulation period (prewarm + main simulation)
+  n_days <- calculate_360_day_difference(prewarm_start_date, end_date) + 1
+
 
   # Run the simulation using the model and parameters
-  results <- sim_mod(model, pars = c(param_inputs), time_start = 0,
+  results <- sim_mod(model, pars = param_inputs, time_start = 0,
                      n_particles = 1, sim_time = n_days)
 
   # Extract the simulation output and the model
@@ -123,93 +132,78 @@ data_sim <- function(model, param_inputs, start_date, end_date,
 
   # If monthly aggregation is selected
   if(month){
-    # Create monthly indices for aggregation
-    month_ind <- seq(1, n_days, by = 30)
+    if(month){
+      # Create monthly indices for aggregation
+      month_ind <- seq(1, n_days, by = 30)
 
-    # Adjust for months with unequal days, if specified
-    if(month_unequal_days){
-      month_ind <- which(param_inputs$day_count == 0)
+      # Adjust for months with unequal days, if specified
+      if(month_unequal_days){
+        month_ind <- which(param_inputs$day_count == 0)
+      }
     }
 
-    # Extract monthly incidence for adults (inc_A) and children (inc_C)
     inc_A <- x[mod$info()$index$month_inc_A,,][month_ind]
     inc_C <- x[mod$info()$index$month_inc_C,,][month_ind]
 
-    # Get the corresponding monthly dates
-    month <- date_to_months(start_date = as.Date(start_date), end_date = as.Date(end_date))
+    month <- date_to_months(start_date = as.Date(prewarm_start_date), end_date = as.Date(end_date))
 
-    # Ensure the lengths are equal
     n_months <- min(length(month), length(inc_A), length(inc_C))
     month <- month[1:n_months]
     inc_A <- inc_A[1:n_months]
     inc_C <- inc_C[1:n_months]
 
-    # Create a dataframe for monthly incidence data
     month_no <- 0:(n_months - 1)
 
     if(return_EIR){
-      EIR_monthly <- x[mod$info()$index$EIR_monthly,,][month_ind]
+      EIR_monthly <- x[mod$info()$index$EIR_monthly,,][month_ind][main_sim_indices]
       EIR_monthly <- EIR_monthly[1:n_months]
-      inc_df <- data.frame(date_ymd = month, month_no, inc_A, inc_C,
-                           inc = inc_A + inc_C, EIR_monthly = EIR_monthly)
-    } else{inc_df <- data.frame(date_ymd = month, month_no, inc_A, inc_C, inc = inc_A + inc_C)}
-    if(return_compartments){
-      SC_monthly <- x[mod$info()$index$SC,,][month_ind]
-      EC_monthly <- x[mod$info()$index$EC,,][month_ind]
-      IC_monthly <- x[mod$info()$index$IC,,][month_ind]
-      TrC_monthly <- x[mod$info()$index$TrC,,][month_ind]
-      RC_monthly <- x[mod$info()$index$RC,,][month_ind]
-      SA_monthly <- x[mod$info()$index$SA,,][month_ind]
-      EA_monthly <- x[mod$info()$index$EA,,][month_ind]
-      IA_monthly <- x[mod$info()$index$IA,,][month_ind]
-      TrA_monthly <- x[mod$info()$index$TrA,,][month_ind]
-      RA_monthly <- x[mod$info()$index$RA,,][month_ind]
-      PC_monthly <- x[mod$info()$index$P_C,,][month_ind]
-      PA_monthly <- x[mod$info()$index$P_A,,][month_ind]
-      P_monthly <- PC_monthly + PA_monthly
+      inc_df <- data.frame(date_ymd = month, month_no, inc_A, inc_C, inc = inc_A + inc_C, EIR_monthly = EIR_monthly)
+    } else {
+      inc_df <- data.frame(date_ymd = month, month_no, inc_A, inc_C, inc = inc_A + inc_C)
     }
-
   } else {
     # If weekly aggregation is selected
-    # Create weekly indices for aggregation
     wk_ind <- seq(1, n_days, by = 7)
 
-    # Extract weekly incidence for adults (inc_A) and children (inc_C)
     inc_A <- x[mod$info()$index$wk_inc_A,,][wk_ind]
     inc_C <- x[mod$info()$index$wk_inc_C,,][wk_ind]
 
-    # Get the corresponding weekly dates
-    week <- date_to_weeks(start_date = as.Date(start_date), end_date = as.Date(end_date))
+    week <- date_to_weeks(start_date = as.Date(prewarm_start_date), end_date = as.Date(end_date))
 
-    # Ensure the lengths are equal
     n_weeks <- min(length(week), length(inc_A), length(inc_C))
     week <- week[1:n_weeks]
     inc_A <- inc_A[1:n_weeks]
     inc_C <- inc_C[1:n_weeks]
 
-    # Create a dataframe for weekly incidence data
     week_no <- 0:(n_weeks - 1)
 
     if(return_EIR){
       EIR_monthly <- x[mod$info()$index$EIR_monthly,,][wk_ind]
       EIR_monthly <- EIR_monthly[1:n_weeks]
       inc_df <- data.frame(week, week_no, inc_A, inc_C, inc = inc_A + inc_C, EIR_monthly = EIR_monthly)
-    } else{inc_df <- data.frame(week, week_no, inc_A, inc_C, inc = inc_A + inc_C)}
+    } else {
+      inc_df <- data.frame(week, week_no, inc_A, inc_C, inc = inc_A + inc_C)
+    }
   }
+
 
   # Round the results if specified
   if(round){
     inc_df[3:5] <- round(inc_df[3:5])
   }
 
+  start_month <- which(inc_df$date_ymd == as.Date(format(as.Date(start_date), "%Y-%m-01")))
+  end_month <- which(inc_df$date_ymd == as.Date(format(as.Date(end_date), "%Y-%m-01")))
+  inc_df <- inc_df[start_month:end_month,]
+
   # Save the dataframe to a file if specified
   if(save){
     saveRDS(inc_df, paste0(dir, file))
   }
 
-  # Return the resulting incidence dataframe
   return(inc_df)
 }
+
 
 #' Simulate Data for Inference
 #'
@@ -520,79 +514,128 @@ calculate_incidence_quantiles <- function(simulations) {
   return(quantiles_df)
 }
 
-#' Simulate Compartments Over Time
+
+
+#' Simulate Compartments Over Time with Prewarm Period
 #'
-#' This function simulates the compartments of an epidemiological model over a specified time period
-#' using the provided model and parameter inputs.
+#' This function simulates the compartments of an epidemiological model over a specified time period,
+#' including an optional prewarm period to allow the model to reach equilibrium before the main simulation period.
 #'
 #' @param model An epidemiological model object used for simulation.
 #' @param param_inputs A named list or vector of model parameters to be used in the simulation.
-#' @param start_date A character string or Date object specifying the start date of the simulation (e.g., "2014-01-01").
+#' @param start_date A character string or Date object specifying the start date of the main simulation (e.g., "2014-01-01").
 #' @param end_date A character string or Date object specifying the end date of the simulation (e.g., "2022-12-31").
+#' @param prewarm_years Integer specifying the number of years to prewarm the model before the main simulation (default: 2).
+#' @param days_per_year Integer specifying the number of days in a model year (default: 360).
 #'
 #' @return A data frame containing the simulated values of each compartment (SC, EC, IC, etc.)
 #' over the simulation period with a weekly time resolution.
 #'
 #' @details The function simulates the dynamics of susceptible, exposed, infected, treated, and recovered
-#' compartments for both children and adults. It aggregates data at weekly intervals and generates
-#' a time series data frame.
-#'
-#' @examples
-#' # Example usage
-#' param_inputs <- list(beta = 0.3, gamma = 0.1)
-#' start_date <- "2014-01-01"
-#' end_date <- "2022-12-31"
-#' model <- create_model()  # Assuming a function to create the model
-#' result <- compartments_sim(model, param_inputs, start_date, end_date)
-#' head(result)
+#' compartments for both children and adults. It first runs a prewarm period (if specified) to allow the model to stabilize,
+#' before simulating the main study period. The results are aggregated at weekly intervals.
 #'
 #' @export
-compartments_sim <- function(model, param_inputs, start_date, end_date) {
-  # Calculate the number of days in the SMC schedule
-  n_days <- calculate_360_day_difference(start_date, end_date) - 1
+compartments_sim <- function(model, param_inputs, start_date, end_date, prewarm_years = 2, days_per_year = 360) {
 
-  # Run the simulation using the model and parameters
-  results <- sim_mod(model, pars = c(param_inputs), time_start = 0,
-                     n_particles = 1, sim_time = n_days)
+  # Extend parameter inputs to accommodate the prewarm period
+  param_inputs_ext <- extend_time_varying_inputs(param_inputs, days_per_year = days_per_year, years_to_extend = prewarm_years)
+
+  # Calculate the prewarm start date
+  prewarm_start_date <- paste0(year(as.Date(start_date)) - prewarm_years, "-", format(as.Date(start_date), "%m-%d"))
+
+  # Calculate the total number of days including prewarm period
+  total_days <- calculate_360_day_difference(prewarm_start_date, end_date) - 1
+
+  # Run the simulation using the model and extended parameters
+  results <- sim_mod(model, pars = c(param_inputs_ext), time_start = 0,
+                     n_particles = 1, sim_time = total_days)
 
   # Extract the simulation output and the model
   x <- results[[1]]
   mod <- results[[2]]
 
-  # Select weekly indices from the simulation results
-  wk_ind <- seq(1, n_days, by = 7)
+  # Select weekly indices from the simulation results (excluding prewarm)
+  full_wk_ind <- seq(1, total_days, by = 7)
+  start_index <- calculate_360_day_difference(prewarm_start_date, start_date)
+  wk_ind <- full_wk_ind[full_wk_ind >= start_index]
 
-  # Extract compartment data using model index references
-  SC <- x[mod$info()$index$SC,,][wk_ind]
-  EC <- x[mod$info()$index$EC,,][wk_ind]
-  IC <- x[mod$info()$index$IC,,][wk_ind]
-  TrC <- x[mod$info()$index$TrC,,][wk_ind]
-  RC <- x[mod$info()$index$RC,,][wk_ind]
-  SA <- x[mod$info()$index$SA,,][wk_ind]
-  EA <- x[mod$info()$index$EA,,][wk_ind]
-  IA <- x[mod$info()$index$IA,,][wk_ind]
-  TrA <- x[mod$info()$index$TrA,,][wk_ind]
-  RA <- x[mod$info()$index$RA,,][wk_ind]
-  PC <- x[mod$info()$index$P_C,,][wk_ind]
-  PA <- x[mod$info()$index$P_A,,][wk_ind]
-  EIR <- x[mod$info()$index$EIR2,,][wk_ind]
-  mu_SE_C <- x[mod$info()$index$mu_SE_C_2,,][wk_ind]
-  mu_SE_A <- x[mod$info()$index$mu_SE_A_2,,][wk_ind]
-  P <- PC + PA  # Total population size
-  eff_SMC_cov <- x[mod$info()$index$SMC_effect_2,,][wk_ind]
-  prev_total_with_R <- x[mod$info()$index$prev_total_1,,][wk_ind]
-  prev_C_with_R <- x[mod$info()$index$prev_C_1,,][wk_ind]
-  prev_A_with_R <- x[mod$info()$index$prev_A_1,,][wk_ind]
-  prev_total_no_R <- x[mod$info()$index$prev_total_2,,][wk_ind]
-  prev_C_no_R <- x[mod$info()$index$prev_C_2,,][wk_ind]
-  prev_A_no_R <- x[mod$info()$index$prev_A_2,,][wk_ind]
+  # Ensure that extracted compartments match the length of wk_ind
+  extract_compartment <- function(index_name) {
+    values <- x[mod$info()$index[[index_name]],,]
+    if (length(values) >= max(wk_ind)) {
+      return(values[wk_ind])  # Ensure selection does not exceed available data
+    } else {
+      stop(paste("Mismatch in compartment size for:", index_name))
+    }
+  }
 
-  # Generate weekly dates for the compartments
-  compart_dates <- generate_360_day_dates(2014, 2022)[wk_ind]
+  # Extract compartment data using helper function
+  SC <- extract_compartment("SC")
+  EC <- extract_compartment("EC")
+  IC <- extract_compartment("IC")
+  TrC <- extract_compartment("TrC")
+  RC <- extract_compartment("RC")
+  SA <- extract_compartment("SA")
+  EA <- extract_compartment("EA")
+  IA <- extract_compartment("IA")
+  TrA <- extract_compartment("TrA")
+  RA <- extract_compartment("RA")
+  PC <- extract_compartment("P_C")
+  PA <- extract_compartment("P_A")
+  EIR <- extract_compartment("EIR2")
+  eff_SMC_cov <- extract_compartment("SMC_effect_2")
+  prev_total_with_R <- extract_compartment("prev_total_1")
+  prev_C_with_R <- extract_compartment("prev_C_1")
+  prev_A_with_R <- extract_compartment("prev_A_1")
+  prev_total_no_R <- extract_compartment("prev_total_2")
+  prev_C_no_R <- extract_compartment("prev_C_2")
+  prev_A_no_R <- extract_compartment("prev_A_2")
+  SMC_effect <- extract_compartment("SMC_effect_2")
+  mu_SE_C <- extract_compartment("mu_SE_C_2")
+  mu_SE_A <- extract_compartment("mu_SE_A_2")
+  X <- extract_compartment("X2")
+
+  # Total population size
+  P <- PC + PA
+
+  # Generate correct weekly dates for the compartments
+  compart_dates <- seq(as.Date(start_date), as.Date(end_date), by = "7 days")
+
+  # Ensure the length of compart_dates matches the number of extracted weekly values
+  min_length <- min(length(compart_dates), length(SC))
+
+  # Trim all vectors to match the shortest length
+  compart_dates <- compart_dates[1:min_length]
+  SC <- SC[1:min_length]
+  EC <- EC[1:min_length]
+  IC <- IC[1:min_length]
+  TrC <- TrC[1:min_length]
+  RC <- RC[1:min_length]
+  SA <- SA[1:min_length]
+  EA <- EA[1:min_length]
+  IA <- IA[1:min_length]
+  TrA <- TrA[1:min_length]
+  RA <- RA[1:min_length]
+  PC <- PC[1:min_length]
+  PA <- PA[1:min_length]
+  P <- P[1:min_length]
+  EIR <- EIR[1:min_length]
+  eff_SMC_cov <- eff_SMC_cov[1:min_length]
+  prev_total_with_R <- prev_total_with_R[1:min_length]
+  prev_C_with_R <- prev_C_with_R[1:min_length]
+  prev_A_with_R <- prev_A_with_R[1:min_length]
+  prev_total_no_R <- prev_total_no_R[1:min_length]
+  prev_C_no_R <- prev_C_no_R[1:min_length]
+  prev_A_no_R <- prev_A_no_R[1:min_length]
+  SMC_effect <- SMC_effect[1:min_length]
+  mu_SE_C <- mu_SE_C[1:min_length]
+  mu_SE_A <- mu_SE_A[1:min_length]
+  X <- X[1:min_length]
 
   # Create a data frame with compartment values
   compart_df <- data.frame(
-    date = as.Date(compart_dates),
+    date = compart_dates,
     SC = SC,
     EC = EC,
     IC = IC,
@@ -607,16 +650,89 @@ compartments_sim <- function(model, param_inputs, start_date, end_date) {
     PA = PA,
     P = P,
     EIR = EIR,
-    mu_SE_C = mu_SE_C,
-    mu_SE_A = mu_SE_A,
     eff_SMC_cov = eff_SMC_cov,
     prev_total_with_R = prev_total_with_R,
     prev_C_with_R = prev_C_with_R,
     prev_A_with_R = prev_A_with_R,
     prev_total_no_R = prev_total_no_R,
     prev_C_no_R = prev_C_no_R,
-    prev_A_no_R = prev_A_no_R
+    prev_A_no_R = prev_A_no_R,
+    SMC_effect = SMC_effect,
+    mu_SE_C = mu_SE_C,
+    mu_SE_A = mu_SE_A,
+    X = X
   )
 
   return(compart_df)
 }
+
+#' Simulate and Extract Yearly Prevalence Estimates for a District
+#'
+#' This function runs a compartmental model simulation for a specified district,
+#' extracts yearly prevalence estimates, and returns a summarized data frame.
+#'
+#' @param model An epidemiological model object used for simulation.
+#' @param results A list containing MCMC or model fitting results for the district,
+#'        including parameter estimates and prior information.
+#' @param start_date A character string or Date object specifying the start date of the simulation (e.g., "2014-01-01").
+#' @param end_date A character string or Date object specifying the end date of the simulation (e.g., "2022-12-31").
+#' @param district_name A character string specifying the name of the district.
+#' @param param_inputs A named vector of parameters and corresponding values. If NULL, uses parameters that maximize likelihood in results.
+#'
+#' @return A data frame containing yearly average prevalence estimates for the given district.
+#'         The data frame includes columns for `year`, various prevalence metrics (e.g., `prev_total_with_R`, `prev_C_with_R`),
+#'         and the corresponding `District` name.
+#'
+#' @details
+#' - The function first extracts the **maximum likelihood parameters** from the model fitting results.
+#' - It updates the **parameter inputs** with these best estimates.
+#' - The model is then **simulated** for the specified district and time period.
+#' - The output is aggregated into **yearly averages** for all prevalence metrics.
+#' - The district name is appended to the final data frame to facilitate later merging.
+#'
+#' @examples
+#' # Example usage for the Koumra district
+#' start_date <- "2014-01-01"
+#' end_date <- "2022-12-31"
+#' koumra_prev <- simulate_prevalence_for_district(model_simp, koumra_results, start_date, end_date, "Koumra")
+#'
+#' # View output
+#' head(koumra_prev)
+#'
+#' @seealso
+#' - `compartments_sim()`: Function used internally to simulate the model.
+#' - `update_param_list()`, `extract_max_posterior_params()`: Functions to extract and update model parameters.
+#'
+#' @export
+simulate_prevalence_for_district <- function(model, results, start_date, end_date, district_name, param_inputs = NULL) {
+
+  if(is.null(param_inputs)){
+    # Extract max likelihood parameters
+    max_ll_params <- extract_max_posterior_params(results$results)
+
+    # Update parameter inputs with max likelihood estimates
+    param_inputs <- update_param_list(results$results$param_inputs, max_ll_params)
+  }
+
+  # Run the compartment simulation for the district
+  compart_df <- compartments_sim(model = model, param_inputs = param_inputs,
+                                 start_date = start_date, end_date = end_date)
+
+  # Ensure date column is in Date format and extract year
+  compart_df <- compart_df %>%
+    mutate(date = as.Date(date), year = year(date))
+
+  # Compute yearly averages for prevalence metrics
+  compart_df_year_avg <- compart_df %>%
+    group_by(year) %>%
+    summarise(across(starts_with("prev"), mean, na.rm = TRUE), .groups = "drop")
+
+  # Add district name for identification
+  compart_df_year_avg <- compart_df_year_avg %>%
+    mutate(District = district_name)
+
+  return(compart_df_year_avg)
+}
+
+
+

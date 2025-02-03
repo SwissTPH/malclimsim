@@ -2,39 +2,40 @@
 % Please edit documentation in R/model_simulation.R
 \name{compartments_sim}
 \alias{compartments_sim}
-\title{Simulate Compartments Over Time}
+\title{Simulate Compartments Over Time with Prewarm Period}
 \usage{
-compartments_sim(model, param_inputs, start_date, end_date)
+compartments_sim(
+  model,
+  param_inputs,
+  start_date,
+  end_date,
+  prewarm_years = 2,
+  days_per_year = 360
+)
 }
 \arguments{
 \item{model}{An epidemiological model object used for simulation.}
 
 \item{param_inputs}{A named list or vector of model parameters to be used in the simulation.}
 
-\item{start_date}{A character string or Date object specifying the start date of the simulation (e.g., "2014-01-01").}
+\item{start_date}{A character string or Date object specifying the start date of the main simulation (e.g., "2014-01-01").}
 
 \item{end_date}{A character string or Date object specifying the end date of the simulation (e.g., "2022-12-31").}
+
+\item{prewarm_years}{Integer specifying the number of years to prewarm the model before the main simulation (default: 2).}
+
+\item{days_per_year}{Integer specifying the number of days in a model year (default: 360).}
 }
 \value{
 A data frame containing the simulated values of each compartment (SC, EC, IC, etc.)
 over the simulation period with a weekly time resolution.
 }
 \description{
-This function simulates the compartments of an epidemiological model over a specified time period
-using the provided model and parameter inputs.
+This function simulates the compartments of an epidemiological model over a specified time period,
+including an optional prewarm period to allow the model to reach equilibrium before the main simulation period.
 }
 \details{
 The function simulates the dynamics of susceptible, exposed, infected, treated, and recovered
-compartments for both children and adults. It aggregates data at weekly intervals and generates
-a time series data frame.
-}
-\examples{
-# Example usage
-param_inputs <- list(beta = 0.3, gamma = 0.1)
-start_date <- "2014-01-01"
-end_date <- "2022-12-31"
-model <- create_model()  # Assuming a function to create the model
-result <- compartments_sim(model, param_inputs, start_date, end_date)
-head(result)
-
+compartments for both children and adults. It first runs a prewarm period (if specified) to allow the model to stabilize,
+before simulating the main study period. The results are aggregated at weekly intervals.
 }

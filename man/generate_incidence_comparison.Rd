@@ -4,7 +4,7 @@
 \alias{generate_incidence_comparison}
 \title{Generate a Comparison Function for Malaria Incidence}
 \usage{
-generate_incidence_comparison(month, age_for_inf, incidence_df)
+generate_incidence_comparison(month, age_for_inf, incidence_df, include_prev)
 }
 \arguments{
 \item{month}{A logical value indicating whether to use monthly data (TRUE) or weekly data (FALSE).}
@@ -13,6 +13,8 @@ generate_incidence_comparison(month, age_for_inf, incidence_df)
 "total", "sep_ages", "all_ages", "u5", or "o5".}
 
 \item{incidence_df}{A data frame containing observed malaria incidence data.}
+
+\item{include_prev}{A logical value indicating if prevalence should be included in the likelihood function}
 }
 \value{
 A function for comparing modeled and observed incidence based on a specified distribution (e.g., Negative Binomial).
@@ -23,6 +25,7 @@ time period (monthly or weekly) and age group for malaria incidence.
 }
 \examples{
 # Example usage for monthly total incidence comparison:
-comparison_fn <- generate_incidence_comparison(month = TRUE, age_for_inf = "total", incidence_df = incidence_data)
+comparison_fn <- generate_incidence_comparison(month = TRUE, age_for_inf = "total",
+incidence_df = incidence_data, include_prev = include_prev)
 # Then use the returned function in MCMC or other model fitting tasks
 }
