@@ -861,7 +861,6 @@ plot_compartments <- function(compart_df, plot_type = "line", compartments = NUL
   return(p)
 }
 
-
 #' Plot Estimated and True Prevalence Over Time
 #'
 #' This function creates a time series plot of estimated malaria prevalence.
@@ -979,4 +978,340 @@ plot_prevalence_over_time <- function(prevalence_data,
 
   return(p)
 }
+
+#' Plot Confidence Intervals for Simulated Compartments
+#'
+#' This function generates a time series plot of median simulated values with confidence intervals,
+#' supporting different plot types, proportion scaling, and log scaling, with consistent ribbon and line colors.
+#'
+#' @param summary_df A data frame containing summarized simulation results with confidence intervals.
+#' @param plot_type Character string specifying the type of plot. Options are "line", "stacked", or "facet".
+#' @param compartments Optional character vector of compartments to plot (e.g., c("SC", "IC")).
+#' @param plot_proportion Logical indicating whether to plot proportions relative to the total population (`P` column).
+#' @param log_scale Logical indicating whether to apply a logarithmic scale to the y-axis.
+#' @param title Character string specifying the plot title (default: "Confidence Intervals for Simulated Compartments").
+#' @param color_palette Character string specifying the color palette from RColorBrewer (default: "Set2").
+#' @param y_label Character string specifying the Y-axis label (default: "Value").
+#'
+#' @return A ggplot object.
+#' @examples
+#' # Basic line plot
+#' plot_simulation_confidence_intervals(summary_df, plot_type = "line")
+#'
+#' # Stacked area plot with selected compartments
+#' plot_simulation_confidence_intervals(summary_df, plot_type = "stacked", compartments = c("SC", "IC"))
+#'
+#' # Faceted plot with proportions and log scale
+#' plot_simulation_confidence_intervals(summary_df, plot_type = "facet", plot_proportion = TRUE, log_scale = TRUE)
+#' @export
+plot_simulation_confidence_intervals <- function(summary_df, plot_type = "line", compartments = NULL,
+                                                 plot_proportion = FALSE, log_scale = FALSE,
+                                                 title = "Confidence Intervals for Simulated Compartments",
+                                                 color_palette = "Set2", y_label = "Value") {
+  # Convert data to long format for flexible plotting
+  long_df <- summary_df %>%
+    pivot_longer(
+      cols = -date,
+      names_to = c("compartment", "stat"),
+      names_pattern = "(.*)_(median|lower|upper)",
+      values_to = "value"
+    ) %>%
+    pivot_wider(names_from = stat, values_from = value) %>%
+    mutate(across(c(median, lower, upper), as.numeric))
+
+  # Filter compartments if specified
+  if (!is.null(compartments)) {
+    long_df <- long_df %>% filter(compartment %in% compartments)
+  }
+
+  # Adjust for proportions if requested (assuming "P" exists in the data)
+  if (plot_proportion && "P" %in% names(summary_df)) {
+    long_df <- long_df %>%
+      left_join(summary_df %>% select(date, P), by = "date") %>%
+      mutate(across(c(median, lower, upper), ~ . / P)) %>%
+      select(-P)
+    y_label <- "Proportion of Population"
+  }
+
+  # Base ggplot object
+  p <- ggplot(long_df, aes(x = date, group = compartment, color = compartment, fill = compartment))
+
+  # Apply plot types
+  if (plot_type == "line") {
+    p <- p +
+      geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, color = NA) +  # Fill uses the same color as the line
+      geom_line(aes(y = median), size = 1.2) +
+      scale_color_brewer(palette = color_palette) +
+      scale_fill_brewer(palette = color_palette)
+  } else if (plot_type == "stacked") {
+    p <- p +
+      geom_area(aes(y = median), alpha = 0.6, position = "stack") +
+      scale_fill_brewer(palette = color_palette)
+  } else if (plot_type == "facet") {
+    p <- p +
+      geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, color = NA) +
+      geom_line(aes(y = median), size = 1.2) +
+      facet_wrap(~ compartment, ncol = 1, scales = "free_y") +
+      scale_color_brewer(palette = color_palette) +
+      scale_fill_brewer(palette = color_palette)
+  } else {
+    stop("Invalid plot_type. Choose from 'line', 'stacked', or 'facet'.")
+  }
+
+  # Apply log scale if requested
+  if (log_scale) {
+    p <- p + scale_y_log10() + annotation_logticks(sides = "l")
+  }
+
+  # Final plot adjustments
+  p <- p +
+    labs(
+      title = title,
+      x = "Date",
+      y = y_label,
+      fill = "Compartment",
+      color = "Compartment"
+    ) +
+    theme_minimal(base_size = 14) +
+    theme(
+      plot.title = element_text(hjust = 0.5, face = "bold", size = 16),
+      axis.title = element_text(size = 14),
+      axis.text = element_text(size = 12),
+      strip.text = element_text(size = 14, face = "bold")
+    )
+
+  return(p)
+}
+
+#' Plot Confidence Intervals for Simulated Compartments with Observed Data (Improved Legend & Colors)
+#'
+#' This function generates a time series plot of median simulated values with confidence intervals,
+#' and overlays observed prevalence data as dots with consistent coloring and a clear legend.
+#'
+#' @param summary_df A data frame containing summarized simulation results with confidence intervals.
+#' @param obs_data A data frame containing observed data with columns `date_ymd`, `prev_A`, and `prev_C`.
+#' @param plot_type Character string specifying the type of plot. Options are "line", "stacked", or "facet".
+#' @param compartments Optional character vector of compartments to plot (e.g., c("SC", "IC")).
+#' @param plot_proportion Logical indicating whether to plot proportions relative to the total population (`P` column).
+#' @param log_scale Logical indicating whether to apply a logarithmic scale to the y-axis.
+#' @param title Character string specifying the plot title (default: "Confidence Intervals for Simulated Compartments").
+#' @param color_palette Character string specifying the color palette from RColorBrewer (default: "Set2").
+#' @param y_label Character string specifying the Y-axis label (default: "Value").
+#'
+#' @return A ggplot object.
+#' @export
+plot_simulation_confidence_intervals <- function(summary_df, obs_data = NULL, plot_type = "line", compartments = NULL,
+                                                 plot_proportion = FALSE, log_scale = FALSE,
+                                                 title = "Confidence Intervals for Simulated Compartments",
+                                                 color_palette = "Set2", y_label = "Value") {
+
+  library(tidyverse)
+
+  # Convert summary_df to long format for flexible plotting
+  long_df <- summary_df %>%
+    pivot_longer(
+      cols = -date,
+      names_to = c("compartment", "stat"),
+      names_pattern = "(.*)_(median|lower|upper)",
+      values_to = "value"
+    ) %>%
+    pivot_wider(names_from = stat, values_from = value) %>%
+    mutate(across(c(median, lower, upper), as.numeric))
+
+  # Filter compartments if specified
+  if (!is.null(compartments)) {
+    long_df <- long_df %>% filter(compartment %in% compartments)
+  }
+
+  # Adjust for proportions if requested (assuming "P" exists in the data)
+  if (plot_proportion && "P" %in% names(summary_df)) {
+    long_df <- long_df %>%
+      left_join(summary_df %>% select(date, P), by = "date") %>%
+      mutate(across(c(median, lower, upper), ~ . / P)) %>%
+      select(-P)
+    y_label <- "Proportion of Population"
+  }
+
+  # Define a consistent color palette
+  unique_compartments <- unique(long_df$compartment)
+  colors <- RColorBrewer::brewer.pal(max(3, length(unique_compartments)), color_palette)
+  color_map <- setNames(colors[1:length(unique_compartments)], unique_compartments)
+
+  # Base ggplot object
+  p <- ggplot(long_df, aes(x = date, group = compartment)) +
+    geom_ribbon(aes(ymin = lower, ymax = upper, fill = compartment), alpha = 0.2) +
+    geom_line(aes(y = median, color = compartment), size = 1.2) +
+    scale_color_manual(values = color_map) +
+    scale_fill_manual(values = color_map)
+
+  # Add observed data as dots with legend integration
+  if (!is.null(obs_data)) {
+    obs_data <- obs_data %>% mutate(date_ymd = as.Date(date_ymd))
+
+    # Plot observed prev_A
+    if ("prev_A" %in% names(obs_data)) {
+      p <- p + geom_point(data = obs_data %>% filter(!is.na(prev_A)),
+                          aes(x = date_ymd, y = prev_A, shape = "Observed prev_A", color = "prev_A_with_R"),
+                          size = 3, inherit.aes = FALSE)
+    }
+
+    # Plot observed prev_C
+    if ("prev_C" %in% names(obs_data)) {
+      p <- p + geom_point(data = obs_data %>% filter(!is.na(prev_C)),
+                          aes(x = date_ymd, y = prev_C, shape = "Observed prev_C", color = "prev_C_with_R"),
+                          size = 3, inherit.aes = FALSE)
+    }
+
+    # Add shapes for observed data in the legend
+    p <- p + scale_shape_manual(name = "Data Type", values = c("Observed prev_A" = 16, "Observed prev_C" = 17))
+  }
+
+  # Apply plot types
+  if (plot_type == "facet") {
+    p <- p + facet_wrap(~ compartment, ncol = 1, scales = "free_y")
+  }
+
+  # Apply log scale if requested
+  if (log_scale) {
+    p <- p + scale_y_log10() + annotation_logticks(sides = "l")
+  }
+
+  # Final plot adjustments
+  p <- p +
+    labs(
+      title = title,
+      x = "Date",
+      y = y_label,
+      fill = "Simulated",
+      color = "Simulated"
+    ) +
+    theme_minimal(base_size = 14) +
+    theme(
+      plot.title = element_text(hjust = 0.5, face = "bold", size = 16),
+      axis.title = element_text(size = 14),
+      axis.text = element_text(size = 12),
+      strip.text = element_text(size = 14, face = "bold"),
+      legend.title = element_text(size = 12),
+      legend.text = element_text(size = 10)
+    )
+
+  return(p)
+}
+
+#' Plot Confidence Intervals for Simulated Compartments with Observed Data (Improved Legend & Colors)
+#'
+#' This function generates a time series plot of median simulated values with confidence intervals,
+#' and overlays observed prevalence data as dots with consistent coloring and a clear legend.
+#'
+#' @param summary_df A data frame containing summarized simulation results with confidence intervals.
+#' @param obs_data A data frame containing observed data with columns `date_ymd`, `prev_A`, and `prev_C`.
+#' @param plot_type Character string specifying the type of plot. Options are "line", "stacked", or "facet".
+#' @param compartments Optional character vector of compartments to plot (e.g., c("SC", "IC")).
+#' @param plot_proportion Logical indicating whether to plot proportions relative to the total population (`P` column).
+#' @param log_scale Logical indicating whether to apply a logarithmic scale to the y-axis.
+#' @param title Character string specifying the plot title (default: "Confidence Intervals for Simulated Compartments").
+#' @param color_palette Character string specifying the color palette from RColorBrewer (default: "Set2").
+#' @param y_label Character string specifying the Y-axis label (default: "Value").
+#'
+#' @return A ggplot object.
+#' @export
+plot_simulation_confidence_intervals <- function(summary_df, obs_data = NULL, plot_type = "line", compartments = NULL,
+                                                 plot_proportion = FALSE, log_scale = FALSE,
+                                                 title = "Confidence Intervals for Simulated Compartments",
+                                                 color_palette = "Set2", y_label = "Value") {
+
+  library(tidyverse)
+
+  # Convert summary_df to long format for flexible plotting
+  long_df <- summary_df %>%
+    pivot_longer(
+      cols = -date,
+      names_to = c("compartment", "stat"),
+      names_pattern = "(.*)_(median|lower|upper)",
+      values_to = "value"
+    ) %>%
+    pivot_wider(names_from = stat, values_from = value) %>%
+    mutate(across(c(median, lower, upper), as.numeric))
+
+  # Filter compartments if specified
+  if (!is.null(compartments)) {
+    long_df <- long_df %>% filter(compartment %in% compartments)
+  }
+
+  # Adjust for proportions if requested (assuming "P" exists in the data)
+  if (plot_proportion && "P" %in% names(summary_df)) {
+    long_df <- long_df %>%
+      left_join(summary_df %>% select(date, P), by = "date") %>%
+      mutate(across(c(median, lower, upper), ~ . / P)) %>%
+      select(-P)
+    y_label <- "Proportion of Population"
+  }
+
+  # Define a consistent color palette
+  unique_compartments <- unique(long_df$compartment)
+  colors <- RColorBrewer::brewer.pal(max(3, length(unique_compartments)), color_palette)
+  color_map <- setNames(colors[1:length(unique_compartments)], unique_compartments)
+
+  # Base ggplot object
+  p <- ggplot(long_df, aes(x = date, group = compartment)) +
+    geom_ribbon(aes(ymin = lower, ymax = upper, fill = compartment), alpha = 0.2) +
+    geom_line(aes(y = median, color = compartment), size = 1.2) +
+    scale_color_manual(values = color_map) +
+    scale_fill_manual(values = color_map)
+
+  # Add observed data as dots with correct facet assignment
+  if (!is.null(obs_data)) {
+    obs_data <- obs_data %>% mutate(date_ymd = as.Date(date_ymd))
+
+    # Reshape observed data for plotting in facets
+    obs_long <- obs_data %>%
+      pivot_longer(cols = starts_with("prev_"), names_to = "compartment", values_to = "value") %>%
+      filter(!is.na(value)) %>%
+      mutate(compartment = case_when(
+        compartment == "prev_A" ~ "prev_A_with_R",
+        compartment == "prev_C" ~ "prev_C_with_R",
+        TRUE ~ compartment
+      ))
+
+    # Add observed points to the plot, mapped to corresponding facets
+    p <- p + geom_point(data = obs_long,
+                        aes(x = date_ymd, y = value, shape = "Observed", color = compartment),
+                        size = 3, inherit.aes = FALSE)
+
+    # Add shape to legend
+    p <- p + scale_shape_manual(name = "Data Type", values = c("Observed" = 16))
+  }
+
+  # Apply plot types
+  if (plot_type == "facet") {
+    p <- p + facet_wrap(~ compartment, ncol = 1, scales = "free_y")
+  }
+
+  # Apply log scale if requested
+  if (log_scale) {
+    p <- p + scale_y_log10() + annotation_logticks(sides = "l")
+  }
+
+  # Final plot adjustments
+  p <- p +
+    labs(
+      title = title,
+      x = "Date",
+      y = y_label,
+      fill = "Simulated",
+      color = "Simulated"
+    ) +
+    theme_minimal(base_size = 14) +
+    theme(
+      plot.title = element_text(hjust = 0.5, face = "bold", size = 16),
+      axis.title = element_text(size = 14),
+      axis.text = element_text(size = 12),
+      strip.text = element_text(size = 14, face = "bold"),
+      legend.title = element_text(size = 12),
+      legend.text = element_text(size = 10)
+    )
+
+  return(p)
+}
+
 

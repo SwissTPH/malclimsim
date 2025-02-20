@@ -42,7 +42,10 @@ index <- function(info) {
       wk_inc_A = info$index$wk_inc_A,
       wk_inc_total = info$index$wk_inc_total,
       prev_C_2 = info$index$prev_C_2,
-      prev_A_2 = info$index$prev_A_2
+      prev_A_2 = info$index$prev_A_2,
+      prev_C_1 = info$index$prev_C_1,
+      prev_A_1 = info$index$prev_A_1
+
     ),
     state = c(
       info$index$month_inc_total,
@@ -52,7 +55,9 @@ index <- function(info) {
       info$index$wk_inc_C,
       info$index$wk_inc_A,
       info$index$prev_C_2,
-      info$index$prev_A_2
+      info$index$prev_A_2,
+      info$index$prev_C_1,
+      info$index$prev_A_1
 
     )
   )

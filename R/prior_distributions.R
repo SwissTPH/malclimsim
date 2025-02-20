@@ -31,8 +31,12 @@ return_default_priors <- function(){
     # 1. Transmission and Recovery Parameters
     #phi = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dbeta(p, 40, 12, log = TRUE)),
     phi = list(initial = 0.2, min = 0.01, max = 2, prior = function(p) dunif(p, min = 0.01, max = 2, log = TRUE)),
+    phi_1 = list(initial = 0.2, min = 0.01, max = 0.999, prior = function(p) dunif(p, min = 0.01, max = 0.999, log = TRUE)),
+    c_phi = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dunif(p, min = 0.01, max = 1, log = TRUE)),
     #qR = list(initial = 0.2, min = 1e-6, max = 0.5, prior = function(p) dunif(p, min = 1e-7, max = 0.5, log = TRUE)),
     qR = list(initial = 0.2, min = 1e-6, max = 0.5, prior = function(p) dnorm(p, 0.24, 0.5, log = TRUE)),
+    qR1 = list(initial = 0.2, min = 1e-6, max = 1, prior = function(p) dnorm(p, 0.24, 2, log = TRUE)),
+    c_qR = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dunif(p, min = 0.01, max = 1, log = TRUE)),
     qR2 = list(initial = 1, min = 1e-7, max = 1, prior = function(p) dnorm(p, mean = 0.5, sd = 0.02, log = TRUE)),
     #mu_RS_C = list(initial = 1/200, min = 1/400, max = 1/120, prior = function(p) dgamma(p, shape = 2, rate = 480, log = TRUE)),
     mu_RS_C = list(initial = 1/150, min = 1/199, max = 1, prior = function(p) dunif(p, min = 1/199, max = 1, log = TRUE)),
@@ -42,6 +46,9 @@ return_default_priors <- function(){
     mu_TS = list(initial = 0.2, min = 0, max = 2, prior = function(p) dunif(p, min = 0, max = 2, log = TRUE)),
     mu_IR = list(initial = 1/5, min = 0.001, max = 1, prior = function(p) dunif(p, min = 0.001, max = 1, log = TRUE)),
     fT_C = list(initial = 0.27, min = 0.001, max = 1, prior = function(p) dunif(p, min = 0.001, max = 1, log = TRUE)),
+    s_1 = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dunif(p, min = 0.01, max = 1, log = TRUE)),
+    c_s = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dunif(p, min = 0.01, max = 1, log = TRUE)),
+    eta = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dunif(p, min = 0.01, max = 1, log = TRUE)),
 
     # 2. Survival and Population Parameters
     a_R = list(initial = 0.5, min = 0.01, max = 1, prior = function(p) dbeta(p, 6, 12, log = TRUE)),
@@ -51,8 +58,8 @@ return_default_priors <- function(){
     size = list(initial = 5.5, min = 1, max = 50, prior = function(p) dnorm(p, mean = 5.5, sd = 0.5, log = TRUE)),
     size_1 = list(initial = 5.5, min = 0.01, max = 200, prior = function(p) dunif(p, min = 0.01, max = 300, log = TRUE)),
     size_2 = list(initial = 5.5, min = 0.01, max = 200, prior = function(p) dunif(p, min = 0.01, max = 300, log = TRUE)),
-    kappa_C = list(initial = 40, min = 0.01, max = 200, prior = function(p) dunif(p, min = 0.01, max = 200, log = TRUE)),
-    kappa_A = list(initial = 40, min = 0.01, max = 200, prior = function(p) dunif(p, min = 0.01, max = 200, log = TRUE)),
+    kappa_C = list(initial = 40, min = 0.01, max = 2000, prior = function(p) dunif(p, min = 0.01, max = 2000, log = TRUE)),
+    kappa_A = list(initial = 40, min = 0.01, max = 2000, prior = function(p) dunif(p, min = 0.01, max = 2000, log = TRUE)),
     # 3. Intervention and Effectiveness Parameters
 
     #eff_SMC = list(initial = 0.6, min = 0.00, max = 1, prior = function(p) dbeta(p, 2, 2, log = TRUE)),
@@ -60,7 +67,7 @@ return_default_priors <- function(){
     #z = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dbeta(p, 4, 2, log = TRUE)),
     z = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dunif(p, min = 0.01, max = 1, log = TRUE)),
     p_MH_C = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dunif(p, min = 0.01, max = 1, log = TRUE)),
-    rho = list(initial = 0.2, min = 0.01, max = 0.99, prior = function(p) dunif(p, min = 0.01, max = 0.99, log = TRUE)),
+    rho = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dunif(p, min = 0.01, max = 1, log = TRUE)),
 
     # Multiplicative constants (k parameters)
     w1 = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dunif(p, min = 0.01, max = 1, log = TRUE)),

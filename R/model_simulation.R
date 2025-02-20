@@ -734,5 +734,93 @@ simulate_prevalence_for_district <- function(model, results, start_date, end_dat
   return(compart_df_year_avg)
 }
 
+#' Sample Parameter Sets from MCMC Results
+#'
+#' This function randomly samples a specified number of parameter sets from the MCMC posterior distribution.
+#'
+#' @param mcmc_results A matrix or data frame containing MCMC posterior samples of parameters.
+#' @param num_samples An integer specifying the number of samples to draw.
+#' @return A matrix of sampled parameter sets.
+#' @examples
+#' sampled_params <- sample_mcmc_steps(MCMC_results_2_3$mcmc_run$pars, 100)
+#' @export
+sample_mcmc_steps <- function(mcmc_results, num_samples) {
+  if (num_samples > nrow(mcmc_results)) {
+    stop("Number of samples requested exceeds available MCMC steps.")
+  }
+
+  sampled_indices <- sample(1:nrow(mcmc_results), num_samples, replace = FALSE)
+  return(mcmc_results[sampled_indices, , drop = FALSE])
+}
+
+#' Run Model Simulations for Each Parameter Set
+#'
+#' This function runs the epidemiological model using different parameter sets sampled from the MCMC posterior.
+#'
+#' @param model A function representing the epidemiological model.
+#' @param param_samples A matrix of parameter sets sampled from the MCMC posterior.
+#' @param start_date The simulation start date.
+#' @param end_date The simulation end date.
+#' @param prewarm_years The number of years to prewarm the model.
+#' @param days_per_year The number of days in a simulation year.
+#' @return A list of data frames containing simulation results for each sampled parameter set.
+#' @examples
+#' simulations <- run_mcmc_simulations(model, sampled_params, "2014-01-01", "2022-12-31", 2, 360)
+#' @export
+run_mcmc_simulations <- function(model, param_inputs, param_samples, start_date, end_date, prewarm_years = 2, days_per_year = 360) {
+  simulation_results <- lapply(1:nrow(param_samples), function(i) {
+    param_sample <- as.list(param_samples[i, ])
+    param_inputs <- update_param_list(param_inputs, param_sample)
+    compartments_sim(model, param_inputs, start_date, end_date, prewarm_years, days_per_year)
+  })
+
+  return(simulation_results)
+}
+
+#' Summarize Simulation Results with Confidence Intervals and Selective Variables
+#'
+#' This function calculates the median and confidence intervals for selected compartments
+#' from the simulation results.
+#'
+#' @param simulation_results A list of data frames containing model outputs for different parameter sets.
+#' @param ci_level The confidence level (e.g., 0.95 for 95% confidence intervals).
+#' @param variables A character vector specifying which compartments to summarize (e.g., c("SC", "EC", "prev_total_with_R")).
+#'                  If NULL, all compartments will be summarized.
+#'
+#' @return A data frame with median values and confidence intervals for the selected compartments at each time step.
+#' @examples
+#' # Summarize SC and EC compartments
+#' summary_df <- summarize_simulations(simulations, ci_level = 0.95, variables = c("SC", "EC"))
+#'
+#' # Summarize all compartments
+#' summary_df <- summarize_simulations(simulations, ci_level = 0.95)
+#' @export
+summarize_simulations <- function(simulation_results, ci_level = 0.95, variables = NULL) {
+  # Combine all simulation runs into a single data frame
+  all_results <- bind_rows(simulation_results, .id = "simulation_id")
+
+  # If variables are NULL, use all columns except 'date' and 'simulation_id'
+  if (is.null(variables)) {
+    variables <- setdiff(colnames(all_results), c("date", "simulation_id"))
+  } else {
+    # Ensure selected variables exist in the data
+    missing_vars <- setdiff(variables, colnames(all_results))
+    if (length(missing_vars) > 0) {
+      stop(paste("The following variables are not found in the simulation results:", paste(missing_vars, collapse = ", ")))
+    }
+  }
+
+  # Group by date and calculate median and CI for selected variables
+  summary_stats <- all_results %>%
+    group_by(date) %>%
+    summarize(across(all_of(variables), list(
+      median = ~ median(.x, na.rm = TRUE),
+      lower = ~ quantile(.x, probs = (1 - ci_level) / 2, na.rm = TRUE),
+      upper = ~ quantile(.x, probs = 1 - (1 - ci_level) / 2, na.rm = TRUE)
+    ), .names = "{.col}_{.fn}")) %>%
+    ungroup()
+
+  return(summary_stats)
+}
 
 
