@@ -173,14 +173,16 @@ inf_run <- function(model, param_inputs, control_params, params_to_estimate, pro
   # Setup for allowing model to run some prior to inference (comparing to observations)
   param_inputs_ext <- extend_time_varying_inputs(param_inputs, days_per_year = 360,
                                              years_to_extend = n_years_warmup)
-  dates[1] <- paste0(year(as.Date(dates[1])) - n_years_warmup, "-", format(as.Date(dates[1]), "%m-%d"))
+  extend_dates <- dates
+  extend_dates[1] <- paste0(year(as.Date(dates[1])) - n_years_warmup, "-", format(as.Date(dates[1]), "%m-%d"))
   # Filter Incidence Data by Date Range
-  incidence_df <- filter_incidence_by_dates(incidence_df, dates)
+  incidence_df <- filter_incidence_by_dates(incidence_df, extend_dates)
 
   # Generate synthetic data if necessary
   if(synthetic){
     incidence_df <- generate_synthetic_data(model, param_inputs_ext, dates, month, month_unequal_days, noise, seed, synthetic, incidence_df)
   }
+
 
   # Define parameters and initialize transformation function
   transform_fn <- define_transformations(temp = param_inputs_ext$temp, c_R_D = param_inputs_ext$c_R_D, SMC = param_inputs_ext$SMC,
@@ -192,9 +194,11 @@ inf_run <- function(model, param_inputs, control_params, params_to_estimate, pro
   # Set up comparison function and initial time
   incidence_observed <- incidence_df[-1]
   comparison_fn <- generate_comparison_function(month, age_for_inf, incidence_observed, include_prev = include_prev)
-  simulated_result <- data_sim_for_inference(model, param_inputs = param_inputs_ext, dates = dates, noise = FALSE, month = month)
-  simulated_result <- filter_by_year(simulated_result, "date_ymd", min(year(incidence_df$date_ymd)) : max(year(incidence_df$date_ymd)))
+  simulated_result <- data_sim_for_inference(model, param_inputs = param_inputs_ext, dates = extend_dates, noise = FALSE, month = month)
+  simulated_result <- filter_incidence_by_dates(simulated_result, dates)
   simulated_result$month_no <- 0: (nrow(simulated_result) - 1)
+  incidence_observed <- filter_incidence_by_dates(incidence_df, dates)[-1]
+  incidence_observed$month_no <- 0: (nrow(incidence_observed) - 1)
   initial_time_obs <- initialize_observation_time(simulated_result, incidence_df)
   filt_data <- filter_data_setup(incidence_observed, month, initial_time_obs)
 
@@ -219,6 +223,7 @@ inf_run <- function(model, param_inputs, control_params, params_to_estimate, pro
 
   return(results)
 }
+
 
 extend_time_varying_inputs <- function(param_inputs, days_per_year = 360, years_to_extend = 2) {
   # Identify the time-varying inputs

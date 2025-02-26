@@ -122,8 +122,18 @@ mu_IR <- 1 / (duration_infection -  1 / mu_RS_C) # I to R is a maximum of 200 da
 
 mu_RS_A <- eta * mu_RS_C
 eta <- user(1)
+
+# Immunity related parameters
 s_1 <- user(1)
 s_2 <- c_s * s_1
+
+#prop_p_1 <- user() # prop of all malaria infections that are patent in <5
+#prop_p_2 <- user() # prop of all malaria infections that are patent in >=5
+
+#s_1 <- 1 - (1 - prop_p_1) / (1 - phi_1) # prop of asymptomatic malaria infections that are patent in <5
+#s_2 <- 1 - (1 - prop_p_2) / (1 - phi_2) # prop of asymptomatic malaria infections that are patent in >=5
+
+# Others
 mu_EI <- user()
 mu_TS <- user()
 #mu_IR <- user()

@@ -64,60 +64,6 @@ generate_incidence_comparison <- function(month, age_for_inf, incidence_df, incl
     })
   }
 
-  if (month && age_for_inf == 'sep_ages' & include_prev == TRUE) {
-    return(function(state, observed, pars = c("size_1", "size_2", "kappa_C", "kappa_A")) {
-      # Incidence Log-Likelihood
-      incidence_observed_C <- observed$inc_C
-      incidence_observed_A <- observed$inc_A
-      mu_C <- state["month_inc_C", , drop = TRUE]
-      mu_A <- state["month_inc_A", , drop = TRUE]
-      size_1 <- pars$size_1
-      size_2 <- pars$size_2
-      if (size_1 == 0) { size_1 <- 1e30 }
-      if (size_2 == 0) { size_2 <- 1e30 }
-
-      # Compute incidence likelihoods
-      ll_C <- ifelse(is.na(incidence_observed_C), 0,
-                     dnbinom(x = incidence_observed_C, mu = mu_C, size = size_1, log = TRUE))
-
-      ll_A <- ifelse(is.na(incidence_observed_A), 0,
-                     dnbinom(x = incidence_observed_A, mu = mu_A, size = size_2, log = TRUE))
-
-      # Prevalence Likelihood for Children (C)
-      prev_observed_C <- observed$prev_C
-      prev_model_C <- state["prev_C_1", , drop = TRUE]
-      mu_prev_C <- observed$prev_C  # Center for C
-      mu_prev_C <- prev_model_C  # Use the model's predicted prevalence
-      kappa_C <- pars$kappa_C  # Precision parameter for Beta (specific to Children)
-
-      if (is.na(prev_observed_C)) {
-        ll_prev_C <- 0  # No contribution if missing
-      } else {
-        alpha_C <- mu_prev_C * kappa_C
-        beta_C <- (1 - mu_prev_C) * kappa_C
-        ll_prev_C <- dbeta(prev_observed_C, shape1 = alpha_C, shape2 = beta_C, log = TRUE)
-      }
-
-      # Prevalence Likelihood for Adults (A)
-      prev_observed_A <- observed$prev_A
-      prev_model_A <- state["prev_A_1", , drop = TRUE]
-      mu_prev_A <- observed$prev_A  # Center for A
-      kappa_A <- pars$kappa_A  # Precision parameter for Beta (specific to Adults)
-
-      if (is.na(prev_observed_A)) {
-        ll_prev_A <- 0  # No contribution if missing
-      } else {
-        alpha_A <- mu_prev_A * kappa_A
-        beta_A <- (1 - mu_prev_A) * kappa_A
-        ll_prev_A <- dbeta(prev_observed_A, shape1 = alpha_A, shape2 = beta_A, log = TRUE)
-      }
-
-      # Combine all likelihood components
-      #return(ll_C + ll_A + 12 * (ll_prev_C + ll_prev_A))  # Adding prevalence likelihoods for C and A
-      return(ll_C + ll_A + (ll_prev_C))  # Adding prevalence likelihoods for C and A
-    })
-  }
-
   if (month && age_for_inf == 'sep_ages' && include_prev == TRUE) {
     return(function(state, observed, pars = c("size_1", "size_2", "kappa_C", "kappa_A")) {
       # Incidence Log-Likelihood
@@ -160,7 +106,7 @@ generate_incidence_comparison <- function(month, age_for_inf, incidence_df, incl
       total_ll <- ll_C + ll_A + prev_weight * (ll_prev_C + ll_prev_A)
 
       # Diagnostics
-      cat("ll_C:", ll_C, " ll_A:", ll_A, " ll_prev_C:", ll_prev_C, " ll_prev_A:", ll_prev_A, " Total:", total_ll, "\n")
+      #cat("ll_C:", ll_C, " ll_A:", ll_A, " ll_prev_C:", ll_prev_C, " ll_prev_A:", ll_prev_A, " Total:", total_ll, "\n")
 
       return(total_ll)
     })
@@ -253,6 +199,55 @@ generate_incidence_comparison <- function(month, age_for_inf, incidence_df, incl
     })
   }
 
+  if (month && age_for_inf == 'u5' && include_prev == FALSE) {
+    return(function(state, observed, pars = c("size_1")) {
+      # Incidence Log-Likelihood
+      incidence_observed_C <- observed$inc_C
+      mu_C <- state["month_inc_C", , drop = TRUE]
+      size_1 <- ifelse(pars$size_1 == 0, 1e-3, pars$size_1)
+
+      ll_C <- ifelse(is.na(incidence_observed_C), 0,
+                     dnbinom(x = incidence_observed_C, mu = mu_C, size = size_1, log = TRUE))
+
+      return(ll_C)
+    })
+  }
+
+  if (month && age_for_inf == 'u5' && include_prev == TRUE) {
+    return(function(state, observed, pars = c("size_1", "kappa_C")) {
+      # Incidence Log-Likelihood
+      incidence_observed_C <- observed$inc_C
+      mu_C <- state["month_inc_C", , drop = TRUE]
+      size_1 <- ifelse(pars$size_1 == 0, 1e-3, pars$size_1)
+
+      ll_C <- ifelse(is.na(incidence_observed_C), 0,
+                     dnbinom(x = incidence_observed_C, mu = mu_C, size = size_1, log = TRUE))
+
+      # Prevalence Likelihood (Beta Distribution)
+      prev_observed_C <- pmin(pmax(observed$prev_C, 1e-6), 1 - 1e-6)
+      prev_model_C <- state["prev_C_2", , drop = TRUE]
+      mu_prev_C <- prev_model_C
+      kappa_C <- pars$kappa_C
+      alpha_C <- mu_prev_C * kappa_C
+      beta_C <- (1 - mu_prev_C) * kappa_C
+
+      ll_prev_C <- ifelse(is.na(prev_observed_C), 0,
+                          dbeta(prev_observed_C, shape1 = alpha_C, shape2 = beta_C, log = TRUE))
+
+      # Prevalence weight (similar to sep_ages)
+      prev_weight <- 12  # Adjust as necessary
+
+      # Combine Likelihoods
+      total_ll <- ll_C + prev_weight * ll_prev_C
+
+      # Diagnostics for Debugging
+      #cat("ll_C:", ll_C, " ll_prev_C:", ll_prev_C, " Total:", total_ll, "\n")
+
+      return(total_ll)
+    })
+  }
+
+
 
   # if(month && age_for_inf == 'u5') {
   #   return(function(state, observed, pars) {
@@ -262,17 +257,54 @@ generate_incidence_comparison <- function(month, age_for_inf, incidence_df, incl
   #   })
   # }
 
-  if(month && age_for_inf == 'o5') {
+  if (month && age_for_inf == 'o5' && include_prev == FALSE) {
     return(function(state, observed, pars = c("size_2")) {
+      # Incidence Log-Likelihood (No Prevalence)
       incidence_observed_A <- observed$inc_A
       mu_A <- state["month_inc_A", , drop = TRUE]
-      size_2 <- pars$size_2
-      if (size_2 == 0) { size_2 <- 1e30 }
-      ll_A <- dnbinom(x = incidence_observed_A, mu = mu_A, size = size_2, log = TRUE)
-      if(is.na(ll_A)){ll_A <- 0}
+      size_2 <- ifelse(pars$size_2 == 0, 1e-3, pars$size_2)
+
+      ll_A <- ifelse(is.na(incidence_observed_A), 0,
+                     dnbinom(x = incidence_observed_A, mu = mu_A, size = size_2, log = TRUE))
+
       return(ll_A)
     })
   }
+
+  if (month && age_for_inf == 'o5' && include_prev == TRUE) {
+    return(function(state, observed, pars = c("size_2", "kappa_A")) {
+      # Incidence Log-Likelihood
+      incidence_observed_A <- observed$inc_A
+      mu_A <- state["month_inc_A", , drop = TRUE]
+      size_2 <- ifelse(pars$size_2 == 0, 1e-3, pars$size_2)
+
+      ll_A <- ifelse(is.na(incidence_observed_A), 0,
+                     dnbinom(x = incidence_observed_A, mu = mu_A, size = size_2, log = TRUE))
+
+      # Prevalence Likelihood (Beta Distribution)
+      prev_observed_A <- pmin(pmax(observed$prev_A, 1e-6), 1 - 1e-6)
+      prev_model_A <- state["prev_A_1", , drop = TRUE]
+      mu_prev_A <- prev_model_A
+      kappa_A <- pars$kappa_A
+      alpha_A <- mu_prev_A * kappa_A
+      beta_A <- (1 - mu_prev_A) * kappa_A
+
+      ll_prev_A <- ifelse(is.na(prev_observed_A), 0,
+                          dbeta(prev_observed_A, shape1 = alpha_A, shape2 = beta_A, log = TRUE))
+
+      # Prevalence Weight (align with sep_ages)
+      prev_weight <- 12  # Adjust as needed
+
+      # Combine Likelihoods
+      total_ll <- ll_A + prev_weight * ll_prev_A
+
+      # Diagnostics for Debugging
+      #cat("ll_A:", ll_A, " ll_prev_A:", ll_prev_A, " Total:", total_ll, "\n")
+
+      return(total_ll)
+    })
+  }
+
 
   # For weekly data
   if(!month && age_for_inf == 'total') {

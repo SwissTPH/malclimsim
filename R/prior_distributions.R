@@ -31,11 +31,11 @@ return_default_priors <- function(){
     # 1. Transmission and Recovery Parameters
     #phi = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dbeta(p, 40, 12, log = TRUE)),
     phi = list(initial = 0.2, min = 0.01, max = 2, prior = function(p) dunif(p, min = 0.01, max = 2, log = TRUE)),
-    phi_1 = list(initial = 0.2, min = 0.01, max = 0.999, prior = function(p) dunif(p, min = 0.01, max = 0.999, log = TRUE)),
+    phi_1 = list(initial = 0.2, min = 0.01, max = 0.999, prior = function(p) dnorm(p, mean = 0.75, sd = 0.05, log = TRUE)),
     c_phi = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dunif(p, min = 0.01, max = 1, log = TRUE)),
     #qR = list(initial = 0.2, min = 1e-6, max = 0.5, prior = function(p) dunif(p, min = 1e-7, max = 0.5, log = TRUE)),
     qR = list(initial = 0.2, min = 1e-6, max = 0.5, prior = function(p) dnorm(p, 0.24, 0.5, log = TRUE)),
-    qR1 = list(initial = 0.2, min = 1e-6, max = 1, prior = function(p) dnorm(p, 0.24, 2, log = TRUE)),
+    qR1 = list(initial = 0.2, min = 1e-6, max = 1, prior = function(p) dnorm(p, 0.24, 0.05, log = TRUE)),
     c_qR = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dunif(p, min = 0.01, max = 1, log = TRUE)),
     qR2 = list(initial = 1, min = 1e-7, max = 1, prior = function(p) dnorm(p, mean = 0.5, sd = 0.02, log = TRUE)),
     #mu_RS_C = list(initial = 1/200, min = 1/400, max = 1/120, prior = function(p) dgamma(p, shape = 2, rate = 480, log = TRUE)),
@@ -46,8 +46,11 @@ return_default_priors <- function(){
     mu_TS = list(initial = 0.2, min = 0, max = 2, prior = function(p) dunif(p, min = 0, max = 2, log = TRUE)),
     mu_IR = list(initial = 1/5, min = 0.001, max = 1, prior = function(p) dunif(p, min = 0.001, max = 1, log = TRUE)),
     fT_C = list(initial = 0.27, min = 0.001, max = 1, prior = function(p) dunif(p, min = 0.001, max = 1, log = TRUE)),
-    s_1 = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dunif(p, min = 0.01, max = 1, log = TRUE)),
-    c_s = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dunif(p, min = 0.01, max = 1, log = TRUE)),
+    #s_1 = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dunif(p, min = 0.01, max = 1, log = TRUE)),
+    s_1 = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dnorm(p, mean = 0.875, sd = 0.05, log = TRUE)),
+    #c_s = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dunif(p, min = 0.01, max = 1, log = TRUE)),
+    c_s = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dnorm(p, mean = 0.653, sd = 0.05, log = TRUE)),
+    #c_s = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dnorm(p, mean = 0.5, sd = 0.25, log = TRUE)),
     eta = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dunif(p, min = 0.01, max = 1, log = TRUE)),
 
     # 2. Survival and Population Parameters
@@ -125,7 +128,7 @@ return_default_priors <- function(){
     lag_T = list(initial = 0, min = 0, max = 100, integer = TRUE, prior = function(p) dunif(p, min = 0, max = 100, log = TRUE)),
 
     # Gamma distribution to ensure positivity
-    alpha = list(initial = 2.5, min = 0, max = 10, prior = function(p) dunif(p, min = 0, max = 10, log = TRUE)),
+    alpha = list(initial = 2.5, min = 0, max = 100, prior = function(p) dunif(p, min = 0, max = 1000, log = TRUE)),
 
     # T_opt - Must be greater than 0, likely between 24 and 32
     T_opt = list(initial = 26.12, min = 0, max = 40, prior = function(p) dnorm(p, mean = 26.12, sd = 3, log = TRUE)),
@@ -138,8 +141,8 @@ return_default_priors <- function(){
     #k1 = list(initial = 1, min = -5, max = 5, prior = function(p) dnorm(p, mean = 1, sd = 1, log = TRUE)), # Normal distribution with bias towards positive values
 
     # sigma_T - Must be positive, value is uncertain
-    sigma_LT = list(initial = 5, min = 3.5, max = 7, prior = function(p) dnorm(p, mean = 5, sd = 3, log = TRUE)), # Gamma distribution to ensure positivity
-    sigma_RT = list(initial = 3, min = 2, max = 7, prior = function(p) dnorm(p, mean = 3, sd = 3, log = TRUE)), # Gamma distribution to ensure positivity
+    sigma_LT = list(initial = 5, min = 3.5, max = 7, prior = function(p) dnorm(p, mean = 5, sd = 0.5, log = TRUE)), # Gamma distribution to ensure positivity
+    sigma_RT = list(initial = 3, min = 2, max = 7, prior = function(p) dnorm(p, mean = 3, sd = 2, log = TRUE)), # Gamma distribution to ensure positivity
 
     #b = list(initial = 1, min = 0.001, max = 50, prior = function(p) dgamma(p, shape = 2, rate = 1, log = TRUE))
     b = list(initial = 1, min = 0.001, max = 50, prior = function(p) dunif(p, min = 0.001, max = 50, log = TRUE))
