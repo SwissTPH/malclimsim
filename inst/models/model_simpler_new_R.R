@@ -30,8 +30,6 @@ mu_SE_A <- (1 - exp(-rho * p_MH_C * EIR)) * (1 - SMC_effect_A)
 initial(mu_SE_A_2) <- (1 - exp(-rho * p_MH_C * EIR)) * (1 - SMC_effect_A)
 update(mu_SE_A_2) <- (1 - exp(-rho * p_MH_C * EIR)) * (1 - SMC_effect_A)
 
-phi_1 <- user(0.5)
-phi_2 <- c_phi * phi_1
 
 # # Children
 # update(SC) <- (SC * r_C) * (1 - delta_a - delta_d - mu_SE_C) + delta_b * P + mu_RS_C * RC + mu_TS * TrC
@@ -124,14 +122,39 @@ mu_RS_A <- eta * mu_RS_C
 eta <- user(1)
 
 # Immunity related parameters
-s_1 <- user(1)
-s_2 <- c_s * s_1
+#s_1 <- user(1)
+#s_2 <- c_s * s_1
+#c_s <- prop_p_2
+qR2 <- user()
 
-#prop_p_1 <- user() # prop of all malaria infections that are patent in <5
+#qR2 <- c_qR * qR1
+
+qR1 <- qR2 + (1 - qR2) * c_qR
+
+c_phi <- user()
+c_qR <- user()
+c_s <- user()
+prop_p_1 <- user() # prop of all malaria infections that are patent in <5
 #prop_p_2 <- user() # prop of all malaria infections that are patent in >=5
+c_p_1 <- user() # prop of patent infections that are symptomatic in <5
+#c_p_2 <- user() # prop of patent infections that are symptomatic in >=5
 
-#s_1 <- 1 - (1 - prop_p_1) / (1 - phi_1) # prop of asymptomatic malaria infections that are patent in <5
-#s_2 <- 1 - (1 - prop_p_2) / (1 - phi_2) # prop of asymptomatic malaria infections that are patent in >=5
+
+# phi_1 <- user(0.5)
+# phi_2 <- c_phi * phi_1
+
+prop_p_2 <- c_s * prop_p_1
+c_p_2 <- c_phi * c_p_1
+
+# Proportion of population that is symptomatic
+phi_1 <- c_p_1 * prop_p_1
+phi_2 <- c_p_2 * prop_p_2
+
+
+# Proprtion of asymptomatic population that is patent
+s_1 <- 1 - ((1 - prop_p_1) / (1 - phi_1))
+s_2 <- 1 - ((1 - prop_p_2) / (1 - phi_2))
+
 
 # Others
 mu_EI <- user()
@@ -151,16 +174,9 @@ sigma_LT <- user(4)
 sigma_RT <- user(4)
 R_opt <- user(1)
 k1 <- user(0.2)
-qR1 <- user()
-qR2 <- c_qR * qR1
 b <- user()
 lag_R <- user(0)  # Default lag = 0
 lag_T <- user(0)
-
-# Constants
-c_phi <- user()
-c_qR <- user()
-c_s <- user()
 
 # defining SMC efficacy
 eff_SMC <- user() # SMC effectiveness

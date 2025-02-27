@@ -147,7 +147,7 @@ create_start_values <- function(params_to_estimate, control_params, min_max_star
   # Default min_max_start_values if NULL, providing predefined bounds for each parameter
   if (is.null(min_max_start_values)) {
     min_max_start_values <- list(
-      mu_EI = c(1/14, 1/8), qR = c(0.1, 0.45), qR2 = c(0.5, 2), a_R = c(0.4, 0.8), b_R = c(1, 3),
+      mu_EI = c(1/14, 1/8), qR = c(0.1, 0.45), qR2 = c(0.01, 0.9), a_R = c(0.4, 0.8), b_R = c(1, 3),
       eff_SMC = c(0.2, 0.8), s = c(0.2, 0.8), phi = c(0.1, 0.4), k_par = c(0.6, 0.8),
       delta_temp = c(-4, 0), mu_RS_C = c(1/160, 1/50), z = c(0.1, 0.7), z_A = c(0.2, 0.6),
       z_C2 = c(0.2, 0.6), rho = c(0.3, 0.9), eta = c(0.1, 0.9), size = c(5,30), size_1 = c(5, 30), size_2 = c(5, 30),
@@ -155,7 +155,7 @@ create_start_values <- function(params_to_estimate, control_params, min_max_star
       mu_IR = c(1/10, 1/2), shift1 = c(1, 30), shift2 = c(1, 30), kappa = c(0.2, 0.6),
       fT_C = c(0.1, 0.7), kappa_C = c(70, 200), kappa_A = c(70, 200), w1 = c(0.3, 0.7), w2 = c(0.3, 0.7),
       s_1 = c(0.3, 0.9), c_s = c(0.3, 0.9), phi_1 = c(0.3, 0.9), c_phi = c(0.3, 0.9),
-      qR1 = c(0.1, 0.9), c_qR = c(0.2, 0.9), eta = c(0.5, 0.9),
+      qR1 = c(0.1, 0.9), qR2 = c(0.1, 0.9), c_qR = c(0.2, 0.9), eta = c(0.5, 0.9),
       # Multiplicative constants (k parameters)
       k1 = c(0.1, 0.8),      # Based on prior: mean = 1, sd = 0.1
       k2 = c(0.5, 1.5),      # Based on prior: mean = 1, sd = 0.1
@@ -273,7 +273,8 @@ create_proposal_matrix <- function(params_to_estimate, proposal_variance = NULL,
       z_A = 0.1, z_C2 = 0.1, rho = 2, eta = 0.1, size = 5, size_1 = 5, size_2 = 5, phi_C2 = 0.1,
       phi_A = 0.1, tau = 0.1, p_surv = 0.1, mu_IR = 0.1, shift1 = 0.1, T_opt = 5, sigma_LT = 3, sigma_RT = 3, alpha = 4,
       shift2 = 0.1, kappa = 0.1, fT_C = 0.1, lag_T = 800, lag_R = 800, alpha = 10,
-      kappa_C = 50, kappa_A = 50, w1 = 0.5, w2 = 0.5, s_1 = 2, c_s = 2, c_phi = 2, qR1 = 2, c_qR = 2, eta = 2
+      kappa_C = 50, kappa_A = 50, w1 = 0.5, w2 = 0.5, s_1 = 2, c_s = 2, c_phi = 2, qR1 = 2,
+      qR2 = 2, c_qR = 2, eta = 2
     )
   }
 

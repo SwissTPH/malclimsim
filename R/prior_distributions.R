@@ -36,6 +36,7 @@ return_default_priors <- function(){
     #qR = list(initial = 0.2, min = 1e-6, max = 0.5, prior = function(p) dunif(p, min = 1e-7, max = 0.5, log = TRUE)),
     qR = list(initial = 0.2, min = 1e-6, max = 0.5, prior = function(p) dnorm(p, 0.24, 0.5, log = TRUE)),
     qR1 = list(initial = 0.2, min = 1e-6, max = 1, prior = function(p) dnorm(p, 0.24, 0.05, log = TRUE)),
+    qR2 = list(initial = 0.2, min = 1e-6, max = 1, prior = function(p) dunif(p, min = 0.0001, max = 1, log = TRUE)),
     c_qR = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dunif(p, min = 0.01, max = 1, log = TRUE)),
     qR2 = list(initial = 1, min = 1e-7, max = 1, prior = function(p) dnorm(p, mean = 0.5, sd = 0.02, log = TRUE)),
     #mu_RS_C = list(initial = 1/200, min = 1/400, max = 1/120, prior = function(p) dgamma(p, shape = 2, rate = 480, log = TRUE)),
