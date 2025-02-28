@@ -131,7 +131,7 @@ qR2 <- user()
 
 qR1 <- qR2 + (1 - qR2) * c_qR
 
-c_phi <- user()
+c_phi <- user() # alters
 c_qR <- user()
 c_s <- user()
 prop_p_1 <- user() # prop of all malaria infections that are patent in <5
@@ -200,8 +200,15 @@ temp_effect <- if (temp_shift <= T_opt) exp(-((temp_shift - T_opt)^2) / (2 * sig
 rain_effect <- 1 / (1 + exp(-k1 * (c_R_D_shift - R_opt))) # Logistic term for rainfall
 #X <- (qR2 * IA + IC + qR * (qR2 * RA + RC)) / P # Proportion of population infectious remains the same
 X <- (IC + IA + qR1 * (s_1 * RC + s_2 * RA) + qR2 * ((1 - s_1) * RC + (1 - s_2) * RA)) / P # Proportion of population infectious remains the same
+
 initial(X2) <- (IC + IA + qR1 * (s_1 * RC + s_2 * RA) + qR2 * ((1 - s_1) * RC + (1 - s_2) * RA)) / P  # Proportion of population infectious remains the same
 update(X2) <- (IC + IA + qR1 * (s_1 * RC + s_2 * RA) + qR2 * ((1 - s_1) * RC + (1 - s_2) * RA)) / P  # Proportion of population infectious remains the same
+initial(X_I) <- (IC + IA) / (IC + IA + qR1 * (s_1 * RC + s_2 * RA) + qR2 * ((1 - s_1) * RC + (1 - s_2) * RA))
+update(X_I) <- (IC + IA) / (IC + IA + qR1 * (s_1 * RC + s_2 * RA) + qR2 * ((1 - s_1) * RC + (1 - s_2) * RA))
+initial(X_AP) <- (qR1 * (s_1 * RC + s_2 * RA)) / (IC + IA + qR1 * (s_1 * RC + s_2 * RA) + qR2 * ((1 - s_1) * RC + (1 - s_2) * RA))
+update(X_AP) <- (qR1 * (s_1 * RC + s_2 * RA)) / (IC + IA + qR1 * (s_1 * RC + s_2 * RA) + qR2 * ((1 - s_1) * RC + (1 - s_2) * RA))
+initial(X_ASP) <- (qR2 * ((1 - s_1) * RC + (1 - s_2) * RA)) / (IC + IA + qR1 * (s_1 * RC + s_2 * RA) + qR2 * ((1 - s_1) * RC + (1 - s_2) * RA))
+update(X_ASP) <- (qR2 * ((1 - s_1) * RC + (1 - s_2) * RA)) / (IC + IA + qR1 * (s_1 * RC + s_2 * RA) + qR2 * ((1 - s_1) * RC + (1 - s_2) * RA))
 
 # Egg-adult Development time due to temperature
 

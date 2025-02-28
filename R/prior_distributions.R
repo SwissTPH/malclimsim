@@ -50,7 +50,7 @@ return_default_priors <- function(){
     #s_1 = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dunif(p, min = 0.01, max = 1, log = TRUE)),
     s_1 = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dnorm(p, mean = 0.875, sd = 0.05, log = TRUE)),
     #c_s = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dunif(p, min = 0.01, max = 1, log = TRUE)),
-    c_s = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dnorm(p, mean = 0.653, sd = 0.05, log = TRUE)),
+    c_s = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dnorm(p, mean = 0.85, sd = 0.2, log = TRUE)),
     #c_s = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dnorm(p, mean = 0.5, sd = 0.25, log = TRUE)),
     eta = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dunif(p, min = 0.01, max = 1, log = TRUE)),
 

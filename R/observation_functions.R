@@ -112,6 +112,35 @@ generate_incidence_comparison <- function(month, age_for_inf, incidence_df, incl
     })
   }
 
+  if (month && age_for_inf == 'sep_ages' && include_prev == FALSE) {
+    return(function(state, observed, pars = c("size_1", "size_2")) {
+      # Incidence Log-Likelihood
+      incidence_observed_C <- observed$inc_C
+      incidence_observed_A <- observed$inc_A
+      mu_C <- state["month_inc_C", , drop = TRUE]
+      mu_A <- state["month_inc_A", , drop = TRUE]
+      size_1 <- ifelse(pars$size_1 == 0, 1e-3, pars$size_1)
+      size_2 <- ifelse(pars$size_2 == 0, 1e-3, pars$size_2)
+
+      ll_C <- ifelse(is.na(incidence_observed_C), 0,
+                     dnbinom(x = incidence_observed_C, mu = mu_C, size = size_1, log = TRUE))
+      ll_A <- ifelse(is.na(incidence_observed_A), 0,
+                     dnbinom(x = incidence_observed_A, mu = mu_A, size = size_2, log = TRUE))
+
+      # Predicted prevalence from model
+      prev_model_C <- state["prev_C_1", , drop = TRUE]
+      prev_model_A <- state["prev_A_1", , drop = TRUE]
+
+      # Apply penalty if prev_C is smaller than prev_A
+      penalty <- ifelse(prev_model_C < prev_model_A, -1e6 * abs(prev_model_C - prev_model_A), 0)
+
+      # Combine all likelihood components
+      total_ll <- ll_C + ll_A + penalty
+
+      return(total_ll)
+    })
+  }
+
 
   if(month && age_for_inf == 'all_ages') {
     return(function(state, observed, pars = c("size_1", "size_2")) {

@@ -595,6 +595,9 @@ compartments_sim <- function(model, param_inputs, start_date, end_date, prewarm_
   mu_SE_C <- extract_compartment("mu_SE_C_2")
   mu_SE_A <- extract_compartment("mu_SE_A_2")
   X <- extract_compartment("X2")
+  X_I <- extract_compartment("X_I")
+  X_AP <- extract_compartment("X_AP")
+  X_ASP <- extract_compartment("X_ASP")
 
   # Total population size
   P <- PC + PA
@@ -632,6 +635,9 @@ compartments_sim <- function(model, param_inputs, start_date, end_date, prewarm_
   mu_SE_C <- mu_SE_C[1:min_length]
   mu_SE_A <- mu_SE_A[1:min_length]
   X <- X[1:min_length]
+  X_I <- X_I[1:min_length]
+  X_AP <- X_AP[1:min_length]
+  X_ASP <- X_ASP[1:min_length]
 
   # Create a data frame with compartment values
   compart_df <- data.frame(
@@ -660,7 +666,10 @@ compartments_sim <- function(model, param_inputs, start_date, end_date, prewarm_
     SMC_effect = SMC_effect,
     mu_SE_C = mu_SE_C,
     mu_SE_A = mu_SE_A,
-    X = X
+    X = X,
+    X_I = X_I,
+    X_AP = X_AP,
+    X_ASP = X_ASP
   )
 
   return(compart_df)
