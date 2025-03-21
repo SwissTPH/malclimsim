@@ -1,0 +1,43 @@
+---
+title: "simulating-from-climate-model"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{simulating-from-climate-model}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(malclimsim)
+library(dplyr)
+library(tidyr)
+library(lubridate)
+library(readxl)
+```
+
+```{r}
+path_to_chad <- "C:/Users/putnni/switchdrive/Chad/" # Replace this with location of chad switchdrive folder
+model_simp <- load_model("model_simpler_EIR")  # Load the deterministic climate model
+district_pops <- read_excel(paste0(path_to_chad, "Data/model-inputs/district_population_estimates.xlsx")) # 2023 population estimates for select districts of Mandoul
+# Years used for the analysis
+years_clim <- 2013:2023 # years to extract climate data
+years_analysis <- 2014:2023
+```
+
+```{r}
+# Years used for the analysis
+years_clim <- 2013:2023 # years to extract climate data
+years_analysis <- 2014:2023
+```
+
+```{r}
+
+```
+

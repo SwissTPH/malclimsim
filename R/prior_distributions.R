@@ -127,9 +127,12 @@ return_default_priors <- function(){
     D <- list(initial = 2, min = 1, max = 200, integer = TRUE, prior = function(p) dunif(p, min = 1, max = 200, log = TRUE)),
     lag_R = list(initial = 0, min = 0, max = 100, integer = TRUE, prior = function(p) dunif(p, min = 0, max = 100, log = TRUE)),
     lag_T = list(initial = 0, min = 0, max = 100, integer = TRUE, prior = function(p) dunif(p, min = 0, max = 100, log = TRUE)),
-
+    lag_SMC = list(initial = 0, min = 0, max = 30, integer = TRUE, prior = function(p) dunif(p, min = 0, max = 30, log = TRUE)),
     # Gamma distribution to ensure positivity
     alpha = list(initial = 2.5, min = 0, max = 100, prior = function(p) dunif(p, min = 0, max = 1000, log = TRUE)),
+    #beta_1 = list(initial = 0, min = 0, max = 1, prior = function(p) dunif(p, min = 0, max = 1, log = TRUE)),
+    beta_1 = list(initial = 0, min = -100, max = 100, prior = function(p) dunif(p, min = -100, max = 100, log = TRUE)),
+    beta_2 = list(initial = 0, min = 0, max = 1, prior = function(p) dunif(p, min = 0, max = 1, log = TRUE)),
 
     # T_opt - Must be greater than 0, likely between 24 and 32
     T_opt = list(initial = 26.12, min = 0, max = 40, prior = function(p) dnorm(p, mean = 26.12, sd = 3, log = TRUE)),

@@ -204,6 +204,109 @@ data_sim <- function(model, param_inputs, start_date, end_date,
   return(inc_df)
 }
 
+data_sim <- function(model, param_inputs, start_date, end_date,
+                     prewarm_years = 2, month = FALSE, round = TRUE, save = TRUE, file = "",
+                     month_unequal_days = FALSE, return_EIR = FALSE, return_compartments = FALSE,
+                     mu_transform_A = NULL, mu_transform_C = NULL, covariate_matrix = NULL) {
+
+  param_inputs <- extend_time_varying_inputs(param_inputs, days_per_year = 360,
+                                             years_to_extend = prewarm_years)
+
+  # Extend the start date backward by the pre-warm period
+  prewarm_start_date <- paste0(year(as.Date(start_date)) - prewarm_years, "-", format(as.Date(start_date), "%m-%d"))
+
+  # Calculate the number of days in the full simulation period (prewarm + main simulation)
+  n_days <- calculate_360_day_difference(prewarm_start_date, end_date) + 1
+
+  # Run the simulation using the model and parameters
+  results <- sim_mod(model, pars = param_inputs, time_start = 0,
+                     n_particles = 1, sim_time = n_days)
+
+  # Extract the simulation output and the model
+  x <- results[[1]]
+  mod <- results[[2]]
+
+  if (month) {
+    month_ind <- seq(1, n_days, by = 30)
+    if (month_unequal_days) {
+      month_ind <- which(param_inputs$day_count == 0)
+    }
+
+    inc_A <- x[mod$info()$index$month_inc_A,,][month_ind]
+    inc_C <- x[mod$info()$index$month_inc_C,,][month_ind]
+
+    month <- date_to_months(start_date = as.Date(prewarm_start_date), end_date = as.Date(end_date))
+    n_months <- min(length(month), length(inc_A), length(inc_C))
+    month <- month[1:n_months]
+    inc_A <- inc_A[1:n_months]
+    inc_C <- inc_C[1:n_months]
+
+    month_no <- 0:(n_months - 1)
+
+    if (return_EIR) {
+      EIR_monthly <- x[mod$info()$index$EIR_monthly,,][month_ind][1:n_months]
+      inc_df <- data.frame(date_ymd = month, month_no, inc_A, inc_C, inc = inc_A + inc_C, EIR_monthly = EIR_monthly)
+    } else {
+      inc_df <- data.frame(date_ymd = month, month_no, inc_A, inc_C, inc = inc_A + inc_C)
+    }
+  } else {
+    wk_ind <- seq(1, n_days, by = 7)
+
+    inc_A <- x[mod$info()$index$wk_inc_A,,][wk_ind]
+    inc_C <- x[mod$info()$index$wk_inc_C,,][wk_ind]
+
+    week <- date_to_weeks(start_date = as.Date(prewarm_start_date), end_date = as.Date(end_date))
+    n_weeks <- min(length(week), length(inc_A), length(inc_C))
+    week <- week[1:n_weeks]
+    inc_A <- inc_A[1:n_weeks]
+    inc_C <- inc_C[1:n_weeks]
+
+    week_no <- 0:(n_weeks - 1)
+
+    if (return_EIR) {
+      EIR_monthly <- x[mod$info()$index$EIR_monthly,,][wk_ind][1:n_weeks]
+      inc_df <- data.frame(week, week_no, inc_A, inc_C, inc = inc_A + inc_C, EIR_monthly = EIR_monthly)
+    } else {
+      inc_df <- data.frame(week, week_no, inc_A, inc_C, inc = inc_A + inc_C)
+    }
+  }
+
+  # Merge with covariate matrix if provided
+  if (!is.null(covariate_matrix)) {
+    inc_df <- inc_df %>% left_join(covariate_matrix, by = c("date_ymd" = colnames(covariate_matrix)[1]))
+  }
+
+  # Apply transformations (if provided)
+  if (!is.null(mu_transform_A)) {
+    inc_df$inc_A <- mu_transform_A(inc_df, param_inputs)
+  }
+  if (!is.null(mu_transform_C)) {
+    inc_df$inc_C <- mu_transform_C(inc_df, param_inputs)
+  }
+
+  # Update total incidence after transformations
+  inc_df$inc <- inc_df$inc_A + inc_df$inc_C
+
+  # Round the results if specified
+  if (round) {
+    inc_df[3:5] <- round(inc_df[3:5])
+  }
+
+  start_month <- which(inc_df$date_ymd == as.Date(format(as.Date(start_date), "%Y-%m-01")))
+  end_month <- which(inc_df$date_ymd == as.Date(format(as.Date(end_date), "%Y-%m-01")))
+  inc_df <- inc_df[start_month:end_month,]
+
+  # Save the dataframe to a file if specified
+  if (save) {
+    saveRDS(inc_df, paste0(dir, file))
+  }
+
+  return(inc_df)
+}
+
+
+
+
 
 #' Simulate Data for Inference
 #'

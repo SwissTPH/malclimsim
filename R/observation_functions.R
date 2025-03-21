@@ -39,30 +39,30 @@ generate_incidence_comparison <- function(month, age_for_inf, incidence_df, incl
   }
 
 
-  if(month && age_for_inf == 'sep_ages' && include_prev == FALSE) {
-    return(function(state, observed, pars = c("size_1", "size_2")) {
-      # Incidence Log-Likelihood
-      incidence_observed_C <- observed$inc_C
-      incidence_observed_A <- observed$inc_A
-      mu_C <- state["month_inc_C", , drop = TRUE]
-      mu_A <- state["month_inc_A", , drop = TRUE]
-      size_1 <- pars$size_1
-      size_2 <- pars$size_2
-      if (size_1 == 0) { size_1 <- 1e5 }
-      if (size_2 == 0) { size_2 <- 1e5 }
-      if(is.na(incidence_observed_C)){ll_C <- 0}else{ # if no observed value, does not contribute to likelihood
-        ll_C <- dnbinom(x = incidence_observed_C, mu = mu_C, size = size_1, log = TRUE)
-      }
-      if(is.na(incidence_observed_A)){ll_A <- 0}else{
-        ll_A <- dnbinom(x = incidence_observed_A, mu = mu_A, size = size_2, log = TRUE)
-      }
-      #print(paste("size_1:", round(size_1, 2), "size_2:",
-      #            round(size_2, 2), "mu_C:", round(mu_C, 2), "mu_A:",
-      #            round(mu_A, 2), "obs_C:", incidence_observed_C,
-      #            "obs_A:", incidence_observed_A))
-      return(ll_C + ll_A)
-    })
-  }
+  # if(month && age_for_inf == 'sep_ages' && include_prev == FALSE) {
+  #   return(function(state, observed, pars = c("size_1", "size_2")) {
+  #     # Incidence Log-Likelihood
+  #     incidence_observed_C <- observed$inc_C
+  #     incidence_observed_A <- observed$inc_A
+  #     mu_C <- state["month_inc_C", , drop = TRUE]
+  #     mu_A <- state["month_inc_A", , drop = TRUE]
+  #     size_1 <- pars$size_1
+  #     size_2 <- pars$size_2
+  #     if (size_1 == 0) { size_1 <- 1e5 }
+  #     if (size_2 == 0) { size_2 <- 1e5 }
+  #     if(is.na(incidence_observed_C)){ll_C <- 0}else{ # if no observed value, does not contribute to likelihood
+  #       ll_C <- dnbinom(x = incidence_observed_C, mu = mu_C, size = size_1, log = TRUE)
+  #     }
+  #     if(is.na(incidence_observed_A)){ll_A <- 0}else{
+  #       ll_A <- dnbinom(x = incidence_observed_A, mu = mu_A, size = size_2, log = TRUE)
+  #     }
+  #     #print(paste("size_1:", round(size_1, 2), "size_2:",
+  #     #            round(size_2, 2), "mu_C:", round(mu_C, 2), "mu_A:",
+  #     #            round(mu_A, 2), "obs_C:", incidence_observed_C,
+  #     #            "obs_A:", incidence_observed_A))
+  #     return(ll_C + ll_A)
+  #   })
+  # }
 
   if (month && age_for_inf == 'sep_ages' && include_prev == TRUE) {
     return(function(state, observed, pars = c("size_1", "size_2", "kappa_C", "kappa_A")) {
@@ -135,8 +135,10 @@ generate_incidence_comparison <- function(month, age_for_inf, incidence_df, incl
       penalty <- ifelse(prev_model_C < prev_model_A, -1e6 * abs(prev_model_C - prev_model_A), 0)
 
       # Combine all likelihood components
-      total_ll <- ll_C + ll_A + penalty
+      #total_ll <- ll_C + ll_A + penalty
 
+      total_ll <- ifelse(observed$Treatment == 1, ll_C + ll_A + penalty,
+             12 * (ll_C + ll_A + penalty))
       return(total_ll)
     })
   }
@@ -214,33 +216,140 @@ generate_incidence_comparison <- function(month, age_for_inf, incidence_df, incl
     })
   }
 
-  if(month && age_for_inf == 'u5' & include_prev == FALSE) {
-    return(function(state, observed, pars = c("size_1", "size_2")) {
-      # Incidence Log-Likelihood
-      incidence_observed_C <- observed$inc_C
-      mu_C <- state["month_inc_C", , drop = TRUE]
-      size_1 <- pars$size_1
-      if (size_1 == 0) { size_1 <- 1e5 }
-      if(is.na(incidence_observed_C)){ll_C <- 0}else{ # if no observed value, does not contribute to likelihood
-        ll_C <- dnbinom(x = incidence_observed_C, mu = mu_C, size = size_1, log = TRUE)
-      }
-      return(ll_C)  # Use weighted penalty
-    })
-  }
+  # if(month && age_for_inf == 'u5' & include_prev == FALSE) {
+  #   return(function(state, observed, pars = c("size_1", "size_2")) {
+  #     # Incidence Log-Likelihood
+  #     incidence_observed_C <- observed$inc_C
+  #     mu_C <- state["month_inc_C", , drop = TRUE]
+  #     size_1 <- pars$size_1
+  #     if (size_1 == 0) { size_1 <- 1e5 }
+  #     if(is.na(incidence_observed_C)){ll_C <- 0}else{ # if no observed value, does not contribute to likelihood
+  #       ll_C <- dnbinom(x = incidence_observed_C, mu = mu_C, size = size_1, log = TRUE)
+  #     }
+  #     return(ll_C)  # Use weighted penalty
+  #   })
+  # }
+
+  # if (month && age_for_inf == 'u5' && include_prev == FALSE) {
+  #   return(function(state, observed, pars = c("size_1")) {
+  #     # Incidence Log-Likelihood
+  #     incidence_observed_C <- observed$inc_C
+  #     mu_C <- state["month_inc_C", , drop = TRUE]
+  #     size_1 <- ifelse(pars$size_1 == 0, 1e-3, pars$size_1)
+  #
+  #     ll_C <- ifelse(is.na(incidence_observed_C), 0,
+  #                    dnbinom(x = incidence_observed_C, mu = mu_C, size = size_1, log = TRUE))
+  #
+  #     return(ll_C)
+  #   })
+  # }
+
+  # if (month && age_for_inf == 'u5' && include_prev == FALSE) {
+  #   return(function(state, observed, pars = c("size_1", "size_2")) {
+  #
+  #     # Incidence Log-Likelihood
+  #     incidence_observed_C <- observed$inc_C
+  #     mu_C <- max(state["month_inc_C", , drop = TRUE], 1e-6)
+  #     size_1 <- ifelse(pars$size_1 == 0, 1e-3, pars$size_1)
+  #
+  #     #print(mu_C)
+  #
+  #     ll_C <- ifelse(is.na(incidence_observed_C), 0,
+  #                    dnbinom(x = incidence_observed_C, mu = mu_C, size = size_1, log = TRUE))
+  #
+  #     # Predicted prevalence from model
+  #     prev_model_C <- state["prev_C_1", , drop = TRUE]
+  #
+  #     # Combine all likelihood components
+  #     #total_ll <- ll_C + ll_A + penalty
+  #
+  #     #total_ll <- ifelse(observed$Treatment == 1, ll_C,
+  #     #                   12 * ll_C)
+  #     total_ll <- ll_C
+  #     return(total_ll)
+  #   })
+  # }
+
+  # if (month && age_for_inf == 'u5' && include_prev == FALSE) {
+  #   return(function(state, observed, pars = c("size_1", "size_2", "beta_1")) {
+  #
+  #     # Retrieve observed incidence
+  #     incidence_observed_C <- observed$inc_C
+  #
+  #     # Retrieve model-predicted incidence
+  #     mu_C <- max(state["month_inc_C", , drop = TRUE], 1e-6)
+  #
+  #     # Retrieve SMC coverage for the current month
+  #     coverage <- observed$cov_SMC / 30
+  #
+  #     # Apply the multiplicative reductive effect of SMC
+  #     mu_C_adjusted <- mu_C * (1 - pars$beta_1 * coverage)
+  #
+  #     # Ensure size parameter is positive
+  #     size_1 <- ifelse(pars$size_1 == 0, 1e-3, pars$size_1)
+  #
+  #     # Calculate the negative binomial log-likelihood
+  #     ll_C <- ifelse(is.na(incidence_observed_C), 0,
+  #                    dnbinom(x = incidence_observed_C, mu = mu_C_adjusted, size = size_1, log = TRUE))
+  #     if(observed$Treatment == 0){ll_C = 12 * ll_C}
+  #
+  #     # Return the total log-likelihood
+  #     return(ll_C)
+  #   })
+  # }
 
   if (month && age_for_inf == 'u5' && include_prev == FALSE) {
-    return(function(state, observed, pars = c("size_1")) {
-      # Incidence Log-Likelihood
+    return(function(state, observed, pars = c("size_1", "size_2", "beta_1")) {
+
+      # Retrieve observed incidence
       incidence_observed_C <- observed$inc_C
-      mu_C <- state["month_inc_C", , drop = TRUE]
+
+      # Retrieve model-predicted incidence (latent)
+      mu_C <- max(state["month_inc_C", , drop = TRUE], 1e-6)  # Ensure positivity
+
+
+      # Ensure size parameter is positive (to avoid numerical issues)
       size_1 <- ifelse(pars$size_1 == 0, 1e-3, pars$size_1)
 
+      # Compute the NB likelihood using the adjusted mean
       ll_C <- ifelse(is.na(incidence_observed_C), 0,
                      dnbinom(x = incidence_observed_C, mu = mu_C, size = size_1, log = TRUE))
+
+      if(observed$Treatment == 0){ll_C = 1 * ll_C}
 
       return(ll_C)
     })
   }
+
+  # if (month && age_for_inf == 'u5' && include_prev == FALSE) {
+  #   return(function(state, observed, pars = c("size_1", "size_2", "beta_1")) {
+  #
+  #     # Retrieve observed incidence
+  #     incidence_observed_C <- observed$inc_C
+  #
+  #     # Retrieve model-predicted incidence (latent)
+  #     mu_C <- max(state["month_inc_C", , drop = TRUE], 1e-6)  # Ensure positivity
+  #
+  #     # Retrieve SMC coverage for the current month
+  #     coverage <- ifelse(is.null(observed$cov_SMC), 0, observed$cov_SMC / 30)
+  #
+  #     # Apply log link transformation to ensure multiplicative effect
+  #     log_mu_C_adjusted <- log(mu_C) + pars$beta_1 * coverage
+  #     mu_C_adjusted <- exp(log_mu_C_adjusted)  # Ensures incidence is always positive
+  #
+  #     # Ensure size parameter is positive (to avoid numerical issues)
+  #     size_1 <- ifelse(pars$size_1 == 0, 1e-3, pars$size_1)
+  #
+  #     # Compute the NB likelihood using the adjusted mean
+  #     ll_C <- ifelse(is.na(incidence_observed_C), 0,
+  #                    dnbinom(x = incidence_observed_C, mu = mu_C_adjusted, size = size_1, log = TRUE))
+  #
+  #     if(observed$Treatment == 0){ll_C = 8 * ll_C}
+  #
+  #     return(ll_C)
+  #   })
+  # }
+
 
   if (month && age_for_inf == 'u5' && include_prev == TRUE) {
     return(function(state, observed, pars = c("size_1", "kappa_C")) {

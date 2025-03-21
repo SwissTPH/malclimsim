@@ -182,7 +182,10 @@ create_start_values <- function(params_to_estimate, control_params, min_max_star
       sigma_RT = c(4, 9),
       b = c(22, 32),
       lag_R = c(15, 30),
-      lag_T = c(15,30)
+      lag_T = c(15,30),
+      lag_SMC = c(5, 20),
+      beta_1 = c(-5, 5),
+      beta_2 = c(-1000, -10)
     )
   }
 
@@ -272,9 +275,9 @@ create_proposal_matrix <- function(params_to_estimate, proposal_variance = NULL,
       phi = 0.1, k_par = 0.1, delta_temp = 0.1, mu_RS_C = 0.1, z = 0.1,
       z_A = 0.1, z_C2 = 0.1, rho = 2, eta = 0.1, size = 5, size_1 = 5, size_2 = 5, phi_C2 = 0.1,
       phi_A = 0.1, tau = 0.1, p_surv = 0.1, mu_IR = 0.1, shift1 = 0.1, T_opt = 5, sigma_LT = 3, sigma_RT = 3, alpha = 4,
-      shift2 = 0.1, kappa = 0.1, fT_C = 0.1, lag_T = 800, lag_R = 800, alpha = 10,
+      shift2 = 0.1, kappa = 0.1, fT_C = 0.1, lag_T = 800, lag_R = 800, lag_SMC = 100, alpha = 10,
       kappa_C = 50, kappa_A = 50, w1 = 0.5, w2 = 0.5, s_1 = 2, c_s = 2, c_phi = 2, qR1 = 2,
-      qR2 = 2, c_qR = 2, eta = 2
+      qR2 = 2, c_qR = 2, eta = 2, beta_1 = 2, beta_2 = 10
     )
   }
 
