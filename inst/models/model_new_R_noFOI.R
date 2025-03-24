@@ -26,13 +26,13 @@ SMC_removal <- if (SMC[time] == 1) w2 else 0
 SMC_removal_A <- w1 * SMC_removal
 #SMC_removal <- user(0)
 
-mu_SE_C <- (1 - exp(-p_MH_C * EIR)) * (1 - SMC_effect)
-initial(mu_SE_C_2) <- (1 - exp(-p_MH_C * EIR)) * (1 - SMC_effect)
-update(mu_SE_C_2) <- (1 - exp(-p_MH_C * EIR)) * (1 - SMC_effect)
+mu_SE_C <- (1 - exp(-p_MH_C * EIR))
+initial(mu_SE_C_2) <- (1 - exp(-p_MH_C * EIR))
+update(mu_SE_C_2) <- (1 - exp(-p_MH_C * EIR))
 
-mu_SE_A <- (1 - exp(-rho * p_MH_C * EIR)) * (1 - SMC_effect_A)
-initial(mu_SE_A_2) <- (1 - exp(-rho * p_MH_C * EIR)) * (1 - SMC_effect_A)
-update(mu_SE_A_2) <- (1 - exp(-rho * p_MH_C * EIR)) * (1 - SMC_effect_A)
+mu_SE_A <- (1 - exp(-rho * p_MH_C * EIR))
+initial(mu_SE_A_2) <- (1 - exp(-rho * p_MH_C * EIR))
+update(mu_SE_A_2) <- (1 - exp(-rho * p_MH_C * EIR))
 
 
 # # Children
