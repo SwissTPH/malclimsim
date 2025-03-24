@@ -16,7 +16,10 @@ data_sim(
   file = "",
   month_unequal_days = FALSE,
   return_EIR = FALSE,
-  return_compartments = FALSE
+  return_compartments = FALSE,
+  mu_transform_A = NULL,
+  mu_transform_C = NULL,
+  covariate_matrix = NULL
 )
 }
 \arguments{
