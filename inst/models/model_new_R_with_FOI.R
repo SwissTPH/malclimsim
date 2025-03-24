@@ -93,8 +93,8 @@ update(wk_inc_total) <-  if ((step) %% steps_per_week == 0) mu_EI * (EC * fT_C *
 # initial(month_inc_A) <- 0
 # update(month_inc_A) <- if ((step) %% steps_per_month == 0) mu_EI * EA * fT_A * phi_2 else month_inc_A + mu_EI * EA * fT_A * phi_2
 
-beta_1 <- user()
-beta_2 <- user()
+#beta_1 <- user()
+#beta_2 <- user()
 SMC_effective_coverage <- if (time > lag_SMC) decay[time - lag_SMC] * cov_SMC[time - lag_SMC] else decay[time] * cov_SMC[time]
 #SMC_X <- beta_1 * SMC_effective_coverage + beta_2 * SMC_effective_coverage * c_R_D_shift
 #SMC_X <- beta_1 * SMC_effective_coverage + beta_2 * c_R_D_shift * SMC_effective_coverage
