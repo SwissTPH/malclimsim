@@ -199,7 +199,8 @@ create_start_values <- function(params_to_estimate, control_params, min_max_star
 
   # Generate the starting values
   for (name in params_to_estimate) {
-    bounds <- min_max_start_values[[name]] %||% c(0, 1)  # Default to (0, 1) if not specified
+    # bounds <- min_max_start_values[[name]] %||% c(0, 1)  # Default to (0, 1) if not specified
+    bounds <- if (is.null(min_max_start_values[[name]])) c(0, 1) else min_max_start_values[[name]]
     if (random) {
       start_values[name, ] <- runif(n_chains, min = bounds[1], max = bounds[2])
     } else {
@@ -288,7 +289,9 @@ create_proposal_matrix <- function(params_to_estimate, proposal_variance = NULL,
 
   # Update the diagonal elements with the specified proposal variances
   for (name in params_to_estimate) {
-    proposal_matrix[name, name] <- proposal_variance[[name]] %||% 0.5  # Default to 0.1 if not specified
+    #proposal_matrix[name, name] <- proposal_variance[[name]] %||% 0.5  # Default to 0.1 if not specified
+    proposal_matrix[name, name] <- if (is.null(proposal_variance[[name]])) 0.5 else proposal_variance[[name]]
+
   }
 
   # If a correlation matrix is provided, integrate it into the proposal matrix
