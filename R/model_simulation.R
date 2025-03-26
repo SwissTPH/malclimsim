@@ -14,6 +14,29 @@ load_model <- function(name){
   return(odin.dust::odin_dust(file))
 }
 
+
+#' Import an Odin Model into the malclimsim Package
+#'
+#' @param model_path Full file path to the external Odin model (an R file) to be imported.
+#' @param model_name Desired name (without ".R") for the model when stored inside the package.
+#'
+#' @return None. The function copies the model file into the package's models directory.
+#' @export
+#'
+#' @examples
+#' import_model("path/to/external_model.R", "my_new_model")
+import_model <- function(model_path, model_name){
+  # Construct the path to the "models" directory within the installed package
+  package_models_path <- paste0(find.package("malclimsim"), "/models/")
+
+  # Construct the destination path for the new model file within the package
+  new_model_new_path <- paste0(package_models_path, model_name, ".R")
+
+  # Copy the external model file to the destination path inside the package's models folder
+  file.copy(from = model_path, to = new_model_new_path, overwrite = TRUE)
+}
+
+
 # Helper function to model the decay of SMC (Seasonal Malaria Chemoprevention) efficacy over time.
 # The decay follows a sigmoid curve where efficacy reduces as time (x) increases.
 # Args:

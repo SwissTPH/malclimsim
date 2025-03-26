@@ -1,0 +1,62 @@
+---
+title: "How to import a model for use with malclimsim"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{using-your-own-model}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Introduction
+The models used in the malclimsim package are written in the Odin domain-specific language (DSL), as described in FitzJohn *et al* in the paper "Reproducible parallel inference and simulation of stochastic state space models using odin, dust, and mcstate", published in 2021. 
+
+## Models are not written in R code
+While the syntax of the Odin DSL often resembles R code, and the model is stored in an R file, it is not R code. One key difference is that a model written in the Odin DSL necessarily describes a directed acyclical graph (DAG) for which an ordering is assumed between variables. More practically, this means that lines of code can be written in any order and Odin "knows" how to assemble these lines into a valid DAG. Also, compared to R, there is a much more limited set of available functions. More information can be found here - https://mrc-ide.github.io/odin/articles/functions.html.
+
+## Some models are already available
+There are some dynamical models of malaria transmission already available upon installation of package. These models will be described in detail elsewhere. Models that are already installed can be viewed using base R commands.
+
+```{r}
+model_path <- paste0(find.package("malclimsim"), "/models/")
+list.files(model_path)
+```
+
+
+Furthermore, the code underlying the models can be viewed and edited in the following way:
+
+```{r}
+utils::file.edit(paste0(model_path, "model_new_R_no_FOI.R"))
+```
+
+
+## It is straightforward to import your own models
+
+First the malclimsim package must be loaded.
+
+```{r message=FALSE, warning=FALSE}
+library(malclimsim)
+```
+
+Then, two objects must be defined, one for the path to the Odin model stored in a .R file, and another for the name of the model.
+
+```{r}
+# Replace this line with location to model that you want to import
+model_path <- "C:/Users/putnni/Documents/models-stored-locally/test_model.R"
+
+# This will be the name of the model that will be called when using "load_model"
+model_name <- "new_model"
+```
+
+Afterwards, simply call `import_model' using these two objects as arguments. Then, the model can be loaded by assigning the output of load_model(model_name) to a variable.
+```{r}
+import_model(model_path, model_name)
+
+new_model <- load_model(model_name)
+```
