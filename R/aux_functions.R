@@ -287,3 +287,8 @@ filter_by_year <- function(data, date_column, years_range) {
   # Return the filtered dataset
   return(filtered_data)
 }
+
+# edit_observation_function(){
+#   package_code_path <- paste0(find.package("malclimsim"), "/R/")
+#   utils::file.edit(paste0(package_code_path, "observation_functions.R"))
+# }

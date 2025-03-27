@@ -642,6 +642,171 @@ calculate_incidence_quantiles <- function(simulations) {
 
 
 
+#' #' Simulate Compartments Over Time with Prewarm Period
+#' #'
+#' #' This function simulates the compartments of an epidemiological model over a specified time period,
+#' #' including an optional prewarm period to allow the model to reach equilibrium before the main simulation period.
+#' #'
+#' #' @param model An epidemiological model object used for simulation.
+#' #' @param param_inputs A named list or vector of model parameters to be used in the simulation.
+#' #' @param start_date A character string or Date object specifying the start date of the main simulation (e.g., "2014-01-01").
+#' #' @param end_date A character string or Date object specifying the end date of the simulation (e.g., "2022-12-31").
+#' #' @param prewarm_years Integer specifying the number of years to prewarm the model before the main simulation (default: 2).
+#' #' @param days_per_year Integer specifying the number of days in a model year (default: 360).
+#' #'
+#' #' @return A data frame containing the simulated values of each compartment (SC, EC, IC, etc.)
+#' #' over the simulation period with a weekly time resolution.
+#' #'
+#' #' @details The function simulates the dynamics of susceptible, exposed, infected, treated, and recovered
+#' #' compartments for both children and adults. It first runs a prewarm period (if specified) to allow the model to stabilize,
+#' #' before simulating the main study period. The results are aggregated at weekly intervals.
+#' #'
+#' #' @export
+#' compartments_sim <- function(model, param_inputs, start_date, end_date, prewarm_years = 2, days_per_year = 360) {
+#'
+#'   # Extend parameter inputs to accommodate the prewarm period
+#'   param_inputs_ext <- extend_time_varying_inputs(param_inputs, days_per_year = days_per_year, years_to_extend = prewarm_years)
+#'
+#'   # Calculate the prewarm start date
+#'   prewarm_start_date <- paste0(year(as.Date(start_date)) - prewarm_years, "-", format(as.Date(start_date), "%m-%d"))
+#'
+#'   # Calculate the total number of days including prewarm period
+#'   total_days <- calculate_360_day_difference(prewarm_start_date, end_date) - 1
+#'
+#'   # Run the simulation using the model and extended parameters
+#'   results <- sim_mod(model, pars = c(param_inputs_ext), time_start = 0,
+#'                      n_particles = 1, sim_time = total_days)
+#'
+#'   # Extract the simulation output and the model
+#'   x <- results[[1]]
+#'   mod <- results[[2]]
+#'
+#'   # Select weekly indices from the simulation results (excluding prewarm)
+#'   full_wk_ind <- seq(1, total_days, by = 7)
+#'   start_index <- calculate_360_day_difference(prewarm_start_date, start_date)
+#'   wk_ind <- full_wk_ind[full_wk_ind >= start_index]
+#'
+#'   # Ensure that extracted compartments match the length of wk_ind
+#'   extract_compartment <- function(index_name) {
+#'     values <- x[mod$info()$index[[index_name]],,]
+#'     if (length(values) >= max(wk_ind)) {
+#'       return(values[wk_ind])  # Ensure selection does not exceed available data
+#'     } else {
+#'       stop(paste("Mismatch in compartment size for:", index_name))
+#'     }
+#'   }
+#'
+#'   # Extract compartment data using helper function
+#'   SC <- extract_compartment("SC")
+#'   EC <- extract_compartment("EC")
+#'   IC <- extract_compartment("IC")
+#'   TrC <- extract_compartment("TrC")
+#'   RC <- extract_compartment("RC")
+#'   SA <- extract_compartment("SA")
+#'   EA <- extract_compartment("EA")
+#'   IA <- extract_compartment("IA")
+#'   TrA <- extract_compartment("TrA")
+#'   RA <- extract_compartment("RA")
+#'   PC <- extract_compartment("P_C")
+#'   PA <- extract_compartment("P_A")
+#'   EIR <- extract_compartment("EIR2")
+#'   eff_SMC_cov <- extract_compartment("SMC_effect_2")
+#'   prev_total_with_R <- extract_compartment("prev_total_1")
+#'   prev_C_with_R <- extract_compartment("prev_C_1")
+#'   prev_A_with_R <- extract_compartment("prev_A_1")
+#'   prev_total_no_R <- extract_compartment("prev_total_2")
+#'   prev_C_no_R <- extract_compartment("prev_C_2")
+#'   prev_A_no_R <- extract_compartment("prev_A_2")
+#'   SMC_effect <- extract_compartment("SMC_effect_2")
+#'   mu_SE_C <- extract_compartment("mu_SE_C_2")
+#'   mu_SE_A <- extract_compartment("mu_SE_A_2")
+#'   X <- extract_compartment("X2")
+#'   X_I <- extract_compartment("X_I")
+#'   X_AP <- extract_compartment("X_AP")
+#'   X_ASP <- extract_compartment("X_ASP")
+#'   rain_effect <- extract_compartment("rain_effect_2")
+#'   temp_effect <- extract_compartment("temp_effect_2")
+#'
+#'   # Total population size
+#'   P <- PC + PA
+#'
+#'   # Generate correct weekly dates for the compartments
+#'   compart_dates <- seq(as.Date(start_date), as.Date(end_date), by = "7 days")
+#'
+#'   # Ensure the length of compart_dates matches the number of extracted weekly values
+#'   min_length <- min(length(compart_dates), length(SC))
+#'
+#'   # Trim all vectors to match the shortest length
+#'   compart_dates <- compart_dates[1:min_length]
+#'   SC <- SC[1:min_length]
+#'   EC <- EC[1:min_length]
+#'   IC <- IC[1:min_length]
+#'   TrC <- TrC[1:min_length]
+#'   RC <- RC[1:min_length]
+#'   SA <- SA[1:min_length]
+#'   EA <- EA[1:min_length]
+#'   IA <- IA[1:min_length]
+#'   TrA <- TrA[1:min_length]
+#'   RA <- RA[1:min_length]
+#'   PC <- PC[1:min_length]
+#'   PA <- PA[1:min_length]
+#'   P <- P[1:min_length]
+#'   EIR <- EIR[1:min_length]
+#'   eff_SMC_cov <- eff_SMC_cov[1:min_length]
+#'   prev_total_with_R <- prev_total_with_R[1:min_length]
+#'   prev_C_with_R <- prev_C_with_R[1:min_length]
+#'   prev_A_with_R <- prev_A_with_R[1:min_length]
+#'   prev_total_no_R <- prev_total_no_R[1:min_length]
+#'   prev_C_no_R <- prev_C_no_R[1:min_length]
+#'   prev_A_no_R <- prev_A_no_R[1:min_length]
+#'   SMC_effect <- SMC_effect[1:min_length]
+#'   mu_SE_C <- mu_SE_C[1:min_length]
+#'   mu_SE_A <- mu_SE_A[1:min_length]
+#'   X <- X[1:min_length]
+#'   X_I <- X_I[1:min_length]
+#'   X_AP <- X_AP[1:min_length]
+#'   X_ASP <- X_ASP[1:min_length]
+#'   rain_effect <- rain_effect[1:min_length]
+#'   temp_effect <- temp_effect[1:min_length]
+#'
+#'   # Create a data frame with compartment values
+#'   compart_df <- data.frame(
+#'     date = compart_dates,
+#'     SC = SC,
+#'     EC = EC,
+#'     IC = IC,
+#'     TrC = TrC,
+#'     RC = RC,
+#'     SA = SA,
+#'     EA = EA,
+#'     IA = IA,
+#'     TrA = TrA,
+#'     RA = RA,
+#'     PC = PC,
+#'     PA = PA,
+#'     P = P,
+#'     EIR = EIR,
+#'     eff_SMC_cov = eff_SMC_cov,
+#'     prev_total_with_R = prev_total_with_R,
+#'     prev_C_with_R = prev_C_with_R,
+#'     prev_A_with_R = prev_A_with_R,
+#'     prev_total_no_R = prev_total_no_R,
+#'     prev_C_no_R = prev_C_no_R,
+#'     prev_A_no_R = prev_A_no_R,
+#'     SMC_effect = SMC_effect,
+#'     mu_SE_C = mu_SE_C,
+#'     mu_SE_A = mu_SE_A,
+#'     X = X,
+#'     X_I = X_I,
+#'     X_AP = X_AP,
+#'     X_ASP = X_ASP,
+#'     rain_effect = rain_effect,
+#'     temp_effect = temp_effect
+#'   )
+#'
+#'   return(compart_df)
+#' }
+
 #' Simulate Compartments Over Time with Prewarm Period
 #'
 #' This function simulates the compartments of an epidemiological model over a specified time period,
@@ -663,143 +828,83 @@ calculate_incidence_quantiles <- function(simulations) {
 #'
 #' @export
 compartments_sim <- function(model, param_inputs, start_date, end_date, prewarm_years = 2, days_per_year = 360) {
-
   # Extend parameter inputs to accommodate the prewarm period
   param_inputs_ext <- extend_time_varying_inputs(param_inputs, days_per_year = days_per_year, years_to_extend = prewarm_years)
 
   # Calculate the prewarm start date
   prewarm_start_date <- paste0(year(as.Date(start_date)) - prewarm_years, "-", format(as.Date(start_date), "%m-%d"))
 
-  # Calculate the total number of days including prewarm period
+  # Calculate total simulation days
   total_days <- calculate_360_day_difference(prewarm_start_date, end_date) - 1
 
-  # Run the simulation using the model and extended parameters
+  # Run the simulation
   results <- sim_mod(model, pars = c(param_inputs_ext), time_start = 0,
                      n_particles = 1, sim_time = total_days)
 
-  # Extract the simulation output and the model
   x <- results[[1]]
   mod <- results[[2]]
 
-  # Select weekly indices from the simulation results (excluding prewarm)
+  # Weekly indices for output (skip prewarm)
   full_wk_ind <- seq(1, total_days, by = 7)
   start_index <- calculate_360_day_difference(prewarm_start_date, start_date)
   wk_ind <- full_wk_ind[full_wk_ind >= start_index]
 
-  # Ensure that extracted compartments match the length of wk_ind
+  # Helper function for safe extraction
   extract_compartment <- function(index_name) {
-    values <- x[mod$info()$index[[index_name]],,]
+    values <- x[mod$info()$index[[index_name]], , ]
     if (length(values) >= max(wk_ind)) {
-      return(values[wk_ind])  # Ensure selection does not exceed available data
+      values[wk_ind]
     } else {
       stop(paste("Mismatch in compartment size for:", index_name))
     }
   }
 
-  # Extract compartment data using helper function
-  SC <- extract_compartment("SC")
-  EC <- extract_compartment("EC")
-  IC <- extract_compartment("IC")
-  TrC <- extract_compartment("TrC")
-  RC <- extract_compartment("RC")
-  SA <- extract_compartment("SA")
-  EA <- extract_compartment("EA")
-  IA <- extract_compartment("IA")
-  TrA <- extract_compartment("TrA")
-  RA <- extract_compartment("RA")
-  PC <- extract_compartment("P_C")
-  PA <- extract_compartment("P_A")
-  EIR <- extract_compartment("EIR2")
-  eff_SMC_cov <- extract_compartment("SMC_effect_2")
-  prev_total_with_R <- extract_compartment("prev_total_1")
-  prev_C_with_R <- extract_compartment("prev_C_1")
-  prev_A_with_R <- extract_compartment("prev_A_1")
-  prev_total_no_R <- extract_compartment("prev_total_2")
-  prev_C_no_R <- extract_compartment("prev_C_2")
-  prev_A_no_R <- extract_compartment("prev_A_2")
-  SMC_effect <- extract_compartment("SMC_effect_2")
-  mu_SE_C <- extract_compartment("mu_SE_C_2")
-  mu_SE_A <- extract_compartment("mu_SE_A_2")
-  X <- extract_compartment("X2")
-  X_I <- extract_compartment("X_I")
-  X_AP <- extract_compartment("X_AP")
-  X_ASP <- extract_compartment("X_ASP")
+  # Vector of compartments to extract
+  compartment_names <- c(
+    "SC", "EC", "IC", "TrC", "RC", "SA", "EA", "IA", "TrA", "RA",
+    "P_C", "P_A", "EIR2", "SMC_effect_2", "prev_total_1", "prev_C_1", "prev_A_1",
+    "prev_total_2", "prev_C_2", "prev_A_2", "mu_SE_C_2", "mu_SE_A_2",
+    "X2", "X_I", "X_AP", "X_ASP", "rain_effect_2", "temp_effect_2"
+  )
 
-  # Total population size
-  P <- PC + PA
+  # Extract all compartments in a list
+  compartments <- setNames(lapply(compartment_names, extract_compartment), compartment_names)
 
-  # Generate correct weekly dates for the compartments
+  # Rename for clarity (optional)
+  names(compartments)[names(compartments) == "P_C"] <- "PC"
+  names(compartments)[names(compartments) == "P_A"] <- "PA"
+  names(compartments)[names(compartments) == "EIR2"] <- "EIR"
+  names(compartments)[names(compartments) == "SMC_effect_2"] <- "SMC_effect"
+  names(compartments)[names(compartments) == "prev_total_1"] <- "prev_total_with_R"
+  names(compartments)[names(compartments) == "prev_C_1"] <- "prev_C_with_R"
+  names(compartments)[names(compartments) == "prev_A_1"] <- "prev_A_with_R"
+  names(compartments)[names(compartments) == "prev_total_2"] <- "prev_total_no_R"
+  names(compartments)[names(compartments) == "prev_C_2"] <- "prev_C_no_R"
+  names(compartments)[names(compartments) == "prev_A_2"] <- "prev_A_no_R"
+  names(compartments)[names(compartments) == "mu_SE_C_2"] <- "mu_SE_C"
+  names(compartments)[names(compartments) == "mu_SE_A_2"] <- "mu_SE_A"
+  names(compartments)[names(compartments) == "X2"] <- "X"
+  names(compartments)[names(compartments) == "rain_effect_2"] <- "rain_effect"
+  names(compartments)[names(compartments) == "temp_effect_2"] <- "temp_effect"
+
+  # Derived total population
+  compartments$P <- compartments$PC + compartments$PA
+
+  # Weekly dates
   compart_dates <- seq(as.Date(start_date), as.Date(end_date), by = "7 days")
 
-  # Ensure the length of compart_dates matches the number of extracted weekly values
-  min_length <- min(length(compart_dates), length(SC))
-
-  # Trim all vectors to match the shortest length
+  # Trim all vectors to minimum shared length
+  min_length <- min(length(compart_dates), sapply(compartments, length))
   compart_dates <- compart_dates[1:min_length]
-  SC <- SC[1:min_length]
-  EC <- EC[1:min_length]
-  IC <- IC[1:min_length]
-  TrC <- TrC[1:min_length]
-  RC <- RC[1:min_length]
-  SA <- SA[1:min_length]
-  EA <- EA[1:min_length]
-  IA <- IA[1:min_length]
-  TrA <- TrA[1:min_length]
-  RA <- RA[1:min_length]
-  PC <- PC[1:min_length]
-  PA <- PA[1:min_length]
-  P <- P[1:min_length]
-  EIR <- EIR[1:min_length]
-  eff_SMC_cov <- eff_SMC_cov[1:min_length]
-  prev_total_with_R <- prev_total_with_R[1:min_length]
-  prev_C_with_R <- prev_C_with_R[1:min_length]
-  prev_A_with_R <- prev_A_with_R[1:min_length]
-  prev_total_no_R <- prev_total_no_R[1:min_length]
-  prev_C_no_R <- prev_C_no_R[1:min_length]
-  prev_A_no_R <- prev_A_no_R[1:min_length]
-  SMC_effect <- SMC_effect[1:min_length]
-  mu_SE_C <- mu_SE_C[1:min_length]
-  mu_SE_A <- mu_SE_A[1:min_length]
-  X <- X[1:min_length]
-  X_I <- X_I[1:min_length]
-  X_AP <- X_AP[1:min_length]
-  X_ASP <- X_ASP[1:min_length]
+  compartments <- lapply(compartments, function(x) x[1:min_length])
 
-  # Create a data frame with compartment values
-  compart_df <- data.frame(
-    date = compart_dates,
-    SC = SC,
-    EC = EC,
-    IC = IC,
-    TrC = TrC,
-    RC = RC,
-    SA = SA,
-    EA = EA,
-    IA = IA,
-    TrA = TrA,
-    RA = RA,
-    PC = PC,
-    PA = PA,
-    P = P,
-    EIR = EIR,
-    eff_SMC_cov = eff_SMC_cov,
-    prev_total_with_R = prev_total_with_R,
-    prev_C_with_R = prev_C_with_R,
-    prev_A_with_R = prev_A_with_R,
-    prev_total_no_R = prev_total_no_R,
-    prev_C_no_R = prev_C_no_R,
-    prev_A_no_R = prev_A_no_R,
-    SMC_effect = SMC_effect,
-    mu_SE_C = mu_SE_C,
-    mu_SE_A = mu_SE_A,
-    X = X,
-    X_I = X_I,
-    X_AP = X_AP,
-    X_ASP = X_ASP
-  )
+  # Combine into final data frame
+  compart_df <- data.frame(date = compart_dates, compartments)
 
   return(compart_df)
 }
+
+
 
 #' Simulate and Extract Yearly Prevalence Estimates for a District
 #'
