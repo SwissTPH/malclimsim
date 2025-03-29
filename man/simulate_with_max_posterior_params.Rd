@@ -10,7 +10,10 @@ simulate_with_max_posterior_params(
   end_date,
   model,
   prewarm_years = 2,
-  days_per_year = 360
+  days_per_year = 360,
+  mu_transform_A = NULL,
+  mu_transform_C = NULL,
+  covariate_matrix = NULL
 )
 }
 \arguments{

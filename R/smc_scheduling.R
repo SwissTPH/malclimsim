@@ -33,35 +33,47 @@
 #' head(schedule)
 #'
 #' @export
-gen_smc_schedule <- function(start_date, end_date, years, months_active, months_30_days = FALSE, coverage = 0.90) {
-  # Generate the sequence of dates
+gen_smc_schedule <- function(start_date, end_date, years, months_active,
+                             months_30_days = FALSE, coverage = 0.90) {
+
   if (months_30_days) {
     dates <- generate_360_day_dates(years[1], years[length(years)])
-    smc_df <- data.frame(dates = dates, SMC = numeric(length(dates)), cov = rep(coverage, length(dates)))
   } else {
     dates <- seq(as.Date(start_date), as.Date(end_date), by = "day")
-    smc_df <- data.frame(dates = format(dates, "%Y-%m-%d"), SMC = numeric(length(dates)), cov = rep(coverage, length(dates)))
   }
 
-  # Loop through each year to assign SMC deployment to the active months
-  for (i in 1:length(years)) {
-    if (sum(months_active[i, ]) > 0) {  # Check if there are active months in the year
-      active_months <- which(months_active[i, ] == 1)
-      smc_days <- format(as.Date(paste(years[i], active_months, "01", sep = "-"), "%Y-%m-%d"))
-      smc_df[match(smc_days, smc_df$dates), ]$SMC <- 1  # Set SMC to 1 on the first day of active months
+  smc_df <- data.frame(
+    dates = dates,
+    SMC = 0,
+    cov = 0
+  )
+
+  # --- Assign SMC = 1 to first day of active months ---
+  for (i in seq_along(years)) {
+    active_months <- which(months_active[i, ] == 1)
+    year_i <- years[i]
+    for (month in active_months) {
+      smc_date <- as.Date(sprintf("%04d-%02d-01", year_i, month))
+      idx <- which(smc_df$dates == smc_date)
+      if (length(idx) == 1) {
+        smc_df$SMC[idx] <- 1
+      }
     }
   }
 
-  # Adjust the decay to start on the first day of each month (reset decay at the beginning of each month)
-  decay_df <- smc_df
-  start_SMC <- which(day(as.Date(decay_df$dates)) != 1)  # Get all dates that are not the first day of the month
-  decay_df$SMC[start_SMC] <- 0  # Set SMC to 0 for non-first-day dates
+  # --- Apply coverage for each SMC round (30-day window) ---
+  smc_rounds <- which(smc_df$SMC == 1)
+  for (idx in smc_rounds) {
+    window_end <- min(idx + 29, nrow(smc_df))  # Avoid going past end of data
+    smc_df$cov[idx:window_end] <- coverage
+  }
 
-  # Calculate the efficacy decay over time
-  smc_df$decay <- calc_decay_arr(decay_df$SMC, const = -0.1806)
+  # --- Decay is only calculated from SMC = 1 onward ---
+  smc_df$decay <- calc_decay_arr(smc_df$SMC, const = -0.1806)
 
-  return(smc_df)  # Return the SMC schedule with decay
+  return(smc_df)
 }
+
 
 
 

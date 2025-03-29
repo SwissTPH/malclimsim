@@ -292,3 +292,40 @@ filter_by_year <- function(data, date_column, years_range) {
 #   package_code_path <- paste0(find.package("malclimsim"), "/R/")
 #   utils::file.edit(paste0(package_code_path, "observation_functions.R"))
 # }
+
+#' Load and clean raw SMC coverage data
+#'
+#' @param path_to_SMC Path to Excel file containing SMC data
+#'
+#' @return A cleaned data frame with columns: date_start, coverage
+#' @export
+load_clean_smc_data <- function(path_to_SMC) {
+  readxl::read_excel(path_to_SMC) %>%
+    dplyr::select(date_start, smc_couv_tot) %>%
+    dplyr::rename(coverage = smc_couv_tot) %>%
+    dplyr::mutate(YearMonth = format(date_start, "%Y-%m")) %>%
+    dplyr::group_by(YearMonth) %>%
+    dplyr::slice(1) %>%
+    dplyr::ungroup() %>%
+    dplyr::select(-YearMonth)
+}
+
+#' Compute monthly metrics from SMC schedule
+#'
+#' @param schedule Data frame with SMC schedule (must include `dates`, `SMC`, `cov`, `decay`)
+#' @param exclude_years Vector of years to exclude (e.g., c(2023))
+#'
+#' @return Monthly summarized schedule with columns: month, SMC, cov, decay
+#' @export
+calculate_monthly_metrics <- function(schedule, exclude_years = NULL) {
+  schedule %>%
+    dplyr::mutate(month = format(as.Date(dates), "%Y-%m-01")) %>%
+    dplyr::group_by(month) %>%
+    dplyr::summarise(
+      SMC = ifelse(sum(SMC, na.rm = TRUE) > 0, 1, 0),
+      cov = sum(cov, na.rm = TRUE),
+      decay = sum(decay, na.rm = TRUE),
+      .groups = "drop"
+    ) %>%
+    dplyr::filter(!(lubridate::year(as.Date(month)) %in% exclude_years))
+}

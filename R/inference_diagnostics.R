@@ -418,8 +418,8 @@ post_plot <- function(results_list, params_to_estimate, dim_plot, show_true = TR
       scale_fill_manual(values = colors) +
       scale_color_manual(values = colors) +
       xlim(
-        quantile(post_data$value, 0.00001, na.rm = TRUE),
-        quantile(post_data$value, 0.99999, na.rm = TRUE)
+        quantile(post_data$value, 0.01, na.rm = TRUE),
+        quantile(post_data$value, 0.99, na.rm = TRUE)
       )
 
     # Add prior if enabled

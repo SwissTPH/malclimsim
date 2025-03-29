@@ -261,6 +261,7 @@ plot_observed_vs_simulated <- function(results, obs_cases, start_date, end_date,
                                        add_ribbon = TRUE, n_samples = 100, groups = c("inc_A", "inc_C", "inc"),
                                        met = NULL, climate_facet = FALSE, prewarm_years = 2, days_per_year = 360,
                                        plot_title = NULL, multiple_results = TRUE,
+                                       mu_transform_A = NULL, mu_transform_C = NULL, covariate_matrix = NULL,
                                        legend_labels = c("Original Model - True Temp",
                                                          "Original Model - Constant Temp",
                                                          "Simplified EIR - True Temp") ) {
@@ -314,10 +315,18 @@ plot_observed_vs_simulated <- function(results, obs_cases, start_date, end_date,
       }
 
     # Run the simulation with parameters that maximize log posterior
-    sim_data <- try(simulate_with_max_posterior_params(result, start_date = start_date,
-                                                      end_date = end_date, model = curr_model,
-                                                      prewarm_years = prewarm_years,
-                                                      days_per_year = days_per_year), silent = TRUE)
+    sim_data <- try(sim_data <- simulate_with_max_posterior_params(
+      result,
+      start_date = start_date,
+      end_date = end_date,
+      model = curr_model,
+      prewarm_years = prewarm_years,
+      days_per_year = days_per_year,
+      mu_transform_A = mu_transform_A,
+      mu_transform_C = mu_transform_C,
+      covariate_matrix = covariate_matrix
+    )
+    , silent = TRUE)
     if(inherits(sim_data, "try-error")){
       stop("Unable to simulate from sim_data function. It is possible that `results' is in the wrong format.")
       return(err_sim)
@@ -466,6 +475,113 @@ plot_observed_vs_simulated <- function(results, obs_cases, start_date, end_date,
   return(p)
 }
 
+plot_observed_vs_simulated <- function(results, obs_cases, start_date, end_date, model,
+                                       add_ribbon = TRUE, n_samples = 100,
+                                       groups = c("inc_A", "inc_C", "inc", "inc_C_transformed"),
+                                       met = NULL, climate_facet = FALSE, prewarm_years = 2,
+                                       days_per_year = 360, plot_title = NULL, multiple_results = TRUE,
+                                       mu_transform_A = NULL, mu_transform_C = NULL, covariate_matrix = NULL,
+                                       legend_labels = c("Original Model - True Temp",
+                                                         "Original Model - Constant Temp",
+                                                         "Simplified EIR - True Temp")) {
+  prewarm_start_date <- paste0(year(as.Date(start_date)) - prewarm_years, "-", format(as.Date(start_date), "%m-%d"))
+  all_sim_data <- list()
+
+  for (i in seq_along(results)) {
+    if (multiple_results) {
+      result <- results[[i]]$results
+      curr_model <- try(model[[i]], silent = TRUE)
+      if (inherits(curr_model, "try-error")) stop("Unable to extract correct model.")
+    } else {
+      result <- results[[i]]
+      curr_model <- model
+    }
+
+    sim_data <- try(simulate_with_max_posterior_params(
+      result,
+      start_date = start_date,
+      end_date = end_date,
+      model = curr_model,
+      prewarm_years = prewarm_years,
+      days_per_year = days_per_year,
+      mu_transform_A = mu_transform_A,
+      mu_transform_C = mu_transform_C,
+      covariate_matrix = covariate_matrix
+    ), silent = TRUE)
+
+    if (inherits(sim_data, "try-error")) stop("Unable to simulate from sim_data function.")
+
+    sim_data <- sim_data[sim_data$date_ymd >= as.Date(start_date), ]
+    sim_data$source <- legend_labels[i]
+    all_sim_data[[i]] <- sim_data
+  }
+
+  sim_data_combined <- do.call(rbind, all_sim_data)
+  colnames(obs_cases)[1] <- "date_ymd"
+  combined_data <- merge(obs_cases, sim_data_combined, by = "date_ymd", suffixes = c("_obs", "_sim"))
+
+  # --- Melt all observed/simulated combinations of requested groups
+  all_vars <- unlist(lapply(groups, function(g) c(paste0(g, "_obs"), paste0(g, "_sim"))))
+  combined_data_long <- reshape2::melt(combined_data, id.vars = c("date_ymd", "source"),
+                                       measure.vars = all_vars)
+
+  # --- Set readable facet labels
+  facet_labels <- c(
+    "inc_A" = "Incidence (>=5 years)",
+    "inc_C" = "Incidence (<5 years)",
+    "inc"   = "Total Incidence",
+    "inc_C_transformed" = "Incidence (<5) Transformed"
+  )
+
+  if (is.null(plot_title)) {
+    plot_title <- "Observed vs Simulated Monthly Malaria Cases"
+  }
+
+  # --- Main plot
+  p <- ggplot(combined_data_long, aes(x = date_ymd, group = source, color = source)) +
+    geom_point(data = subset(combined_data_long, grepl("_obs$", variable)), aes(y = value),
+               color = "blue", size = 2, alpha = 0.7) +
+    geom_line(data = subset(combined_data_long, grepl("_sim$", variable)), aes(y = value), size = 1.5) +
+    facet_wrap(~ gsub("(_obs|_sim)", "", variable), scales = "free", ncol = 1,
+               labeller = as_labeller(facet_labels)) +
+    labs(title = plot_title,
+         x = "Date",
+         y = "Number of Monthly Malaria Cases",
+         color = "Simulation") +
+    theme_minimal() +
+    theme(
+      plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+      axis.title.y = element_text(size = 14, face = "bold"),
+      axis.text = element_text(size = 12),
+      strip.text = element_text(size = 14, face = "bold")
+    )
+
+  # --- Add Ribbon if requested
+  if (add_ribbon) {
+    ribbon_data_list <- list()
+
+    for (group in groups) {
+      qcols <- c(paste0(group, "_q005"), paste0(group, "_q995"))
+      if (!all(qcols %in% colnames(combined_data))) next
+
+      ribbon_data <- combined_data[, c("date_ymd", "source", qcols)]
+      colnames(ribbon_data) <- c("date_ymd", "source", "q005", "q995")
+      ribbon_data$variable <- group
+      ribbon_data_list[[group]] <- ribbon_data
+    }
+
+    ribbon_data_combined <- do.call(rbind, ribbon_data_list)
+
+    p <- p + geom_ribbon(
+      data = ribbon_data_combined,
+      aes(x = date_ymd, ymin = q005, ymax = q995, fill = source),
+      alpha = 0.3,
+      inherit.aes = FALSE
+    )
+  }
+
+  return(p)
+}
 
 
 
@@ -1310,6 +1426,94 @@ plot_simulation_confidence_intervals <- function(summary_df, obs_data = NULL, pl
       legend.title = element_text(size = 12),
       legend.text = element_text(size = 10)
     )
+
+  return(p)
+}
+
+#' Prepare Observed and Simulated Data for Plotting
+#'
+#' This function reshapes and combines simulated and observed data, allowing plotting of multiple
+#' simulated variables (e.g., transformed and untransformed incidence) against the same observed variable.
+#'
+#' @param sim_data Simulated data frame in long format (must include 'date_ymd', 'variable', 'median', etc.).
+#' @param obs_data Observed data frame in wide format (e.g., columns: date_ymd, inc_C, ...).
+#' @param sim_vars Vector of variable names from simulation to include (e.g., c("inc_C", "inc_C_transformed")).
+#' @param obs_var Name of the observed variable to match against (e.g., "inc_C").
+#' @param label Label for the simulated data source.
+#'
+#' @return Combined long-format tibble ready for plotting.
+#' @export
+prepare_plot_data <- function(sim_data, obs_data, sim_vars, obs_var, label = "Simulated") {
+  # --- Simulated data: filter selected variables and tag source
+  sim_filtered <- sim_data %>%
+    filter(variable %in% sim_vars) %>%
+    mutate(source = label)
+
+  # --- Expand observed data to match each sim variable
+  repeated_obs <- lapply(sim_vars, function(var_name) {
+    obs_data %>%
+      select(date_ymd, !!obs_var) %>%
+      rename(value = !!obs_var) %>%
+      mutate(
+        variable = var_name,
+        source = "Observed"
+      )
+  })
+
+  obs_long <- bind_rows(repeated_obs)
+
+  # --- Combine and return
+  bind_rows(sim_filtered, obs_long)
+}
+
+
+#' Plot Posterior Predictive Check (PPC)
+#'
+#' Generates a time series plot comparing observed vs simulated values with optional credible interval ribbons.
+#'
+#' @param plot_data Output of `prepare_plot_data()`: long-format tibble with `date_ymd`, `value`, `variable`, `source`.
+#' @param ci_data Optional output of `summarize_simulations()`, long-format with `date`, `variable`, `lower`, `upper`.
+#' @param plot_title Title for the plot.
+#' @return A ggplot object.
+#' @export
+plot_ppc <- function(plot_data, ci_data = NULL, plot_title = "Posterior Predictive Check") {
+  # Facet label mapping
+  label_map <- c(
+    inc_C = "No SMC",
+    inc_C_transformed = "With SMC"
+  )
+
+  p <- ggplot(plot_data, aes(x = date_ymd, y = value, color = source, group = source)) +
+    geom_point(data = subset(plot_data, source == "Observed"), size = 2.5, alpha = 0.8) +
+    geom_line(data = subset(plot_data, source != "Observed"), size = 1.3) +
+    facet_wrap(~ variable, scales = "free_y", labeller = as_labeller(label_map)) +
+    labs(
+      title = plot_title,
+      x = "Date",
+      y = "Monthly Number of Cases",
+      color = "Data Source"
+    ) +
+    scale_color_manual(values = c("Observed" = "black", "Simulated" = "#1f77b4")) +
+    theme_minimal(base_size = 16) +
+    theme(
+      plot.title = element_text(hjust = 0.5, face = "bold", size = 18),
+      strip.text = element_text(face = "bold", size = 16),
+      axis.text = element_text(size = 14),
+      axis.title = element_text(size = 16),
+      legend.position = "top",
+      legend.title = element_text(size = 14),
+      legend.text = element_text(size = 13)
+    )
+
+  if (!is.null(ci_data)) {
+    p <- p + geom_ribbon(
+      data = ci_data,
+      aes(x = date_ymd, ymin = lower, ymax = upper, fill = variable),
+      alpha = 0.25,
+      inherit.aes = FALSE,
+      show.legend = FALSE
+    )
+  }
 
   return(p)
 }

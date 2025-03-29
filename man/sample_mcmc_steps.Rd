@@ -5,13 +5,17 @@
 \title{Sample Parameter Sets from MCMC Results}
 \usage{
 sample_mcmc_steps(mcmc_results, num_samples)
+
+sample_mcmc_steps(mcmc_results, num_samples)
 }
 \arguments{
 \item{mcmc_results}{A matrix or data frame containing MCMC posterior samples of parameters.}
 
-\item{num_samples}{An integer specifying the number of samples to draw.}
+\item{num_samples}{Number of samples to draw.}
 }
 \value{
+A matrix of sampled parameter sets.
+
 A matrix of sampled parameter sets.
 }
 \description{

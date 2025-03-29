@@ -12,13 +12,16 @@ plot_observed_vs_simulated(
   model,
   add_ribbon = TRUE,
   n_samples = 100,
-  groups = c("inc_A", "inc_C", "inc"),
+  groups = c("inc_A", "inc_C", "inc", "inc_C_transformed"),
   met = NULL,
   climate_facet = FALSE,
   prewarm_years = 2,
   days_per_year = 360,
   plot_title = NULL,
   multiple_results = TRUE,
+  mu_transform_A = NULL,
+  mu_transform_C = NULL,
+  covariate_matrix = NULL,
   legend_labels = c("Original Model - True Temp", "Original Model - Constant Temp",
     "Simplified EIR - True Temp")
 )

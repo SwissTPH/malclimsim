@@ -20,10 +20,18 @@ generate_synthetic_data <- function(model, param_inputs, dates, month, month_une
 }
 
 # Define comparison function
+# generate_comparison_function <- function(month, age_for_inf, incidence_observed, include_prev) {
+#   comparison_fn <- generate_incidence_comparison(month, age_for_inf, incidence_observed, include_prev)
+#   return(comparison_fn)
+# }
+
+
+# Define comparison function
 generate_comparison_function <- function(month, age_for_inf, incidence_observed, include_prev) {
   comparison_fn <- generate_incidence_comparison(month, age_for_inf, incidence_observed, include_prev)
   return(comparison_fn)
 }
+
 
 # Initialize observation time for alignment of observed and simulated data
 initialize_observation_time <- function(simulated_result, incidence_df) {
@@ -149,80 +157,127 @@ filter_incidence_by_dates <- function(incidence_df, dates) {
 #' @param start_values Initial parameter values for starting the MCMC chains.
 #' @param noise Logical; if TRUE, adds noise to the synthetic incidence data.
 #' @param seed Numeric; sets the random seed for reproducibility.
-#' @param month Logical; if TRUE, generates monthly data.
 #' @param month_unequal_days Logical; indicates if monthly data has unequal days.
 #' @param dates Vector of start and end dates for the simulation period.
-#' @param age_for_inf Character; indicates type of age-specific incidence data ('total', 'sep_ages', 'total + sep_ages').
 #' @param synthetic Logical; if TRUE, generates synthetic incidence data.
 #' @param incidence_df Data frame of observed incidence data if not synthetic.
 #' @param save_trajectories Logical; if TRUE, saves MCMC trajectories.
 #' @param rerun_n Numeric; frequency for re-running MCMC proposals.
 #' @param rerun_random Logical; if TRUE, re-runs MCMC randomly.
+#' @param param_priors Optional prior list for MCMC parameters.
+#' @param n_years_warmup Number of years to run prior to start of observation period.
+#' @param obs_config A named list specifying observation model configuration.
+#'        Use `make_obs_config()` to construct this.
 #'
 #' @return A list containing MCMC results, including posterior samples, fixed parameters, priors, and incidence data.
 #' @export
-#'
-#' @examples
-#' inf_run(model, param_inputs, control_params, params_to_estimate, proposal_matrix, adaptive_params, start_values)
 inf_run <- function(model, param_inputs, control_params, params_to_estimate, proposal_matrix,
-                    adaptive_params, start_values, noise = FALSE, seed = 24, month = FALSE,
-                    month_unequal_days = FALSE, dates, age_for_inf, synthetic = TRUE, incidence_df = NULL,
-                    save_trajectories = TRUE, rerun_n = Inf, rerun_random = FALSE, param_priors = NULL,
-                    n_years_warmup = 3, include_prev = TRUE) {
+                    adaptive_params, start_values, noise = FALSE, seed = 24,
+                    month_unequal_days = FALSE, dates, synthetic = TRUE, incidence_df = NULL,
+                    save_trajectories = TRUE, rerun_n = Inf, rerun_random = FALSE,
+                    param_priors = NULL, n_years_warmup = 3, obs_config) {
 
-  # Setup for allowing model to run some prior to inference (comparing to observations)
+  # --- Extend inputs to include warm-up period ---
   param_inputs_ext <- extend_time_varying_inputs(param_inputs, days_per_year = 360,
-                                             years_to_extend = n_years_warmup)
+                                                 years_to_extend = n_years_warmup)
   extend_dates <- dates
   extend_dates[1] <- paste0(year(as.Date(dates[1])) - n_years_warmup, "-", format(as.Date(dates[1]), "%m-%d"))
-  # Filter Incidence Data by Date Range
+
+  # --- Filter incidence data to extended date range ---
   incidence_df <- filter_incidence_by_dates(incidence_df, extend_dates)
 
-  # Generate synthetic data if necessary
-  if(synthetic){
-    incidence_df <- generate_synthetic_data(model, param_inputs_ext, dates, month, month_unequal_days, noise, seed, synthetic, incidence_df)
+  # --- Optionally generate synthetic incidence data ---
+  if (synthetic) {
+    incidence_df <- generate_synthetic_data(
+      model, param_inputs_ext, dates,
+      month = (obs_config$time == "month"),
+      month_unequal_days = month_unequal_days,
+      noise = noise, seed = seed,
+      synthetic = TRUE,
+      incidence_df = incidence_df
+    )
   }
 
+  # --- Define parameter transforms and priors ---
+  transform_fn <- define_transformations(
+    temp = param_inputs_ext$temp,
+    c_R_D = param_inputs_ext$c_R_D,
+    SMC = param_inputs_ext$SMC,
+    decay = param_inputs_ext$decay,
+    cov_SMC = param_inputs_ext$cov_SMC
+  )
 
-  # Define parameters and initialize transformation function
-  transform_fn <- define_transformations(temp = param_inputs_ext$temp, c_R_D = param_inputs_ext$c_R_D, SMC = param_inputs_ext$SMC,
-                                         decay = param_inputs_ext$decay, cov_SMC = param_inputs_ext$cov_SMC)
-  priors_and_proposals <- define_priors_and_proposals(param_inputs, proposal_matrix, params_to_estimate, transform_fn)
+  priors_and_proposals <- define_priors_and_proposals(
+    param_inputs, proposal_matrix, params_to_estimate, transform_fn
+  )
+
   mcmc_pars <- priors_and_proposals$mcmc_pars
   paramFix <- priors_and_proposals$paramFix
 
-  # Set up comparison function and initial time
-  incidence_observed <- incidence_df[-1]
-  comparison_fn <- generate_comparison_function(month, age_for_inf, incidence_observed, include_prev = include_prev)
-  simulated_result <- data_sim_for_inference(model, param_inputs = param_inputs_ext, dates = extend_dates, noise = FALSE, month = month)
-  simulated_result <- filter_incidence_by_dates(simulated_result, dates)
-  simulated_result$month_no <- 0: (nrow(simulated_result) - 1)
-  incidence_observed <- filter_incidence_by_dates(incidence_df, dates)[-1]
-  incidence_observed$month_no <- 0: (nrow(incidence_observed) - 1)
-  initial_time_obs <- initialize_observation_time(simulated_result, incidence_df)
-  filt_data <- filter_data_setup(incidence_observed, month, initial_time_obs)
+  # --- Set up observation comparison function ---
+  incidence_observed <- incidence_df[-1]  # remove date column if needed
+  comparison_fn <- generate_incidence_comparison(
+    month = obs_config$time == "month",
+    age_for_inf = obs_config$age_group,
+    incidence_df = incidence_observed,
+    include_prev = obs_config$include_prev,
+    use_SMC_as_covariate = obs_config$use_SMC_as_covariate
+  )
 
-    # Define and set up filter for MCMC
-  filter <- mcstate::particle_deterministic$new(data = filt_data, model = model, index = index, compare = comparison_fn)
+  # --- Simulate data using the model ---
+  simulated_result <- data_sim_for_inference(
+    model, param_inputs = param_inputs_ext, dates = extend_dates,
+    noise = FALSE, month = (obs_config$time == "month")
+  )
+
+  simulated_result <- filter_incidence_by_dates(simulated_result, dates)
+  simulated_result$month_no <- 0:(nrow(simulated_result) - 1)
+
+  incidence_observed <- filter_incidence_by_dates(incidence_df, dates)[-1]
+  incidence_observed$month_no <- 0:(nrow(incidence_observed) - 1)
+
+  initial_time_obs <- initialize_observation_time(simulated_result, incidence_df)
+  filt_data <- filter_data_setup(incidence_observed, (obs_config$time == "month"), initial_time_obs)
+
+  # --- Initialize particle filter ---
+  filter <- mcstate::particle_deterministic$new(
+    data = filt_data,
+    model = model,
+    index = index,
+    compare = comparison_fn
+  )
+
   filter$run(c(param_inputs))
 
-  # Define MCMC control settings
-  control_settings <- define_mcmc_control(control_params, adaptive_params, save_trajectories, rerun_n, rerun_random)
+  # --- MCMC control ---
+  control_settings <- define_mcmc_control(
+    control_params, adaptive_params,
+    save_trajectories, rerun_n, rerun_random
+  )
+
   control1 <- control_settings$control1
   control2 <- control_settings$control2
 
-  # Run MCMC
-  start_values = reorder_start_values(start_values, priors_and_proposals$param_priors)
+  # --- Run MCMC simulation ---
+  start_values <- reorder_start_values(start_values, priors_and_proposals$param_priors)
   mcmc_run <- run_mcmc_simulation(mcmc_pars, filter, start_values, control1, control2)
-  coda_pars <- as.mcmc(cbind(mcmc_run$probabilities, mcmc_run$pars))
+  coda_pars <- coda::as.mcmc(cbind(mcmc_run$probabilities, mcmc_run$pars))
 
-  # Collect results
-  results <- list(mcmc_run = mcmc_run, coda_pars = coda_pars, paramFix = paramFix, param_inputs = param_inputs,
-                  incidence_df = incidence_df, model = model, param_priors = priors_and_proposals$param_priors,
-                  n_chains = control_params$n_chains)
+  # --- Return results ---
+  results <- list(
+    mcmc_run = mcmc_run,
+    coda_pars = coda_pars,
+    paramFix = paramFix,
+    param_inputs = param_inputs,
+    incidence_df = incidence_df,
+    model = model,
+    param_priors = priors_and_proposals$param_priors,
+    n_chains = control_params$n_chains
+  )
 
   return(results)
 }
+
 
 
 extend_time_varying_inputs <- function(param_inputs, days_per_year = 360, years_to_extend = 2) {

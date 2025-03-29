@@ -14,10 +14,8 @@ inf_run(
   start_values,
   noise = FALSE,
   seed = 24,
-  month = FALSE,
   month_unequal_days = FALSE,
   dates,
-  age_for_inf,
   synthetic = TRUE,
   incidence_df = NULL,
   save_trajectories = TRUE,
@@ -25,7 +23,7 @@ inf_run(
   rerun_random = FALSE,
   param_priors = NULL,
   n_years_warmup = 3,
-  include_prev = TRUE
+  obs_config
 )
 }
 \arguments{
@@ -47,13 +45,9 @@ inf_run(
 
 \item{seed}{Numeric; sets the random seed for reproducibility.}
 
-\item{month}{Logical; if TRUE, generates monthly data.}
-
 \item{month_unequal_days}{Logical; indicates if monthly data has unequal days.}
 
 \item{dates}{Vector of start and end dates for the simulation period.}
-
-\item{age_for_inf}{Character; indicates type of age-specific incidence data ('total', 'sep_ages', 'total + sep_ages').}
 
 \item{synthetic}{Logical; if TRUE, generates synthetic incidence data.}
 
@@ -64,6 +58,13 @@ inf_run(
 \item{rerun_n}{Numeric; frequency for re-running MCMC proposals.}
 
 \item{rerun_random}{Logical; if TRUE, re-runs MCMC randomly.}
+
+\item{param_priors}{Optional prior list for MCMC parameters.}
+
+\item{n_years_warmup}{Number of years to run prior to start of observation period.}
+
+\item{obs_config}{A named list specifying observation model configuration.
+Use \code{make_obs_config()} to construct this.}
 }
 \value{
 A list containing MCMC results, including posterior samples, fixed parameters, priors, and incidence data.
@@ -71,7 +72,4 @@ A list containing MCMC results, including posterior samples, fixed parameters, p
 \description{
 Generates synthetic incidence data if required, sets up MCMC parameters and priors,
 defines model comparison functions, and runs the MCMC process.
-}
-\examples{
-inf_run(model, param_inputs, control_params, params_to_estimate, proposal_matrix, adaptive_params, start_values)
 }

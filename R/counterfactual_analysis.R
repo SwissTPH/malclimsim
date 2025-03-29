@@ -23,9 +23,24 @@ set_eff_smc_to_zero <- function(param_inputs) {
 #' @param model The model function to simulate from.
 #' @return A data frame containing the simulation output with SMC.
 #' @export
-simulate_with_smc <- function(results, start_date, end_date, model) {
-  # Use the simulate_with_max_posterior_params function to simulate with SMC
-  sim_data <- simulate_with_max_posterior_params(results, start_date, end_date, model)
+simulate_with_smc <- function(results, start_date, end_date, model,
+                              mu_transform_C = NULL, mu_transform_A = NULL,
+                              covariate_matrix = NULL) {
+  # Extract the best-fit parameters
+  max_posterior_params <- extract_max_posterior_params(results)
+
+  # Update the parameters to set eff_SMC to zero
+  param_inputs <- results$param_inputs
+  updated_params <- update_param_list(param_inputs, max_posterior_params)
+  no_smc_params <- set_eff_smc_to_zero(updated_params)
+
+  # Run the model simulation without SMC
+  simulation_output <- data_sim(model, no_smc_params, start_date, end_date,
+                                month = TRUE, round = FALSE, save = FALSE,
+                                month_unequal_days = FALSE,
+                                mu_transform_C = mu_transform_C,
+                                mu_transform_A = mu_transform_A,
+                                covariate_matrix = covariate_matrix)
   return(sim_data)
 }
 
@@ -39,7 +54,9 @@ simulate_with_smc <- function(results, start_date, end_date, model) {
 #' @param model The model function to simulate from.
 #' @return A data frame containing the simulation output without SMC.
 #' @export
-simulate_without_smc <- function(results, start_date, end_date, model) {
+simulate_without_smc <- function(results, start_date, end_date, model,
+                                 mu_transform_C = NULL, mu_transform_A = NULL,
+                                 covariate_matrix = NULL) {
   # Extract the best-fit parameters
   max_posterior_params <- extract_max_posterior_params(results)
 
@@ -51,7 +68,10 @@ simulate_without_smc <- function(results, start_date, end_date, model) {
   # Run the model simulation without SMC
   simulation_output <- data_sim(model, no_smc_params, start_date, end_date,
                                 month = TRUE, round = FALSE, save = FALSE,
-                                month_unequal_days = FALSE)
+                                month_unequal_days = FALSE,
+                                mu_transform_C = mu_transform_C,
+                                mu_transform_A = mu_transform_A,
+                                covariate_matrix = covariate_matrix)
 
   return(simulation_output)
 }
@@ -180,4 +200,102 @@ calculate_eff_smc_confidence_intervals <- function(results, param_inputs, model,
     median = median(eff_smc_estimates)
   ))
 }
+
+#' Calculate Outcome-Based Estimates from Simulated Scenarios
+#'
+#' This function compares two sets of simulated outcomes (e.g., with vs without SMC)
+#' and returns a vector of scalar estimates for each parameter set using a custom outcome function.
+#'
+#' @param o1 List of data frames: outcomes under scenario 1 (e.g., with SMC)
+#' @param o2 List of data frames: outcomes under scenario 2 (e.g., no SMC)
+#' @param outcome_fn A function of the form f(y1, y0) that returns a scalar (e.g., cases averted)
+#'
+#' @return A numeric vector, one value per parameter set.
+#' @export
+#' @examples
+#' cases_averted <- calculate_estimate(simulations_with_SMC, simulations_no_SMC, cases_averted_fn)
+calculate_estimate <- function(o1, o2, outcome_fn) {
+  if (length(o1) != length(o2)) {
+    stop("o1 and o2 must be the same length (matching parameter sets).")
+  }
+
+  mapply(function(y1_df, y0_df) {
+    outcome_fn(y1_df$inc_C_transformed, y0_df$inc_C_transformed)
+  }, o1, o2)
+}
+
+#' Calculate Outcome Across Matched Simulation Lists
+#'
+#' @param o1 List of data frames (e.g., with SMC).
+#' @param o2 List of data frames (e.g., no SMC).
+#' @param outcome_fn Function that takes two data frames and returns a scalar outcome.
+#'
+#' @return Numeric vector of outcomes (e.g., effectiveness or cases averted) for each parameter set.
+#' @export
+calculate_estimate <- function(o1, o2, outcome_fn) {
+  if(!(is.null(o1) | is.null(o2))){
+    if (length(o1) != length(o2)) stop("Lists must be of equal length.")
+  }
+
+  vapply(seq_along(o1), function(i) {
+    outcome_fn(o1[[i]], o2[[i]])
+  }, numeric(1))
+}
+
+
+#' Plot Histogram of Estimated Effects with Confidence Interval and Trimmed X-Axis
+#'
+#' @param estimates Numeric vector of estimates (e.g., cases averted).
+#' @param x_label Label for the x-axis.
+#' @param title Title for the plot.
+#' @param bins Number of histogram bins (default = 30).
+#' @param ci_level Confidence interval level (default = 0.95).
+#'
+#' @return A ggplot object showing histogram, density, and CI lines.
+#' @export
+plot_estimate_distribution <- function(estimates,
+                                       x_label = "Cases Averted",
+                                       title = "Posterior Distribution of Estimated Cases Averted",
+                                       bins = 30,
+                                       ci_level = 0.95) {
+  df <- data.frame(estimate = estimates)
+
+  # Central estimates
+  median_est <- median(estimates)
+  lower_ci <- quantile(estimates, probs = (1 - ci_level) / 2)
+  upper_ci <- quantile(estimates, probs = 1 - (1 - ci_level) / 2)
+
+  # Axis trimming (0.25% to 99.75%)
+  x_min <- quantile(estimates, 0.0025)
+  x_max <- quantile(estimates, 0.9975)
+
+  ggplot(df, aes(x = estimate)) +
+    geom_histogram(aes(y = ..density..), bins = bins, fill = "#2C3E50", alpha = 0.85, color = "white") +
+    geom_density(color = "#E74C3C", size = 1.3, adjust = 1.2) +
+    geom_vline(xintercept = median_est, linetype = "dashed", color = "#2980B9", size = 1.1) +
+    geom_vline(xintercept = lower_ci, linetype = "dotted", color = "#27AE60", size = 1) +
+    geom_vline(xintercept = upper_ci, linetype = "dotted", color = "#27AE60", size = 1) +
+    annotate("text", x = median_est, y = Inf,
+             label = paste("Median =", round(median_est, 1)),
+             vjust = -0.7, hjust = -0.1, size = 5, fontface = "bold", color = "#2980B9") +
+    annotate("text", x = lower_ci, y = Inf,
+             label = paste0(round(100 * (1 - ci_level) / 2), "% = ", round(lower_ci, 1)),
+             vjust = -1.5, hjust = 1, size = 4.5, color = "#27AE60") +
+    annotate("text", x = upper_ci, y = Inf,
+             label = paste0(round(100 * (1 + ci_level) / 2), "% = ", round(upper_ci, 1)),
+             vjust = -1.5, hjust = 0, size = 4.5, color = "#27AE60") +
+    coord_cartesian(xlim = c(x_min, x_max)) +
+    labs(
+      title = title,
+      x = x_label,
+      y = "Density"
+    ) +
+    theme_minimal(base_size = 14) +
+    theme(
+      plot.title = element_text(hjust = 0.5, face = "bold", size = 16),
+      axis.title = element_text(face = "bold"),
+      axis.text = element_text(size = 12)
+    )
+}
+
 

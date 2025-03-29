@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_simulation.R
 \name{data_sim}
 \alias{data_sim}
-\title{Simulate Data from Model}
+\title{Simulate Incidence Data from the Model}
 \usage{
 data_sim(
   model,
@@ -23,36 +23,48 @@ data_sim(
 )
 }
 \arguments{
-\item{model}{The model to be simulated.}
+\item{model}{A dust model object used to simulate malaria transmission.}
 
-\item{param_inputs}{A list of parameters required for the simulation.}
+\item{param_inputs}{A named list of model parameter values.}
 
-\item{start_date}{The start date for the simulation, as a \code{Date} object or character string.}
+\item{start_date}{Start date of the observation window (character or Date).}
 
-\item{end_date}{The end date for the simulation, as a \code{Date} object or character string.}
+\item{end_date}{End date of the observation window (character or Date).}
 
-\item{prewarm_years}{Integer, the number of years to simulate before \code{start_date} as a pre-warm period
-(default is 2 years).}
+\item{prewarm_years}{Number of years to simulate before \code{start_date} for warm-up (default = 2).}
 
-\item{month}{Logical; if \code{TRUE}, aggregate data monthly; if \code{FALSE}, aggregate weekly.}
+\item{month}{Logical. If \code{TRUE}, aggregate and return monthly incidence (default).}
 
-\item{round}{Logical; if \code{TRUE}, round the results to whole numbers.}
+\item{round}{Logical. If \code{TRUE}, round the incidence values to integers (default = TRUE).}
 
-\item{save}{Logical; if \code{TRUE}, save the results to a file.}
+\item{save}{Logical. If \code{TRUE}, save the result as an RDS file.}
 
-\item{file}{Character; file name for saving the results, if \code{save} is \code{TRUE}.}
+\item{file}{Character. Filename to use if saving to disk.}
 
-\item{month_unequal_days}{Logical; if \code{TRUE}, adjust aggregation for unequal days in months.}
+\item{month_unequal_days}{Logical. If \code{TRUE}, aggregate based on actual month boundaries.}
+
+\item{return_EIR}{Logical. If \code{TRUE}, include EIR values in the output.}
+
+\item{return_compartments}{Logical. (Currently unused.)}
+
+\item{mu_transform_A}{Optional function to transform adult incidence after simulation.}
+
+\item{mu_transform_C}{Optional function to transform child incidence after simulation.}
+
+\item{covariate_matrix}{Optional data frame of covariates to merge by date.}
 }
 \value{
-A data frame containing the incidence data aggregated by month or week.
+A data frame with date, group-specific incidence (and optional transformed incidence).
 }
 \description{
-This function runs the simulation using the specified model and parameters,
-and returns either monthly or weekly aggregated incidence data for adults (\code{inc_A})
-and children (\code{inc_C}), as well as total incidence (\code{inc}).
+Runs a deterministic model simulation and returns incidence data aggregated
+either monthly or weekly. Allows for a warm-up period prior to the start date,
+optional rounding, and optional transformations to incidence values (e.g., to apply
+covariate effects used in observation models).
 }
 \examples{
-# Running the simulation and getting monthly data
-inc_data <- data_sim(model, param_inputs, start_date = "2021-01-01", end_date = "2021-12-31", month = TRUE)
+# Simulate and apply a log-linear transformation to child incidence
+mu_C_adj <- function(df, pars) exp(log(df$inc_C) + 0.1 * df$cov_SMC / 30)
+sim_df <- data_sim(model, param_inputs, "2014-01-01", "2019-12-31",
+                   mu_transform_C = mu_C_adj, covariate_matrix = covariates)
 }

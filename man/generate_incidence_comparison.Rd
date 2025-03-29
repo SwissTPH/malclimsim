@@ -2,30 +2,31 @@
 % Please edit documentation in R/observation_functions.R
 \name{generate_incidence_comparison}
 \alias{generate_incidence_comparison}
-\title{Generate a Comparison Function for Malaria Incidence}
+\title{Generalized Likelihood Generator for Malaria Incidence & Prevalence}
 \usage{
-generate_incidence_comparison(month, age_for_inf, incidence_df, include_prev)
+generate_incidence_comparison(
+  month,
+  age_for_inf,
+  incidence_df,
+  include_prev,
+  use_SMC_as_covariate = FALSE
+)
 }
 \arguments{
-\item{month}{A logical value indicating whether to use monthly data (TRUE) or weekly data (FALSE).}
+\item{month}{Logical. Use monthly (TRUE) or weekly (FALSE) data.}
 
-\item{age_for_inf}{A string specifying the age group for incidence:
-"total", "sep_ages", "all_ages", "u5", or "o5".}
+\item{age_for_inf}{Age group string: "u5", "o5", "total", etc.}
 
-\item{incidence_df}{A data frame containing observed malaria incidence data.}
+\item{incidence_df}{Data frame of observed incidence/prevalence.}
 
-\item{include_prev}{A logical value indicating if prevalence should be included in the likelihood function}
+\item{include_prev}{Logical. If TRUE, include prevalence components.}
+
+\item{use_SMC_as_covariate}{Logical. If TRUE, apply beta_1 to adjust incidence by SMC coverage.}
 }
 \value{
-A function for comparing modeled and observed incidence based on a specified distribution (e.g., Negative Binomial).
+A function: function(state, observed, pars) -> log-likelihood.
 }
 \description{
-This function generates a likelihood comparison function based on the specified
-time period (monthly or weekly) and age group for malaria incidence.
-}
-\examples{
-# Example usage for monthly total incidence comparison:
-comparison_fn <- generate_incidence_comparison(month = TRUE, age_for_inf = "total",
-incidence_df = incidence_data, include_prev = include_prev)
-# Then use the returned function in MCMC or other model fitting tasks
+Builds a log-likelihood function tailored to the configuration specified.
+Includes internal log-likelihood helpers for safe use with mcstate/callr.
 }
