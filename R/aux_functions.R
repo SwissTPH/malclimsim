@@ -329,3 +329,49 @@ calculate_monthly_metrics <- function(schedule, exclude_years = NULL) {
     ) %>%
     dplyr::filter(!(lubridate::year(as.Date(month)) %in% exclude_years))
 }
+
+#' Export Parameter Tables as LaTeX Files
+#'
+#' Splits parameters into estimated and fixed, then saves each as a LaTeX .tex table.
+#'
+#' @param param_inputs List of parameter inputs.
+#' @param params_to_estimate Character vector of parameter names to treat as estimated.
+#' @param out_dir Directory to save the LaTeX files.
+#' @param sigfig Number of significant figures to round to.
+#'
+#' @return No return value. Side effect: two .tex files saved.
+#' @export
+export_param_table_tex <- function(param_inputs, params_to_estimate, out_dir, sigfig = 3) {
+  param_scalar <- param_inputs[sapply(param_inputs, function(x) is.numeric(x) && length(x) == 1)]
+
+  est <- param_scalar[names(param_scalar) %in% params_to_estimate]
+  fix <- param_scalar[!names(param_scalar) %in% params_to_estimate]
+
+  write_param_table <- function(data, name) {
+    df <- data.frame(Parameter = names(data), Value = signif(unlist(data), sigfig), row.names = NULL)
+    out_path <- file.path(out_dir, paste0(name, ".tex"))
+    print(xtable::xtable(df, caption = paste(name, "Parameters"), label = paste0("tab:", name)),
+          file = out_path, include.rownames = FALSE)
+  }
+
+  write_param_table(est, "estimated_params")
+  write_param_table(fix, "fixed_params")
+}
+
+#' Save ggplot with Dynamic Filename
+#'
+#' Utility to save plots with a consistent naming scheme.
+#'
+#' @param plot_obj The ggplot object.
+#' @param filename_stub Name without extension.
+#' @param out_dir Directory to save to.
+#' @param width Width in inches.
+#' @param height Height in inches.
+#'
+#' @return Path to saved file (invisible).
+#' @export
+save_plot_dynamic <- function(plot_obj, filename_stub, out_dir, width = 10, height = 6) {
+  fname <- file.path(out_dir, paste0(filename_stub, ".png"))
+  ggplot2::ggsave(fname, plot = plot_obj, width = width, height = height, dpi = 300)
+  invisible(fname)
+}

@@ -5,17 +5,23 @@
 \title{Plot Posterior Predictive Check (PPC)}
 \usage{
 plot_ppc(plot_data, ci_data = NULL, plot_title = "Posterior Predictive Check")
+
+plot_ppc(plot_data, ci_data = NULL, plot_title = "Posterior Predictive Check")
 }
 \arguments{
-\item{plot_data}{Output of \code{prepare_plot_data()}: long-format tibble with \code{date_ymd}, \code{value}, \code{variable}, \code{source}.}
+\item{plot_data}{Long-format tibble with \code{date_ymd}, \code{value}, \code{variable}, and optionally \code{source}.}
 
-\item{ci_data}{Optional output of \code{summarize_simulations()}, long-format with \code{date}, \code{variable}, \code{lower}, \code{upper}.}
+\item{ci_data}{Optional tibble with credible intervals: \code{date_ymd}, \code{lower}, \code{upper}, \code{variable}.}
 
 \item{plot_title}{Title for the plot.}
 }
 \value{
 A ggplot object.
+
+A ggplot object.
 }
 \description{
+Generates a time series plot comparing observed vs simulated values with optional credible interval ribbons.
+
 Generates a time series plot comparing observed vs simulated values with optional credible interval ribbons.
 }

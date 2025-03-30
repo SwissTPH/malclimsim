@@ -201,28 +201,6 @@ calculate_eff_smc_confidence_intervals <- function(results, param_inputs, model,
   ))
 }
 
-#' Calculate Outcome-Based Estimates from Simulated Scenarios
-#'
-#' This function compares two sets of simulated outcomes (e.g., with vs without SMC)
-#' and returns a vector of scalar estimates for each parameter set using a custom outcome function.
-#'
-#' @param o1 List of data frames: outcomes under scenario 1 (e.g., with SMC)
-#' @param o2 List of data frames: outcomes under scenario 2 (e.g., no SMC)
-#' @param outcome_fn A function of the form f(y1, y0) that returns a scalar (e.g., cases averted)
-#'
-#' @return A numeric vector, one value per parameter set.
-#' @export
-#' @examples
-#' cases_averted <- calculate_estimate(simulations_with_SMC, simulations_no_SMC, cases_averted_fn)
-calculate_estimate <- function(o1, o2, outcome_fn) {
-  if (length(o1) != length(o2)) {
-    stop("o1 and o2 must be the same length (matching parameter sets).")
-  }
-
-  mapply(function(y1_df, y0_df) {
-    outcome_fn(y1_df$inc_C_transformed, y0_df$inc_C_transformed)
-  }, o1, o2)
-}
 
 #' Calculate Outcome Across Matched Simulation Lists
 #'
@@ -299,3 +277,89 @@ plot_estimate_distribution <- function(estimates,
 }
 
 
+#' Evaluate Multiple SMC Scenarios
+#'
+#' Runs model simulations for a list of SMC coverage patterns and summarizes outcomes.
+#'
+#' @param patterns A named list of 12-element binary vectors representing monthly SMC coverage patterns.
+#' @param model A compiled model object used for simulations.
+#' @param param_inputs A named list of baseline parameter values.
+#' @param param_samples A matrix of sampled parameter sets (rows = samples).
+#' @param start_date Start date for the simulation.
+#' @param end_date End date for the simulation.
+#' @param avg_cov Average SMC coverage to apply during active months.
+#' @param years A vector of years to apply SMC coverage.
+#' @param exclude_years Years to exclude from summarizing coverage (default = 2023).
+#' @param mu_transform_C Optional transformation function for mu_C.
+#' @param mu_transform_A Optional transformation function for mu_A.
+#' @param outcome_fn A function defining the outcome to summarize (default: total cases).
+#' @param ci_level Confidence level for credible intervals (default = 0.95).
+#' @param out_dir Directory to save plots (optional).
+#'
+#' @return A list with two elements:
+#' \describe{
+#'   \item{outputs}{A named list of lists with estimates and plots for each scenario.}
+#'   \item{summaries}{A named list of time series summaries for each scenario.}
+#' }
+#' @export
+evaluate_multiple_scenarios <- function(patterns,
+                                        model,
+                                        param_inputs,
+                                        param_samples,
+                                        start_date,
+                                        end_date,
+                                        avg_cov,
+                                        years,
+                                        exclude_years = 2023,
+                                        mu_transform_C = NULL,
+                                        mu_transform_A = NULL,
+                                        outcome_fn = function(y1, y0) sum(y1$inc_C_transformed),
+                                        ci_level = 0.95,
+                                        out_dir = NULL) {
+  outputs <- list()
+  summaries <- list()
+
+  for (label in names(patterns)) {
+    month_pattern <- patterns[[label]]
+    n_years <- (lubridate::year(end_date) + 1) - lubridate::year(start_date)
+    months_active <- matrix(rep(month_pattern, n_years + 1), nrow = n_years + 1, byrow = TRUE)
+
+    smc_schedule <- gen_smc_schedule(start_date, end_date, years = years,
+                                     months_active = months_active, coverage = avg_cov)
+    smc_schedule_monthly <- calculate_monthly_metrics(smc_schedule, exclude_years = exclude_years)
+
+    covariate_matrix <- data.frame(
+      date_ymd = as.Date(smc_schedule_monthly$month),
+      cov_SMC = smc_schedule_monthly$cov
+    )
+
+    sims <- run_simulations_from_samples(
+      model = model,
+      param_inputs = param_inputs,
+      param_samples = param_samples,
+      start_date = start_date,
+      end_date = end_date,
+      prewarm_years = 2,
+      mu_transform_C = mu_transform_C,
+      mu_transform_A = mu_transform_A,
+      covariate_matrix = covariate_matrix
+    )
+
+    est <- calculate_estimate(sims, NULL, outcome_fn = outcome_fn)
+    plot <- plot_estimate_distribution(est, x_label = "", title = label, ci_level = ci_level)
+
+    # Save histogram if out_dir provided
+    if (!is.null(out_dir)) {
+      save_plot_dynamic(plot, paste0("hist_", gsub(" ", "_", label)), out_dir)
+    }
+
+    # Summarize time series output
+    sim_summary <- summarize_simulation_ci(sims, variables = "inc_C_transformed") %>%
+      mutate(scenario = label)
+
+    outputs[[label]] <- list(estimate = est, plot = plot, summary = sim_summary)
+    summaries[[label]] <- sim_summary
+  }
+
+  return(list(outputs = outputs, summaries = summaries))
+}

@@ -1518,4 +1518,164 @@ plot_ppc <- function(plot_data, ci_data = NULL, plot_title = "Posterior Predicti
   return(p)
 }
 
+#' Plot Posterior Predictive Check (PPC)
+#'
+#' Generates a time series plot comparing observed vs simulated values with optional credible interval ribbons.
+#'
+#' @param plot_data Long-format tibble with `date_ymd`, `value`, `variable`, and optionally `source`.
+#' @param ci_data Optional tibble with credible intervals: `date_ymd`, `lower`, `upper`, `variable`.
+#' @param plot_title Title for the plot.
+#' @return A ggplot object.
+#' @export
+plot_ppc <- function(plot_data, ci_data = NULL, plot_title = "Posterior Predictive Check") {
+  # Default to Simulated if no source column exists
+  if (!"source" %in% colnames(plot_data)) {
+    plot_data$source <- "Simulated"
+  }
+
+  # Base plot
+  p <- ggplot(plot_data, aes(x = date_ymd, y = value, color = source, group = interaction(source, variable))) +
+    geom_point(data = subset(plot_data, source == "Observed"), size = 2.5, alpha = 0.8) +
+    geom_line(data = subset(plot_data, source != "Observed"), size = 1.3) +
+    facet_wrap(~ variable, scales = "free_y") +
+    labs(
+      title = plot_title,
+      x = "Date",
+      y = "Monthly Number of Cases",
+      color = "Source"
+    ) +
+    theme_minimal(base_size = 16) +
+    theme(
+      plot.title = element_text(hjust = 0.5, face = "bold", size = 18),
+      strip.text = element_text(face = "bold", size = 16),
+      axis.text = element_text(size = 14),
+      axis.title = element_text(size = 16),
+      legend.position = "top",
+      legend.title = element_text(size = 14),
+      legend.text = element_text(size = 13)
+    )
+
+  # Add credible interval ribbon if provided
+  if (!is.null(ci_data)) {
+    p <- p + geom_ribbon(
+      data = ci_data,
+      aes(x = date_ymd, ymin = lower, ymax = upper, fill = variable),
+      alpha = 0.25,
+      inherit.aes = FALSE,
+      show.legend = FALSE
+    )
+  }
+
+  return(p)
+}
+
+
+#' Plot Counterfactual Time Series Across Multiple Scenarios
+#'
+#' Combines simulation summaries and generates a faceted time series plot.
+#'
+#' @param summaries_list List of data frames returned by `summarize_simulation_ci()`.
+#' @param title Title of the plot.
+#'
+#' @return A ggplot object.
+#' @export
+plot_counterfactual_time_series <- function(summaries_list, title = "Counterfactuals Over Time") {
+  df_all <- bind_rows(summaries_list)
+  df_all <- df_all %>%
+    rename(date_ymd = date_ymd, value = median) %>%
+    mutate(source = "Simulated", variable = scenario)
+
+  plot_ppc(plot_data = df_all, ci_data = df_all, plot_title = title)
+}
+
+#' Plot Time Series of Multiple SMC Scenarios
+#'
+#' This function creates a faceted time series plot comparing multiple SMC deployment scenarios.
+#'
+#' @param summary_list A named list of data frames from `summarize_simulation_ci()`, one per scenario.
+#'                      Each data frame must contain columns `date_ymd`, `variable`, `median`, `lower`, `upper`.
+#' @param title Plot title.
+#' @param out_dir Optional directory to save the plot.
+#' @param filename Optional filename (without extension) to save the plot.
+#' @param width Plot width in inches.
+#' @param height Plot height in inches.
+#'
+#' @return A ggplot object.
+#' @export
+plot_scenario_time_series <- function(summary_df,
+                                      title = "SMC Scenario Time Series",
+                                      save = TRUE,
+                                      out_dir = NULL,
+                                      filename = "ts_scenario_comparison") {
+
+  p <- ggplot(summary_df, aes(x = date_ymd, y = median)) +
+    geom_line(color = "#1f77b4", size = 1.2) +
+    geom_ribbon(aes(ymin = lower, ymax = upper), fill = "#1f77b4", alpha = 0.3) +
+    facet_wrap(~ scenario, scales = "free_y") +
+    labs(
+      title = title,
+      x = "Date",
+      y = "Monthly Incidence",
+      color = NULL
+    ) +
+    theme_minimal(base_size = 14) +
+    theme(
+      plot.title = element_text(hjust = 0.5, face = "bold"),
+      strip.text = element_text(face = "bold"),
+      axis.text = element_text(size = 12),
+      axis.title = element_text(size = 14)
+    )
+
+  if (save && !is.null(out_dir)) {
+    ggsave(
+      filename = file.path(out_dir, paste0(filename, ".png")),
+      plot = p, width = 12, height = 6, dpi = 300
+    )
+  }
+
+  return(p)
+}
+
+#' Plot Single Time Series Comparison (With vs. Without SMC)
+#'
+#' Generates a single time series plot showing two scenarios (e.g., With SMC vs. Without SMC),
+#' each with their respective credible interval ribbons.
+#'
+#' @param plot_data Data frame with columns: date_ymd, value, variable (e.g., "With SMC", "Without SMC").
+#' @param ci_data Optional data frame with columns: date_ymd, lower, upper, variable.
+#' @param plot_title Title for the plot.
+#' @return A ggplot object.
+#' @export
+plot_ppc_single <- function(plot_data, ci_data = NULL, plot_title = "Time Series Comparison") {
+  p <- ggplot(plot_data, aes(x = date_ymd, y = value, color = variable)) +
+    geom_line(size = 1.2) +
+    labs(
+      title = plot_title,
+      x = "Date",
+      y = "Monthly Number of Cases",
+      color = "Scenario"
+    ) +
+    theme_minimal(base_size = 16) +
+    theme(
+      plot.title = element_text(hjust = 0.5, face = "bold", size = 18),
+      axis.text = element_text(size = 14),
+      axis.title = element_text(size = 16),
+      legend.position = "top",
+      legend.title = element_text(size = 14),
+      legend.text = element_text(size = 13)
+    )
+
+  # Add credible intervals if provided
+  if (!is.null(ci_data)) {
+    p <- p + geom_ribbon(
+      data = ci_data,
+      aes(x = date_ymd, ymin = lower, ymax = upper, fill = variable),
+      alpha = 0.25,
+      inherit.aes = FALSE,
+      show.legend = FALSE
+    )
+  }
+
+  return(p)
+}
 

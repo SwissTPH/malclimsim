@@ -163,3 +163,25 @@ smc_schedule_from_data <- function(smc_cov, months_30_days, years, const = -0.18
   return(smc_df)
 }
 
+#' Generate SMC Coverage Matrix for Simulation
+#'
+#' Creates a monthly covariate matrix for SMC coverage from a deployment pattern.
+#'
+#' @param start_date Simulation start date ("YYYY-MM-DD").
+#' @param end_date Simulation end date ("YYYY-MM-DD").
+#' @param years Numeric vector of years to apply the SMC schedule.
+#' @param month_pattern A 12-length binary vector representing monthly SMC rounds.
+#' @param avg_cov Numeric average SMC coverage to apply.
+#' @param exclude_years Optional vector of years to exclude from coverage.
+#'
+#' @return A data frame with `date_ymd` and `cov_SMC` columns.
+#' @export
+generate_smc_coverage_matrix <- function(start_date, end_date, years, month_pattern, avg_cov, exclude_years = NULL) {
+  n_years <- (year(end_date) + 1) - year(start_date)
+  months_active <- matrix(rep(month_pattern, n_years + 1), nrow = n_years + 1, byrow = TRUE)
+
+  smc_schedule <- gen_smc_schedule(start_date, end_date, years, months_active, coverage = avg_cov)
+  smc_schedule_monthly <- calculate_monthly_metrics(smc_schedule, exclude_years = exclude_years)
+
+  data.frame(date_ymd = as.Date(smc_schedule_monthly$month), cov_SMC = smc_schedule_monthly$cov)
+}

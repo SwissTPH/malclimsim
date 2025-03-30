@@ -4,7 +4,15 @@
 \alias{simulate_with_smc}
 \title{Simulate Model with SMC}
 \usage{
-simulate_with_smc(results, start_date, end_date, model)
+simulate_with_smc(
+  results,
+  start_date,
+  end_date,
+  model,
+  mu_transform_C = NULL,
+  mu_transform_A = NULL,
+  covariate_matrix = NULL
+)
 }
 \arguments{
 \item{results}{The MCMC results object containing the parameter samples.}
