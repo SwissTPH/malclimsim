@@ -11,7 +11,7 @@
 #' @param cov_SMC A numeric value representing the covariance for SMC.
 #'
 #' @return A function that takes a vector of parameters (`theta`) and combines them with the other provided values into a list.
-#'
+#' @export
 #' @examples
 #' transform_function <- make_transform(temp = 25, c_R_D = 0.5, SMC = 0.1, decay = 0.03, cov_SMC = 0.05)
 #' transformed_params <- transform_function(c(0.1, 0.2, 0.3))
@@ -30,6 +30,7 @@ make_transform <- function(temp, c_R_D, SMC, decay, cov_SMC) {
 #'
 #' @return A list containing two elements, `run` and `state`, each with named indices for different model variables.
 #'
+#' @export
 #' @examples
 #' model_indices <- index(info)
 index <- function(info) {
@@ -74,7 +75,7 @@ index <- function(info) {
 #' @param rate An integer specifying the rate (e.g., 7 for weekly data, 30 for monthly data) for resampling the time steps.
 #'
 #' @return A data frame with filtered data, including time intervals and the appropriate columns for particle filtering.
-#'
+#' @export
 #' @examples
 #' # Assuming 'incidence_observed' is a data frame with your observed data
 #' formatted_data <- relate_time_steps_to_observed_data(incidence_observed, month = FALSE, initial_time_obs = 0, rate = 7)

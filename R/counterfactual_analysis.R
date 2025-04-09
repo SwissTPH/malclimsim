@@ -5,6 +5,7 @@
 #'
 #' @param param_inputs A list of parameter values for the model.
 #' @return A list with the `eff_SMC` parameter set to zero.
+#' @export
 #' @examples
 #' no_smc_params <- set_eff_smc_to_zero(param_inputs)
 set_eff_smc_to_zero <- function(param_inputs) {
@@ -115,6 +116,7 @@ calculate_cases_averted <- function(with_smc_df, without_smc_df) {
 #' @param param_inputs A list of parameter values for the model.
 #' @param coverage_level A numeric value (between 0 and 1) representing the desired coverage level. Default is 1 (100% coverage).
 #' @return A list with the `cov_SMC` parameter updated to the specified coverage level.
+#' @export
 #' @examples
 #' full_coverage_params <- set_smc_coverage(param_inputs, coverage_level = 1)
 set_smc_coverage <- function(param_inputs, coverage_level = 1) {
