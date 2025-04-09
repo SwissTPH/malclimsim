@@ -10,6 +10,7 @@
 #' (1 = active, 0 = inactive).
 #' @param months_30_days A logical flag to simulate a 360-day calendar. Default is \code{FALSE}.
 #' @param coverage A numeric value specifying the coverage rate of SMC. Default is \code{0.90}.
+#' @param smc_day_of_month Determines which day of the month the SMC round begins.
 #'
 #' @return A dataframe with columns:
 #' \item{dates}{The sequence of dates for the given period.}
@@ -34,7 +35,8 @@
 #'
 #' @export
 gen_smc_schedule <- function(start_date, end_date, years, months_active,
-                             months_30_days = FALSE, coverage = 0.90) {
+                             months_30_days = FALSE, coverage = 0.90,
+                             smc_day_of_month = 1) {
 
   if (months_30_days) {
     dates <- generate_360_day_dates(years[1], years[length(years)])
@@ -48,12 +50,17 @@ gen_smc_schedule <- function(start_date, end_date, years, months_active,
     cov = 0
   )
 
-  # --- Assign SMC = 1 to first day of active months ---
+  # --- Assign SMC = 1 to selected day of active months ---
   for (i in seq_along(years)) {
     active_months <- which(months_active[i, ] == 1)
     year_i <- years[i]
     for (month in active_months) {
-      smc_date <- as.Date(sprintf("%04d-%02d-01", year_i, month))
+      # Ensure smc_day_of_month does not exceed the number of days in that month
+      first_day <- as.Date(sprintf("%04d-%02d-01", year_i, month))
+      days_in_month <- as.integer(format(first_day + months(1) - 1, "%d"))
+      actual_day <- min(smc_day_of_month, days_in_month)
+      smc_date <- as.Date(sprintf("%04d-%02d-%02d", year_i, month, actual_day))
+
       idx <- which(smc_df$dates == smc_date)
       if (length(idx) == 1) {
         smc_df$SMC[idx] <- 1
@@ -73,8 +80,6 @@ gen_smc_schedule <- function(start_date, end_date, years, months_active,
 
   return(smc_df)
 }
-
-
 
 
 #' Generate a schedule of coverage values for a given period with decay
@@ -184,4 +189,70 @@ generate_smc_coverage_matrix <- function(start_date, end_date, years, month_patt
   smc_schedule_monthly <- calculate_monthly_metrics(smc_schedule, exclude_years = exclude_years)
 
   data.frame(date_ymd = as.Date(smc_schedule_monthly$month), cov_SMC = smc_schedule_monthly$cov)
+}
+
+#' Compute monthly metrics from SMC schedule
+#'
+#' @param schedule Data frame with SMC schedule (must include `dates`, `SMC`, `cov`, `decay`)
+#' @param exclude_years Vector of years to exclude (e.g., c(2023))
+#'
+#' @return Monthly summarized schedule with columns: month, SMC, cov, decay
+#' @export
+calculate_monthly_metrics <- function(schedule, exclude_years = NULL) {
+  schedule %>%
+    dplyr::mutate(month = format(as.Date(dates), "%Y-%m-01")) %>%
+    dplyr::group_by(month) %>%
+    dplyr::summarise(
+      SMC = ifelse(sum(SMC, na.rm = TRUE) > 0, 1, 0),
+      cov = sum(cov, na.rm = TRUE),
+      decay = sum(decay, na.rm = TRUE),
+      .groups = "drop"
+    ) %>%
+    dplyr::filter(!(lubridate::year(as.Date(month)) %in% exclude_years))
+}
+
+
+#' Compute weekly metrics from SMC schedule
+#'
+#' @param schedule Data frame with SMC schedule (must include `dates`, `SMC`, `cov`, `decay`)
+#' @param exclude_years Vector of years to exclude (e.g., c(2023))
+#'
+#' @return Weekly summarized schedule with columns: week, SMC, cov, decay
+#' @export
+calculate_weekly_metrics <- function(schedule, exclude_years = NULL) {
+  schedule %>%
+    dplyr::mutate(
+      week = format(as.Date(dates), "%G-W%V")
+    ) %>%
+    dplyr::group_by(week) %>%
+    dplyr::summarise(
+      SMC = ifelse(sum(SMC, na.rm = TRUE) > 0, 1, 0),
+      cov = sum(cov, na.rm = TRUE),
+      decay = sum(decay, na.rm = TRUE),
+      .groups = "drop"
+    ) %>%
+    dplyr::filter(!(as.numeric(substr(week, 1, 4)) %in% exclude_years))
+}
+
+
+#' Compute weekly metrics from SMC schedule (epidemiological weeks, starting Sunday)
+#'
+#' @param schedule Data frame with SMC schedule (must include `dates`, `SMC`, `cov`, `decay`)
+#' @param exclude_years Vector of years to exclude (e.g., c(2023))
+#'
+#' @return Weekly summarized schedule with columns: week_start (Date), SMC, cov, decay
+#' @export
+calculate_weekly_metrics <- function(schedule, exclude_years = NULL) {
+  schedule %>%
+    dplyr::mutate(
+      date_ymd = lubridate::floor_date(as.Date(dates), unit = "week", week_start = 7)
+    ) %>%
+    dplyr::group_by(date_ymd) %>%
+    dplyr::summarise(
+      SMC = ifelse(sum(SMC, na.rm = TRUE) > 0, 1, 0),
+      cov = sum(cov, na.rm = TRUE),
+      decay = sum(decay, na.rm = TRUE),
+      .groups = "drop"
+    ) %>%
+    dplyr::filter(!(lubridate::year(date_ymd) %in% exclude_years))
 }

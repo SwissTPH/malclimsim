@@ -361,5 +361,106 @@ evaluate_multiple_scenarios <- function(patterns,
     summaries[[label]] <- sim_summary
   }
 
-  return(list(outputs = outputs, summaries = summaries))
+  return(list(outputs = outputs, summaries = summaries, est = est))
+}
+
+#' Evaluate Multiple SMC Scenarios
+#'
+#' Runs model simulations for a list of SMC coverage patterns and summarizes outcomes.
+#'
+#' @param patterns A named list of 12-element binary vectors representing monthly SMC coverage patterns.
+#' @param model A compiled model object used for simulations.
+#' @param param_inputs A named list of baseline parameter values.
+#' @param param_samples A matrix of sampled parameter sets (rows = samples).
+#' @param start_date Start date for the simulation.
+#' @param end_date End date for the simulation.
+#' @param avg_cov Average SMC coverage to apply during active months.
+#' @param years A vector of years to apply SMC coverage.
+#' @param exclude_years Years to exclude from summarizing coverage (default = 2023).
+#' @param mu_transform_C Optional transformation function for mu_C.
+#' @param mu_transform_A Optional transformation function for mu_A.
+#' @param outcome_fn A function defining the outcome to summarize (default: total cases).
+#' @param ci_level Confidence level for credible intervals (default = 0.95).
+#' @param out_dir Directory to save plots (optional).
+#'
+#' @return A list with three elements:
+#' \describe{
+#'   \item{outputs}{A named list of lists with estimates, plots, and summaries for each scenario.}
+#'   \item{summaries}{A named list of time series summaries for each scenario.}
+#'   \item{estimates}{A named list of scalar outcome estimates for each scenario.}
+#' }
+#' @export
+evaluate_multiple_scenarios <- function(patterns,
+                                        smc_day_of_month = 1,
+                                        model,
+                                        param_inputs,
+                                        param_samples,
+                                        start_date,
+                                        end_date,
+                                        avg_cov,
+                                        years,
+                                        exclude_years = 2023,
+                                        mu_transform_C = NULL,
+                                        mu_transform_A = NULL,
+                                        outcome_fn = function(y1, y0) sum(y1$inc_C_transformed),
+                                        o1 = NULL,
+                                        ci_level = 0.95,
+                                        out_dir = NULL) {
+  outputs <- list()
+  summaries <- list()
+  estimates <- list()
+
+  for (label in names(patterns)) {
+    month_pattern <- patterns[[label]]
+    n_years <- (lubridate::year(end_date) + 1) - lubridate::year(start_date)
+    months_active <- matrix(rep(month_pattern, n_years + 1), nrow = n_years + 1, byrow = TRUE)
+
+    smc_schedule <- gen_smc_schedule(start_date, end_date, years = years,
+                                     months_active = months_active, coverage = avg_cov,
+                                     smc_day_of_month = smc_day_of_month)
+    smc_schedule_monthly <- calculate_monthly_metrics(smc_schedule, exclude_years = exclude_years)
+
+    covariate_matrix <- data.frame(
+      date_ymd = as.Date(smc_schedule_monthly$month),
+      cov_SMC = smc_schedule_monthly$cov
+    )
+
+    sims <- run_simulations_from_samples(
+      model = model,
+      param_inputs = param_inputs,
+      param_samples = param_samples,
+      start_date = start_date,
+      end_date = end_date,
+      prewarm_years = 2,
+      mu_transform_C = mu_transform_C,
+      mu_transform_A = mu_transform_A,
+      covariate_matrix = covariate_matrix
+    )
+
+    est <- calculate_estimate(o1 = o1, o2 = sims, outcome_fn = outcome_fn)
+    estimates[[label]] <- est
+
+    plot <- plot_estimate_distribution(est, x_label = "", title = label, ci_level = ci_level)
+
+    if (!is.null(out_dir)) {
+      save_plot_dynamic(plot, paste0("hist_", gsub(" ", "_", label)), out_dir)
+    }
+
+    sim_summary <- summarize_simulation_ci(sims, variables = "inc_C_transformed") %>%
+      dplyr::mutate(scenario = label)
+
+    outputs[[label]] <- list(
+      estimate = est,
+      plot = plot,
+      summary = sim_summary
+    )
+
+    summaries[[label]] <- sim_summary
+  }
+
+  return(list(
+    outputs = outputs,
+    summaries = summaries,
+    estimates = estimates
+  ))
 }

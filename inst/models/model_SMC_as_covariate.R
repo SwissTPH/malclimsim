@@ -45,32 +45,37 @@ update(RA) <- RA - mu_RS_A * RA + mu_IR * IA + (1 - phi_2) * mu_EI * EA - delta_
 ## - each variables represents number of cases  #
 ## in the given time period - day, week, month  #
 #################################################
+# These will be used to rescale the outputs, "adjusting" for population growth
+r_C <- user(1.000071) # daily growth rate u5 Chad
+r_A <- user(1.000092) # daily growth rate o5 Chad
+
+
 initial(day_inc_C) <- 0
-update(day_inc_C) <- if ((step) %% steps_per_day == 0) mu_EI * EC * fT_C * phi_1 else day_inc_C + mu_EI * EC * fT_C * phi_1
+update(day_inc_C) <- if ((step) %% steps_per_day == 0) r_C * mu_EI * EC * fT_C * phi_1 else day_inc_C + r_C * mu_EI * EC * fT_C * phi_1
 
 initial(wk_inc_C) <- 0
-update(wk_inc_C) <- if ((step) %% steps_per_week == 0) mu_EI * EC * fT_C * phi_1 else wk_inc_C + mu_EI * EC * fT_C * phi_1
+update(wk_inc_C) <- if ((step) %% steps_per_week == 0) r_C * mu_EI * EC * fT_C * phi_1 else wk_inc_C + r_C * mu_EI * EC * fT_C * phi_1
 
 initial(day_inc_A) <- 0
-update(day_inc_A) <- if ((step) %% steps_per_day == 0) mu_EI * EA * fT_A * phi_2 else day_inc_A + mu_EI * EA * fT_A * phi_2
+update(day_inc_A) <- if ((step) %% steps_per_day == 0) r_A * mu_EI * EA * fT_A * phi_2 else day_inc_A + r_A * mu_EI * EA * fT_A * phi_2
 
 initial(wk_inc_A) <- 0
-update(wk_inc_A) <- if ((step) %% steps_per_week == 0) mu_EI * EA * fT_A * phi_2 else wk_inc_A + mu_EI * EA * fT_A * phi_2
+update(wk_inc_A) <- if ((step) %% steps_per_week == 0) r_A * mu_EI * EA * fT_A * phi_2 else wk_inc_A + r_A * mu_EI * EA * fT_A * phi_2
 
 initial(day_inc_total) <- 0
-update(day_inc_total) <- if ((step) %% steps_per_day == 0) mu_EI * (EC * fT_C * phi_1 + EA * fT_A * phi_2) else day_inc_total + mu_EI * (EC * fT_C * phi_1 + EA * fT_A * phi_2)
+update(day_inc_total) <- if ((step) %% steps_per_day == 0) mu_EI * (r_C * EC * fT_C * phi_1 + r_A * EA * fT_A * phi_2) else day_inc_total + mu_EI * (r_C * EC * fT_C * phi_1 + r_A * EA * fT_A * phi_2)
 
 initial(wk_inc_total) <- 0
-update(wk_inc_total) <-  if ((step) %% steps_per_week == 0) mu_EI * (EC * fT_C * phi_1 + EA * fT_A * phi_2) else wk_inc_total + mu_EI * (EC * fT_C * phi_1 + EA * fT_A * phi_2)
+update(wk_inc_total) <-  if ((step) %% steps_per_week == 0) mu_EI * (r_C * EC * fT_C * phi_1 + r_A * EA * fT_A * phi_2) else wk_inc_total + mu_EI * (r_C * EC * fT_C * phi_1 + r_A * EA * fT_A * phi_2)
 
 initial(month_inc_C) <- 0
-update(month_inc_C) <- if ((step) %% steps_per_month == 0) mu_EI * EC * fT_C * phi_1 else month_inc_C + mu_EI * EC * fT_C * phi_1
+update(month_inc_C) <- if ((step) %% steps_per_month == 0) r_C * mu_EI * EC * fT_C * phi_1 else month_inc_C + r_C * mu_EI * EC * fT_C * phi_1
 
 initial(month_inc_A) <- 0
-update(month_inc_A) <- if ((step) %% steps_per_month == 0) mu_EI * EA * fT_A * phi_2 else month_inc_A + mu_EI * EA * fT_A * phi_2
+update(month_inc_A) <- if ((step) %% steps_per_month == 0) r_A * mu_EI * EA * fT_A * phi_2 else r_A * month_inc_A + mu_EI * EA * fT_A * phi_2
 
 initial(month_inc_total) <- 0
-update(month_inc_total) <- if ((step) %% steps_per_month == 0) mu_EI * (EC * fT_C * phi_1 + EA * fT_A * phi_2) else month_inc_total + mu_EI * (EC * fT_C * phi_1 + EA * fT_A * phi_2)
+update(month_inc_total) <- if ((step) %% steps_per_month == 0) mu_EI * (r_C * EC * fT_C * phi_1 + r_A * EA * fT_A * phi_2) else month_inc_total + mu_EI * (r_C * EC * fT_C * phi_1 + r_A * EA * fT_A * phi_2)
 
 #########################
 ## Defining Prevalence  #
@@ -199,7 +204,8 @@ P = (SC + EC + IC + TrC + RC + SA + EA + IA + TrA + RA)
 ## - some parameters are defined within the observation function  #
 ## that is defined with the `observation_functions.R` file        #
 ###################################################################
-beta_1 <- user() # SMC effectiveness parameter
+beta_1 <- user() # SMC effectiveness parameter (log-link)
+beta_2 <- user() # SMC effeciveness parameter (multiplicative effect)
 size_1 <- user(10) # Negative binomial dispersion parameter for <5
 size_2 <- user(10) # Negative binomial dispersion parameter for >=5
 kappa_C <- user(30) # Prevalence dispersion parameter for <5

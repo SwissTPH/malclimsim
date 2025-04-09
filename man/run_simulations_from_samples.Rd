@@ -13,7 +13,8 @@ run_simulations_from_samples(
   prewarm_years = 2,
   mu_transform_C = NULL,
   mu_transform_A = NULL,
-  covariate_matrix = NULL
+  covariate_matrix = NULL,
+  month = TRUE
 )
 }
 \arguments{

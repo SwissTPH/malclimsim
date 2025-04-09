@@ -8,7 +8,8 @@ make_obs_config(
   use_monthly = TRUE,
   age_group = "u5",
   include_prev = TRUE,
-  use_SMC_as_covariate = FALSE
+  use_SMC_as_covariate = FALSE,
+  log_link = TRUE
 )
 }
 \arguments{

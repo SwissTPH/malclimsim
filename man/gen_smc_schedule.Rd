@@ -10,7 +10,8 @@ gen_smc_schedule(
   years,
   months_active,
   months_30_days = FALSE,
-  coverage = 0.9
+  coverage = 0.9,
+  smc_day_of_month = 1
 )
 }
 \arguments{
@@ -26,6 +27,8 @@ gen_smc_schedule(
 \item{months_30_days}{A logical flag to simulate a 360-day calendar. Default is \code{FALSE}.}
 
 \item{coverage}{A numeric value specifying the coverage rate of SMC. Default is \code{0.90}.}
+
+\item{smc_day_of_month}{Determines which day of the month the SMC round begins.}
 }
 \value{
 A dataframe with columns:

@@ -1636,6 +1636,67 @@ plot_scenario_time_series <- function(summary_df,
   return(p)
 }
 
+#' Plot Time Series of Multiple SMC Scenarios
+#'
+#' This function creates either a faceted or combined time series plot comparing multiple SMC deployment scenarios.
+#'
+#' @param summary_df A data frame from `summarize_simulation_ci()`, with all scenarios stacked.
+#'                   Must include `date_ymd`, `variable`, `median`, `lower`, `upper`, and `scenario`.
+#' @param title Plot title.
+#' @param facet Logical. If TRUE (default), plot each scenario in a separate facet. If FALSE, overlay all on the same axis.
+#' @param save Logical. If TRUE, saves the plot.
+#' @param out_dir Optional directory to save the plot.
+#' @param filename Optional filename (without extension) to save the plot.
+#' @param width Plot width in inches.
+#' @param height Plot height in inches.
+#'
+#' @return A ggplot object.
+#' @export
+plot_scenario_time_series <- function(summary_df,
+                                      title = "SMC Scenario Time Series",
+                                      facet = TRUE,
+                                      save = TRUE,
+                                      out_dir = NULL,
+                                      filename = "ts_scenario_comparison",
+                                      width = 12,
+                                      height = 6) {
+
+  p <- ggplot(summary_df, aes(x = date_ymd, y = median, color = scenario, fill = scenario)) +
+    geom_line(size = 1.2) +
+    geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, color = NA)
+
+  if (facet) {
+    p <- p + facet_wrap(~ scenario, scales = "free_y") +
+      guides(color = "none", fill = "none")
+  }
+
+  p <- p +
+    labs(
+      title = title,
+      x = "Date",
+      y = "Monthly Cases",
+      color = NULL,
+      fill = NULL
+    ) +
+    theme_minimal(base_size = 14) +
+    theme(
+      plot.title = element_text(hjust = 0.5, face = "bold"),
+      strip.text = element_text(face = "bold"),
+      axis.text = element_text(size = 12),
+      axis.title = element_text(size = 14)
+    )
+
+  if (save && !is.null(out_dir)) {
+    ggsave(
+      filename = file.path(out_dir, paste0(filename, ".png")),
+      plot = p, width = width, height = height, dpi = 300
+    )
+  }
+
+  return(p)
+}
+
+
 #' Plot Single Time Series Comparison (With vs. Without SMC)
 #'
 #' Generates a single time series plot showing two scenarios (e.g., With SMC vs. Without SMC),

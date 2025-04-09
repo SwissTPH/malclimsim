@@ -1,39 +1,30 @@
-#' Convert a Date Range to Weekly Year Format
+#' Convert Date Range to Weekly Format (Sundays)
 #'
-#' This function takes a start date and an end date, and converts the range into
-#' a vector of week-year format ("YYYY-WW") according to the ISO week numbering.
+#' This function takes a start date and an end date, and returns a vector of Dates
+#' representing the Sunday of each week in the range.
 #'
 #' @param start_date The start date as a character string or `Date` object.
 #' @param end_date The end date as a character string or `Date` object.
 #'
-#' @return A character vector containing each week between `start_date` and `end_date` in the format "YYYY-WW".
+#' @return A vector of `Date` objects representing each Sunday between the dates.
 #' @export
 #'
 #' @examples
 #' date_to_weeks("2022-01-01", "2022-03-01")
-date_to_weeks <- function(start_date, end_date){
-  weeks <- c()  # Initialize an empty vector to store weeks
+date_to_weeks <- function(start_date, end_date) {
+  start_date <- as.Date(start_date)
+  end_date <- as.Date(end_date)
 
-  # Loop through each week in the date range
-  while (start_date <= end_date) {
-    # Extract year and ISO week number
-    year <- format(start_date, "%Y")
-    week <- format(start_date, "%V")  # %V gives the ISO-8601 week number
+  # Align start_date to the nearest previous Sunday
+  start_sunday <- lubridate::floor_date(start_date, unit = "week", week_start = 7)
 
-    # Combine year and week to form "YYYY-WW"
-    year_week <- paste(year, week, sep = "-")
+  # Generate sequence of Sundays
+  all_weeks <- seq(start_sunday, end_date, by = "1 week")
 
-    # Append this week to the list of weeks
-    weeks <- c(weeks, year_week)
-
-    # Move to the next week
-    start_date <- start_date + 7
-  }
-
-  # Remove any potential duplicate weeks (e.g., at year boundaries) and append the last week
-  weeks <- c(unique(weeks), "2022-53")
-  return(weeks)
+  return(all_weeks)
 }
+
+
 
 #' Convert Date Range to Monthly Format
 #'
@@ -310,25 +301,6 @@ load_clean_smc_data <- function(path_to_SMC) {
     dplyr::select(-YearMonth)
 }
 
-#' Compute monthly metrics from SMC schedule
-#'
-#' @param schedule Data frame with SMC schedule (must include `dates`, `SMC`, `cov`, `decay`)
-#' @param exclude_years Vector of years to exclude (e.g., c(2023))
-#'
-#' @return Monthly summarized schedule with columns: month, SMC, cov, decay
-#' @export
-calculate_monthly_metrics <- function(schedule, exclude_years = NULL) {
-  schedule %>%
-    dplyr::mutate(month = format(as.Date(dates), "%Y-%m-01")) %>%
-    dplyr::group_by(month) %>%
-    dplyr::summarise(
-      SMC = ifelse(sum(SMC, na.rm = TRUE) > 0, 1, 0),
-      cov = sum(cov, na.rm = TRUE),
-      decay = sum(decay, na.rm = TRUE),
-      .groups = "drop"
-    ) %>%
-    dplyr::filter(!(lubridate::year(as.Date(month)) %in% exclude_years))
-}
 
 #' Export Parameter Tables as LaTeX Files
 #'

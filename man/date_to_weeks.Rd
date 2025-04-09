@@ -2,7 +2,7 @@
 % Please edit documentation in R/aux_functions.R
 \name{date_to_weeks}
 \alias{date_to_weeks}
-\title{Convert a Date Range to Weekly Year Format}
+\title{Convert Date Range to Weekly Format (Sundays)}
 \usage{
 date_to_weeks(start_date, end_date)
 }
@@ -12,11 +12,11 @@ date_to_weeks(start_date, end_date)
 \item{end_date}{The end date as a character string or \code{Date} object.}
 }
 \value{
-A character vector containing each week between \code{start_date} and \code{end_date} in the format "YYYY-WW".
+A vector of \code{Date} objects representing each Sunday between the dates.
 }
 \description{
-This function takes a start date and an end date, and converts the range into
-a vector of week-year format ("YYYY-WW") according to the ISO week numbering.
+This function takes a start date and an end date, and returns a vector of Dates
+representing the Sunday of each week in the range.
 }
 \examples{
 date_to_weeks("2022-01-01", "2022-03-01")

@@ -199,10 +199,10 @@ data_sim <- function(model, param_inputs, start_date, end_date,
 
     if (return_EIR) {
       EIR <- x[mod$info()$index$EIR_monthly,,][week_ind][1:n]
-      inc_df <- data.frame(week = dates[1:n], week_no, inc_A = inc_A[1:n], inc_C = inc_C[1:n],
+      inc_df <- data.frame(date_ymd = dates[1:n], week_no, inc_A = inc_A[1:n], inc_C = inc_C[1:n],
                            inc = inc_A[1:n] + inc_C[1:n], EIR_monthly = EIR)
     } else {
-      inc_df <- data.frame(week = dates[1:n], week_no, inc_A = inc_A[1:n], inc_C = inc_C[1:n],
+      inc_df <- data.frame(date_ymd = dates[1:n], week_no, inc_A = inc_A[1:n], inc_C = inc_C[1:n],
                            inc = inc_A[1:n] + inc_C[1:n])
     }
   }
@@ -282,13 +282,9 @@ data_sim_for_inference <- function(model, param_inputs,
                                    month_unequal_days = FALSE){
 
   # incidence dataframe in specific format from data_sim
-  if(month){
-    incidence_df <- data_sim(model, param_inputs, start_date = dates[1],
-                             end_date = dates[2], month = TRUE, save = FALSE,
-                             month_unequal_days = month_unequal_days)
-  }else{incidence_df <- data_sim(model, param_inputs, start_date = dates[1],
-                                 end_date = dates[2], month = FALSE, save = FALSE,
-                                 month_unequal_days = month_unequal_days)}
+  incidence_df <- data_sim(model, param_inputs, start_date = dates[1],
+                           end_date = dates[2], month = month, save = FALSE,
+                           month_unequal_days = month_unequal_days)
 
   if(noise){
     set.seed(seed)
@@ -829,12 +825,13 @@ run_simulations_from_samples <- function(model, param_inputs, param_samples,
                                          prewarm_years = 2,
                                          mu_transform_C = NULL,
                                          mu_transform_A = NULL,
-                                         covariate_matrix = NULL) {
+                                         covariate_matrix = NULL,
+                                         month = TRUE) {
   lapply(1:nrow(param_samples), function(i) {
     updated_inputs <- update_param_list(param_inputs, as.list(param_samples[i, ]))
     #compartments_sim(model, updated_inputs, start_date, end_date, prewarm_years, days_per_year)
     data_sim(model, updated_inputs, as.Date(start_date), as.Date(end_date), prewarm_years = 2, save = FALSE,
-             mu_transform_C = mu_transform_C, mu_transform_A = mu_transform_A, month = TRUE,
+             mu_transform_C = mu_transform_C, mu_transform_A = mu_transform_A, month = month,
              covariate_matrix = covariate_matrix)
   })
 }

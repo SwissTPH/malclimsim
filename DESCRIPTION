@@ -34,7 +34,8 @@ Imports:
     scales,
     patchwork,
     RColorBrewer,
-    stringr
+    stringr,
+    tsibble
 Depends:
     ecmwfr,
     sf,

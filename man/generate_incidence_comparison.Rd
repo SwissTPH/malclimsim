@@ -9,7 +9,8 @@ generate_incidence_comparison(
   age_for_inf,
   incidence_df,
   include_prev,
-  use_SMC_as_covariate = FALSE
+  use_SMC_as_covariate = FALSE,
+  log_link = TRUE
 )
 }
 \arguments{
@@ -22,6 +23,8 @@ generate_incidence_comparison(
 \item{include_prev}{Logical. If TRUE, include prevalence components.}
 
 \item{use_SMC_as_covariate}{Logical. If TRUE, apply beta_1 to adjust incidence by SMC coverage.}
+
+\item{log_link}{Logical. If TRUE, log-link function is used for observation model.}
 }
 \value{
 A function: function(state, observed, pars) -> log-likelihood.
