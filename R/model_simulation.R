@@ -86,13 +86,32 @@ calc_decay_arr <- function(SMC, decay_func = decay_SMC, const = -0.1806) {
 }
 
 
-# Function to run the malaria model simulation
-# Arguments:
-#   odin_mod: the model to simulate
-#   pars: parameters for the model
-#   time_start: initial time step
-#   n_particles: number of particles (repetitions for stochastic simulation)
-#   sim_time: total simulation time (days)
+#' Simulate the Malaria Model Over Time
+#'
+#' Runs a stochastic malaria transmission model using an `odin`-generated model object, storing state outputs across multiple time steps and particles.
+#'
+#' @param odin_mod An `odin` model object (usually created with `odin::odin()`), representing the compiled malaria model.
+#' @param pars A named list of parameters to pass to the model.
+#' @param time_start Numeric value specifying the starting time (e.g., 0).
+#' @param n_particles Integer; number of particles used in the stochastic simulation (i.e., number of replicate simulations).
+#' @param sim_time Integer; total number of time steps (days) to simulate.
+#'
+#' @return A list with two elements:
+#' \describe{
+#'   \item{x}{A 3D array of simulation results with dimensions `[state, particle, time]`.}
+#'   \item{model}{The `odin` model object after simulation (can be used to inspect internals).}
+#' }
+#'
+#' @details
+#' The model is initialized once using the `odin_mod$new()` constructor, and then `model$run(t)` is called at each time step `t` to advance the simulation.
+#'
+#' @examples
+#' \dontrun{
+#' mod <- odin::odin("malaria_model.R")
+#' results <- sim_mod(mod, pars = list(beta = 0.2), time_start = 0, n_particles = 10, sim_time = 100)
+#' }
+#'
+#' @export
 sim_mod <- function(odin_mod, pars, time_start, n_particles, sim_time){
   # Initialize the model with the provided parameters and particles
   model <- odin_mod$new(pars = pars, time = time_start, n_particles = n_particles)
@@ -108,6 +127,7 @@ sim_mod <- function(odin_mod, pars, time_start, n_particles, sim_time){
   # Return the simulation result array and the model object
   return(list(x, model))
 }
+
 
 #' Simulate Incidence Data from the Model
 #'
@@ -255,6 +275,7 @@ data_sim <- function(model, param_inputs, start_date, end_date,
 #' @return A data frame containing simulated incidence data, formatted according to the output of `data_sim`.
 #'         If `noise` is enabled, the `inc` column will include added noise.
 #'
+#' @export
 #' @details
 #' - When `month = TRUE`, the simulation aggregates incidence by month, and the `month_unequal_days` parameter can control
 #'   whether or not to adjust for months with different numbers of days.
@@ -416,6 +437,7 @@ simulate_with_max_posterior_params <- function(results, start_date, end_date, mo
 #' @param results The MCMC results object containing parameter samples.
 #' @param n The number of samples to extract.
 #' @return A list of named vectors, each containing one set of sampled parameters.
+#' @export
 #' @examples
 #' # Assuming `results` contains the MCMC output
 #' sampled_parameters <- sample_params(results, 100)
@@ -442,6 +464,7 @@ sample_params <- function(results, n) {
 #' @param end_date The end date for the simulation.
 #' @param param_inputs The initial list of parameters to update for each simulation.
 #' @return A list of data frames, each containing the simulation output for a different parameter set.
+#' @export
 #' @examples
 #' # Assuming `sampled_params` is a list of sampled parameter sets
 #' simulations <- simulate_models(model = data_sim, param_inputs = param_inputs,
@@ -505,6 +528,7 @@ simulate_models <- function(model, param_inputs, sampled_params, start_date, end
 #'
 #' @param simulations A list of data frames, each containing the simulation output for different parameter sets.
 #' @return A data frame containing the quantiles for each group (`inc_A`, `inc_C`, and `inc`) for each time point.
+#' @export
 #' @examples
 #' # Assuming `simulations` is a list of data frames with simulated incidence data
 #' incidence_quantiles <- calculate_incidence_quantiles(simulations)

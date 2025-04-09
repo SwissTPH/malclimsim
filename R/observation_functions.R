@@ -33,6 +33,7 @@ make_obs_config <- function(use_monthly = TRUE,
 #'
 #' @return A named list with one or more of: mu, mu_C, mu_A, mu_C1, mu_C2, etc.
 #' These correspond to expected incidence variables in the model output.
+#' @export
 get_field_mapping <- function(time, age_group) {
   prefix <- switch(time,
                    month = "month_inc",
@@ -83,6 +84,7 @@ get_field_mapping <- function(time, age_group) {
 #' @param log_link Logical. If TRUE, log-link function is used for observation model.
 #'
 #' @return A function: function(state, observed, pars) -> log-likelihood.
+#' @export
 generate_incidence_comparison <- function(month,
                                           age_for_inf,
                                           incidence_df,
