@@ -1,10 +1,28 @@
-# Helper function to create a list of MCMC chains
-# - Splits the MCMC output by chain for easier visualization and diagnostics
+#' Convert MCMC Output to List of Chains for Visualization
+#'
+#' Converts the output of a multi-chain MCMC run into a `coda::mcmc.list` object, separating chains
+#' for easier visualization and diagnostics (e.g., trace plots or Gelman-Rubin diagnostics).
+#'
+#' @param mcmc_run An object returned by `mcstate::pmcmc()`, containing posterior samples and a `chain` column indicating chain IDs.
+#'
+#' @return An `mcmc.list` object (from the `coda` package), where each element is an individual chain converted to an `mcmc` object.
+#'
+#' @details
+#' This function assumes that `mcmc_run$pars` contains the posterior samples and that there is a
+#' `chain` vector in `mcmc_run$chain` specifying the chain each row belongs to.
+#'
+#' @examples
+#' \dontrun{
+#' mcmc_chains <- plot_chains(mcmc_run)
+#' plot(mcmc_chains)  # Trace plots for all chains
+#' }
+#'
+#' @export
 plot_chains <- function(mcmc_run) {
   chains <- mcmc_run$chain
   df <- data.frame(as.matrix(mcmc_run$pars), chains) # Combine parameter values with chain labels
   chains_sep <- split(df, df$chains) # Separate data by chain
-  chains_list <- mcmc.list(lapply(chains_sep, function(x) as.mcmc(x[-ncol(x)]))) # Convert each chain to an 'mcmc' object
+  chains_list <- coda::mcmc.list(lapply(chains_sep, function(x) coda::as.mcmc(x[-ncol(x)]))) # Convert to 'mcmc'
   return(chains_list)
 }
 
@@ -157,6 +175,46 @@ MCMC_diag <- function(results, params = c("trace", "gelman", "corr", "ess", "acf
   }))
 }
 
+#' MCMC Diagnostic and Summary Plots
+#'
+#' Computes and optionally plots a suite of MCMC diagnostics including trace plots, Gelman-Rubin statistics,
+#' autocorrelation, effective sample size, and posterior quantiles.
+#'
+#' @param results A fitted MCMC result object (e.g., from `mcstate::pmcmc()`). Must contain a `pars` matrix and `n_chains` value.
+#' @param params A character vector specifying which diagnostics to compute/plot. Options include:
+#'   \itemize{
+#'     \item `"trace"`: Trace plots of each parameter.
+#'     \item `"gelman"`: Gelman-Rubin convergence diagnostics (requires \code{n_chains > 1}).
+#'     \item `"corr"`: Pairwise correlation plots (calls `plot_corr()`).
+#'     \item `"ess"`: Effective sample size.
+#'     \item `"acf"`: Autocorrelation plots.
+#'     \item `"quantiles"`: Posterior quantile summaries.
+#'     \item `"acceptance"`: Acceptance rate (based on rejection rate).
+#'   }
+#' @param thin Integer; optional thinning interval. If greater than 1, chains are thinned accordingly. Default is 1 (no thinning).
+#'
+#' @return A list containing the selected diagnostics. Output elements are named according to `params`, and may include:
+#'   \itemize{
+#'     \item \code{$trace}: The `mcmc.list` object used for plotting.
+#'     \item \code{$gelman}: Output from `gelman.diag()`.
+#'     \item \code{$corr}: Placeholder message indicating correlation plot was created.
+#'     \item \code{$ess}: Effective sample sizes from `effectiveSize()`.
+#'     \item \code{$acf}: Placeholder message indicating ACF was plotted.
+#'     \item \code{$quantiles}: Matrix of posterior quantiles (2.5%, 50%, 97.5%).
+#'     \item \code{$acceptance}: Acceptance rates per chain.
+#'   }
+#'
+#' @details
+#' This function wraps common diagnostics from the `coda` package and custom correlation plotting into a single call.
+#' Useful for quickly assessing convergence and chain quality after MCMC sampling.
+#'
+#' @examples
+#' \dontrun{
+#' diagnostics <- MCMC_diag(results, params = c("trace", "gelman", "ess", "quantiles"))
+#' }
+#'
+#' @importFrom coda as.mcmc effectiveSize gelman.diag mcmc.list rejectionRate
+#' @export
 MCMC_diag <- function(results, params = c("trace", "gelman", "corr", "ess", "acf", "quantiles", "acceptance"), thin = 1) {
   suppressWarnings(suppressMessages({
     # Extract parameter samples and split into chains
@@ -183,14 +241,14 @@ MCMC_diag <- function(results, params = c("trace", "gelman", "corr", "ess", "acf
     # Trace plot
     if ("trace" %in% params) {
       cat("\n TRACE PLOT \n")
-      plot(mcmc_chains)  # Trace plot for convergence assessment
+      plot(mcmc_chains)
       results_list$trace <- mcmc_chains
     }
 
     # Gelman-Rubin statistic
     if ("gelman" %in% params && n_chains > 1) {
       cat("\n GELMAN-RUBIN STATISTIC \n")
-      gelman_result <- gelman.diag(mcmc_chains)  # Numerical convergence assessment
+      gelman_result <- gelman.diag(mcmc_chains)
       print(gelman_result)
       results_list$gelman <- gelman_result
     }
@@ -198,7 +256,7 @@ MCMC_diag <- function(results, params = c("trace", "gelman", "corr", "ess", "acf
     # Correlation plot
     if ("corr" %in% params) {
       cat("\n CORRELATION PLOT \n")
-      plot_corr(results)  # Retain the previous large and clear plot
+      plot_corr(results)
       results_list$corr <- "Correlation plot generated"
     }
 
@@ -213,7 +271,7 @@ MCMC_diag <- function(results, params = c("trace", "gelman", "corr", "ess", "acf
     # Autocorrelation Function (ACF)
     if ("acf" %in% params) {
       cat("\n AUTOCORRELATION FUNCTION \n")
-      acf_result <- acf(as.matrix(do.call(rbind, mcmc_chains)), main = "Autocorrelation")
+      acf(as.matrix(do.call(rbind, mcmc_chains)), main = "Autocorrelation")
       results_list$acf <- "Autocorrelation function plotted"
     }
 
@@ -232,10 +290,10 @@ MCMC_diag <- function(results, params = c("trace", "gelman", "corr", "ess", "acf
       results_list$acceptance <- acceptance_rates
     }
 
-    # Return all results
     return(results_list)
   }))
 }
+
 
 #' Plot Posterior Distributions of Estimated Parameters
 #'
