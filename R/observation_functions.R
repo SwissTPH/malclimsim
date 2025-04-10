@@ -223,47 +223,6 @@ get_field_mapping <- function(time, age_group) {
 #   })
 # }
 
-#' Generate Log-Likelihood Function for Incidence and Prevalence Data
-#'
-#' Builds a generalized log-likelihood function that compares observed incidence and/or prevalence
-#' data against model-predicted outputs. Supports options for age groups, time scales, SMC covariate
-#' effects, log or linear link functions, and population growth adjustments.
-#'
-#' @param month Logical. If `TRUE`, use monthly data; if `FALSE`, use weekly data.
-#' @param age_for_inf Character string indicating the age group used in the inference.
-#'   Must be one of `"u5"`, `"o5"`, `"sep_ages"`, `"total"`, or `"all_ages"`.
-#' @param incidence_df A data frame of observed incidence and/or prevalence data used for likelihood evaluation.
-#' @param include_prev Logical. If `TRUE`, includes prevalence components in the likelihood.
-#' @param use_SMC_as_covariate Logical. If `TRUE`, adjusts predicted incidence using SMC coverage via a beta parameter.
-#' @param log_link Logical. If `TRUE`, uses a log link for SMC effects; otherwise uses a linear multiplicative link.
-#' @param include_pop_growth Logical. If `TRUE`, rescales model-predicted incidence by `r_C` and/or `r_A` to account for population growth.
-#'
-#' @return A function of the form `function(state, observed, pars)` that returns a scalar log-likelihood
-#'   value for a given model state, observed data, and parameter set.
-#'
-#' @details
-#' This function returns a closure that computes the log-likelihood for comparing model outputs to observed
-#' data. The structure and field mappings for incidence variables depend on the `month` and `age_for_inf`
-#' arguments. If `include_pop_growth = TRUE`, the function multiplies model incidence predictions by the
-#' dynamic outputs `r_C` and/or `r_A` to approximate growing population denominators.
-#'
-#' Negative binomial likelihoods are used for incidence, and beta likelihoods for prevalence (if included).
-#' SMC coverage is incorporated either with a log-link (multiplicative on log scale) or linear effect on
-#' the incidence mean.
-#'
-#' @examples
-#' # Create a likelihood function for monthly under-5 incidence with SMC effect
-#' likelihood_fn <- generate_incidence_comparison(
-#'   month = TRUE,
-#'   age_for_inf = "u5",
-#'   incidence_df = obs_cases,
-#'   include_prev = FALSE,
-#'   use_SMC_as_covariate = TRUE,
-#'   log_link = TRUE,
-#'   include_pop_growth = TRUE
-#' )
-#'
-#' @export
 generate_incidence_comparison <- function(month,
                                           age_for_inf,
                                           incidence_df,
@@ -275,35 +234,36 @@ generate_incidence_comparison <- function(month,
   mapping <- get_field_mapping(time, age_for_inf)
   coverage_divisor <- if (month) 30 else 7
 
-  # --- Inlined helper functions ---
-
+  # --- Helper: Unadjusted likelihood ---
   ll_inc_nb <- function(observed, predicted, size) {
     if (is.na(observed)) return(0)
     dnbinom(x = observed, mu = predicted, size = size, log = TRUE)
   }
 
+  # --- Helper: SMC-adjusted incidence likelihood ---
   if (log_link) {
     ll_inc_nb_beta_adjusted <- function(inc_observed, inc_predicted, beta, coverage,
-                                        size, treatment, obs_weight = 1, divisor = 30) {
+                                        size, treatment, obs_weight = 1, divisor = 30, r_scale = 1) {
       if (is.na(inc_observed)) return(0)
       coverage <- ifelse(is.null(coverage), 0, coverage / divisor)
       inc_predicted <- pmax(inc_predicted, 1e-6)
-      mu_adjusted <- exp(log(inc_predicted) + beta * coverage)
+      mu_adjusted <- exp(log(inc_predicted) + beta * coverage) * r_scale
       size <- ifelse(size == 0, 1e-3, size)
       obs_weight * dnbinom(x = inc_observed, mu = mu_adjusted, size = size, log = TRUE)
     }
   } else {
     ll_inc_nb_beta_adjusted <- function(inc_observed, inc_predicted, beta, coverage,
-                                        size, treatment, obs_weight = 1, divisor = 30) {
+                                        size, treatment, obs_weight = 1, divisor = 30, r_scale = 1) {
       if (is.na(inc_observed)) return(0)
       coverage <- ifelse(is.null(coverage), 0, coverage / divisor)
       inc_predicted <- pmax(inc_predicted, 1e-6)
-      mu_adjusted <- inc_predicted * (1 - beta * coverage)
+      mu_adjusted <- inc_predicted * (1 - beta * coverage) * r_scale
       size <- ifelse(size == 0, 1e-3, size)
       obs_weight * dnbinom(x = inc_observed, mu = mu_adjusted, size = size, log = TRUE)
     }
   }
 
+  # --- Helper: Prevalence likelihood ---
   ll_prev_beta <- function(observed, predicted, kappa) {
     obs_clamped <- pmin(pmax(observed, 1e-6), 1 - 1e-6)
     alpha <- predicted * kappa
@@ -312,53 +272,44 @@ generate_incidence_comparison <- function(month,
     dbeta(obs_clamped, shape1 = alpha, shape2 = beta, log = TRUE)
   }
 
-  # --- Likelihood function returned ---
+  # --- Main log-likelihood function ---
   return(function(state, observed, pars) {
-    total_ll <- 0  # Initialize total log-likelihood
+    total_ll <- 0
 
-    # --- Incidence: Children ---
+    # --- Children ---
     if (!is.null(mapping$mu_C)) {
       mu_C <- state[mapping$mu_C, , drop = TRUE]
-
-      # Apply population growth adjustment if requested
-      if (include_pop_growth) {
-        #print(state["r_C", , drop = TRUE])
-        mu_C <- mu_C * state["r_C", , drop = TRUE]
-      }
-
+      r_C <- if (include_pop_growth && "r_C" %in% rownames(state)) state["r_C", , drop = TRUE] else 1
       size_1 <- ifelse(is.null(pars$size_1), 1e-3, max(pars$size_1, 1e-3))
 
       if (use_SMC_as_covariate && !is.null(pars$beta_1)) {
-        cov <- observed$cov_SMC
         beta <- if (log_link) pars$beta_1 else pars$beta_2
-
         ll_C <- ll_inc_nb_beta_adjusted(
           inc_observed = observed$inc_C,
           inc_predicted = mu_C,
           beta = beta,
-          coverage = cov,
+          coverage = observed$cov_SMC,
           size = size_1,
           treatment = observed$treatment,
           obs_weight = observed$obs_weight,
-          divisor = coverage_divisor
+          divisor = coverage_divisor,
+          r_scale = r_C
         )
       } else {
-        ll_C <- ll_inc_nb(observed$inc_C, mu_C, size_1)
+        mu_C_adj <- mu_C * r_C
+        ll_C <- ll_inc_nb(observed$inc_C, mu_C_adj, size_1)
       }
 
       total_ll <- total_ll + ll_C
     }
 
-    # --- Incidence: Adults ---
+    # --- Adults ---
     if (!is.null(mapping$mu_A)) {
       mu_A <- state[mapping$mu_A, , drop = TRUE]
-
-      if (include_pop_growth) {
-        mu_A <- mu_A * state["r_A", , drop = TRUE]
-      }
-
+      r_A <- if (include_pop_growth && "r_A" %in% rownames(state)) state["r_A", , drop = TRUE] else 1
+      mu_A_adj <- mu_A * r_A
       size_2 <- ifelse(is.null(pars$size_2), 1e-3, max(pars$size_2, 1e-3))
-      ll_A <- ll_inc_nb(observed$inc_A, mu_A, size_2)
+      ll_A <- ll_inc_nb(observed$inc_A, mu_A_adj, size_2)
       total_ll <- total_ll + ll_A
     }
 
