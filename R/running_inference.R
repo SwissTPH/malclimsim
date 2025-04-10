@@ -402,7 +402,8 @@ inf_run <- function(model, param_inputs, control_params, params_to_estimate, pro
     age_for_inf = obs_config$age_group,
     incidence_df = incidence_observed,
     include_prev = obs_config$include_prev,
-    use_SMC_as_covariate = obs_config$use_SMC_as_covariate
+    use_SMC_as_covariate = obs_config$use_SMC_as_covariate,
+    include_pop_growth = obs_config$include_pop_growth
   )
 
   # --- Initialize particle filter ---

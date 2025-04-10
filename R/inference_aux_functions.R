@@ -45,7 +45,9 @@ index <- function(info) {
       prev_C_2 = info$index$prev_C_2,
       prev_A_2 = info$index$prev_A_2,
       prev_C_1 = info$index$prev_C_1,
-      prev_A_1 = info$index$prev_A_1
+      prev_A_1 = info$index$prev_A_1,
+      r_C = info$index$r_C,
+      r_A = info$index$r_A
 
     ),
     state = c(
@@ -58,7 +60,9 @@ index <- function(info) {
       info$index$prev_C_2,
       info$index$prev_A_2,
       info$index$prev_C_1,
-      info$index$prev_A_1
+      info$index$prev_A_1,
+      info$index$r_C,
+      info$index$r_A
 
     )
   )

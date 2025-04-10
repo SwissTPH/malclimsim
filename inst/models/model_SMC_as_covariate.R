@@ -46,36 +46,48 @@ update(RA) <- RA - mu_RS_A * RA + mu_IR * IA + (1 - phi_2) * mu_EI * EA - delta_
 ## in the given time period - day, week, month  #
 #################################################
 # These will be used to rescale the outputs, "adjusting" for population growth
-r_C <- user(1.000071) # daily growth rate u5 Chad
-r_A <- user(1.000092) # daily growth rate o5 Chad
+init_r_C <- user(1.0)
+pop_growth_C <- user(1.000071)  # daily multiplier
+initial(r_C) <- init_r_C
+update(r_C) <- r_C * pop_growth_C
+
+
+init_r_A <- user(1.0)
+pop_growth_A <- user(1.000092)
+initial(r_A) <- init_r_A
+update(r_A) <- r_A * pop_growth_A
+
+
+#r_C <- user(1.000071)
+#r_A <- user(1.000071)
 
 
 initial(day_inc_C) <- 0
-update(day_inc_C) <- if ((step) %% steps_per_day == 0) r_C * mu_EI * EC * fT_C * phi_1 else day_inc_C + r_C * mu_EI * EC * fT_C * phi_1
+update(day_inc_C) <- if ((step) %% steps_per_day == 0)  mu_EI * EC * fT_C * phi_1 else day_inc_C +  mu_EI * EC * fT_C * phi_1
 
 initial(wk_inc_C) <- 0
-update(wk_inc_C) <- if ((step) %% steps_per_week == 0) r_C * mu_EI * EC * fT_C * phi_1 else wk_inc_C + r_C * mu_EI * EC * fT_C * phi_1
+update(wk_inc_C) <- if ((step) %% steps_per_week == 0)  mu_EI * EC * fT_C * phi_1 else wk_inc_C +  mu_EI * EC * fT_C * phi_1
 
 initial(day_inc_A) <- 0
-update(day_inc_A) <- if ((step) %% steps_per_day == 0) r_A * mu_EI * EA * fT_A * phi_2 else day_inc_A + r_A * mu_EI * EA * fT_A * phi_2
+update(day_inc_A) <- if ((step) %% steps_per_day == 0)  mu_EI * EA * fT_A * phi_2 else day_inc_A +  mu_EI * EA * fT_A * phi_2
 
 initial(wk_inc_A) <- 0
-update(wk_inc_A) <- if ((step) %% steps_per_week == 0) r_A * mu_EI * EA * fT_A * phi_2 else wk_inc_A + r_A * mu_EI * EA * fT_A * phi_2
+update(wk_inc_A) <- if ((step) %% steps_per_week == 0)  mu_EI * EA * fT_A * phi_2 else wk_inc_A +  mu_EI * EA * fT_A * phi_2
 
 initial(day_inc_total) <- 0
-update(day_inc_total) <- if ((step) %% steps_per_day == 0) mu_EI * (r_C * EC * fT_C * phi_1 + r_A * EA * fT_A * phi_2) else day_inc_total + mu_EI * (r_C * EC * fT_C * phi_1 + r_A * EA * fT_A * phi_2)
+update(day_inc_total) <- if ((step) %% steps_per_day == 0) mu_EI * ( EC * fT_C * phi_1 +  EA * fT_A * phi_2) else day_inc_total + mu_EI * ( EC * fT_C * phi_1 +  EA * fT_A * phi_2)
 
 initial(wk_inc_total) <- 0
-update(wk_inc_total) <-  if ((step) %% steps_per_week == 0) mu_EI * (r_C * EC * fT_C * phi_1 + r_A * EA * fT_A * phi_2) else wk_inc_total + mu_EI * (r_C * EC * fT_C * phi_1 + r_A * EA * fT_A * phi_2)
+update(wk_inc_total) <-  if ((step) %% steps_per_week == 0) mu_EI * ( EC * fT_C * phi_1 +  EA * fT_A * phi_2) else wk_inc_total + mu_EI * ( EC * fT_C * phi_1 +  EA * fT_A * phi_2)
 
 initial(month_inc_C) <- 0
-update(month_inc_C) <- if ((step) %% steps_per_month == 0) r_C * mu_EI * EC * fT_C * phi_1 else month_inc_C + r_C * mu_EI * EC * fT_C * phi_1
+update(month_inc_C) <- if ((step) %% steps_per_month == 0)  mu_EI * EC * fT_C * phi_1 else month_inc_C +  mu_EI * EC * fT_C * phi_1
 
 initial(month_inc_A) <- 0
-update(month_inc_A) <- if ((step) %% steps_per_month == 0) r_A * mu_EI * EA * fT_A * phi_2 else r_A * month_inc_A + mu_EI * EA * fT_A * phi_2
+update(month_inc_A) <- if ((step) %% steps_per_month == 0)  mu_EI * EA * fT_A * phi_2 else  month_inc_A + mu_EI * EA * fT_A * phi_2
 
 initial(month_inc_total) <- 0
-update(month_inc_total) <- if ((step) %% steps_per_month == 0) mu_EI * (r_C * EC * fT_C * phi_1 + r_A * EA * fT_A * phi_2) else month_inc_total + mu_EI * (r_C * EC * fT_C * phi_1 + r_A * EA * fT_A * phi_2)
+update(month_inc_total) <- if ((step) %% steps_per_month == 0) mu_EI * ( EC * fT_C * phi_1 +  EA * fT_A * phi_2) else month_inc_total + mu_EI * ( EC * fT_C * phi_1 +  EA * fT_A * phi_2)
 
 #########################
 ## Defining Prevalence  #

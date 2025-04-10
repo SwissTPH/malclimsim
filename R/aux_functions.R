@@ -347,3 +347,51 @@ save_plot_dynamic <- function(plot_obj, filename_stub, out_dir, width = 10, heig
   ggplot2::ggsave(fname, plot = plot_obj, width = width, height = height, dpi = 300)
   invisible(fname)
 }
+
+
+#' Generate Vectors of Population Growth Scaling (r_C and r_A)
+#'
+#' Computes population multipliers over time for under-5 (r_C) and over-5 (r_A) groups,
+#' using fixed daily exponential growth. Time steps can be monthly (30 days) or weekly (7 days).
+#'
+#' @param n Integer. Number of time points to generate (e.g. months or weeks).
+#' @param month Logical. If `TRUE`, use 30-day months; if `FALSE`, use 7-day weeks.
+#' @param growth_rate_C Daily growth rate for under-5 population. Default corresponds to 2.6% per year.
+#' @param growth_rate_A Daily growth rate for over-5 population. Default corresponds to 2.6% per year.
+#' @param init_r_C Initial multiplier for r_C (default = 1).
+#' @param init_r_A Initial multiplier for r_A (default = 1).
+#'
+#' @return A data frame with columns: `timestep`, `r_C`, `r_A`
+#'
+#' @examples
+#' # Monthly population growth over 60 months
+#' get_population_scaling(n = 60, month = TRUE)
+#'
+#' # Weekly population growth over 120 weeks with custom growth rates
+#' get_population_scaling(n = 120, month = FALSE, growth_rate_C = 1.00005, growth_rate_A = 1.00003)
+#'
+#' @export
+get_population_scaling <- function(n,
+                                   month = TRUE,
+                                   growth_rate_C = 1.026^(1 / 360),
+                                   growth_rate_A = 1.026^(1 / 360),
+                                   init_r_C = 1,
+                                   init_r_A = 1) {
+  if (n <= 0) stop("n must be a positive integer")
+
+  # Time steps in model days
+  step_size <- if (month) 30 else 7
+  model_days <- seq(0, by = step_size, length.out = n)
+
+  # Compute exponential growth
+  r_C <- init_r_C * growth_rate_C ^ model_days
+  r_A <- init_r_A * growth_rate_A ^ model_days
+
+  data.frame(
+    timestep = seq_len(n),
+    model_days = model_days,
+    r_C = r_C,
+    r_A = r_A
+  )
+}
+
