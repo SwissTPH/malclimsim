@@ -200,39 +200,17 @@ generate_smc_coverage_matrix <- function(start_date, end_date, years, month_patt
 #' @export
 calculate_monthly_metrics <- function(schedule, exclude_years = NULL) {
   schedule %>%
-    dplyr::mutate(month = format(as.Date(dates), "%Y-%m-01")) %>%
-    dplyr::group_by(month) %>%
+    dplyr::mutate(date_ymd = format(as.Date(dates), "%Y-%m-01")) %>%
+    dplyr::group_by(date_ymd) %>%
     dplyr::summarise(
       SMC = ifelse(sum(SMC, na.rm = TRUE) > 0, 1, 0),
       cov = sum(cov, na.rm = TRUE),
       decay = sum(decay, na.rm = TRUE),
       .groups = "drop"
     ) %>%
-    dplyr::filter(!(lubridate::year(as.Date(month)) %in% exclude_years))
+    dplyr::filter(!(lubridate::year(as.Date(date_ymd)) %in% exclude_years))
 }
 
-
-#' Compute weekly metrics from SMC schedule
-#'
-#' @param schedule Data frame with SMC schedule (must include `dates`, `SMC`, `cov`, `decay`)
-#' @param exclude_years Vector of years to exclude (e.g., c(2023))
-#'
-#' @return Weekly summarized schedule with columns: week, SMC, cov, decay
-#' @export
-calculate_weekly_metrics <- function(schedule, exclude_years = NULL) {
-  schedule %>%
-    dplyr::mutate(
-      week = format(as.Date(dates), "%G-W%V")
-    ) %>%
-    dplyr::group_by(week) %>%
-    dplyr::summarise(
-      SMC = ifelse(sum(SMC, na.rm = TRUE) > 0, 1, 0),
-      cov = sum(cov, na.rm = TRUE),
-      decay = sum(decay, na.rm = TRUE),
-      .groups = "drop"
-    ) %>%
-    dplyr::filter(!(as.numeric(substr(week, 1, 4)) %in% exclude_years))
-}
 
 
 #' Compute weekly metrics from SMC schedule (epidemiological weeks, starting Sunday)

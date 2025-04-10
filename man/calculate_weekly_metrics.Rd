@@ -2,10 +2,8 @@
 % Please edit documentation in R/smc_scheduling.R
 \name{calculate_weekly_metrics}
 \alias{calculate_weekly_metrics}
-\title{Compute weekly metrics from SMC schedule}
+\title{Compute weekly metrics from SMC schedule (epidemiological weeks, starting Sunday)}
 \usage{
-calculate_weekly_metrics(schedule, exclude_years = NULL)
-
 calculate_weekly_metrics(schedule, exclude_years = NULL)
 }
 \arguments{
@@ -14,12 +12,8 @@ calculate_weekly_metrics(schedule, exclude_years = NULL)
 \item{exclude_years}{Vector of years to exclude (e.g., c(2023))}
 }
 \value{
-Weekly summarized schedule with columns: week, SMC, cov, decay
-
 Weekly summarized schedule with columns: week_start (Date), SMC, cov, decay
 }
 \description{
-Compute weekly metrics from SMC schedule
-
 Compute weekly metrics from SMC schedule (epidemiological weeks, starting Sunday)
 }

@@ -37,15 +37,23 @@ import_model <- function(model_path, model_name){
 }
 
 
-# Helper function to model the decay of SMC (Seasonal Malaria Chemoprevention) efficacy over time.
-# The decay follows a sigmoid curve where efficacy reduces as time (x) increases.
-# Args:
-#   - x: A numeric value representing the number of days since the last SMC treatment.
-#   - const: The decay constant controlling the steepness of the sigmoid curve (default = -0.1806).
-# Returns:
-#   - A numeric value representing the remaining efficacy of SMC treatment at day 'x'.
+#' Compute SMC Efficacy Decay Over Time
+#'
+#' Models the decay of Seasonal Malaria Chemoprevention (SMC) efficacy as a sigmoid function
+#' of time since last administration.
+#'
+#' @param x Numeric. Number of days since the last SMC treatment.
+#' @param const Numeric. The decay constant that controls the steepness of the sigmoid curve. Default is -0.1806.
+#'
+#' @return Numeric. Remaining efficacy of SMC treatment at day \code{x}.
+#'
+#' @examples
+#' decay_SMC(0)      # Should return near maximum efficacy
+#' decay_SMC(60)     # Should return reduced efficacy
+#'
+#' @export
 decay_SMC <- function(x, const = -0.1806){
-  return(0.90 / (1 + exp(const * (32.97 - x))))  # Sigmoid function for efficacy decay
+  return(0.90 / (1 + exp(const * (32.97 - x))))
 }
 
 
@@ -85,6 +93,37 @@ calc_decay_arr <- function(SMC, decay_func = decay_SMC, const = -0.1806) {
   return(decay_arr)
 }
 
+#' Calculate Normalized SMC Decay Array Over Time
+#'
+#' Generates a vector of normalized decayed SMC efficacies for a time series where SMC is applied intermittently.
+#' Each decay curve is scaled so that its maximum value is 1.
+#'
+#' @param SMC Numeric vector. Time series indicating the presence (positive value) or absence (zero) of SMC at each time point.
+#' @param decay_func Function. Function defining the decay curve. Default is \code{decay_SMC}.
+#' @param const Numeric. Decay constant to pass to \code{decay_func}. Default is -0.1806.
+#'
+#' @return Numeric vector of the same length as \code{SMC}, with decay values normalized to a max of 1 per SMC round.
+#'
+#' @examples
+#' smc_series <- c(0, 1, 0, 0, 0, 1, 0, 0)
+#' calc_decay_arr(smc_series)
+#'
+#' @export
+calc_decay_arr <- function(SMC, decay_func = decay_SMC, const = -0.1806) {
+  decay_arr <- numeric(length(SMC))
+  i <- 1
+  while (i <= length(SMC)) {
+    if (SMC[i] > 0) {
+      next_SMC <- which(SMC[(i + 1):length(SMC)] > 0)
+      end <- if (length(next_SMC) == 0) length(SMC) else i + next_SMC[1]
+      decay_values <- decay_func(seq(0, end - i), const = const)
+      decay_values <- decay_values / max(decay_values, na.rm = TRUE)  # Normalize so max is 1
+      decay_arr[i:end] <- decay_values[1:(end - i + 1)]
+    }
+    i <- i + 1
+  }
+  return(decay_arr)
+}
 
 #' Simulate the Malaria Model Over Time
 #'

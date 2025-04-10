@@ -20,7 +20,9 @@ evaluate_multiple_scenarios(
   outcome_fn = function(y1, y0) sum(y1$inc_C_transformed),
   o1 = NULL,
   ci_level = 0.95,
-  out_dir = NULL
+  out_dir = NULL,
+  month = FALSE,
+  apply_decay = TRUE
 )
 
 evaluate_multiple_scenarios(
@@ -39,11 +41,15 @@ evaluate_multiple_scenarios(
   outcome_fn = function(y1, y0) sum(y1$inc_C_transformed),
   o1 = NULL,
   ci_level = 0.95,
-  out_dir = NULL
+  out_dir = NULL,
+  month = FALSE,
+  apply_decay = TRUE
 )
 }
 \arguments{
 \item{patterns}{A named list of 12-element binary vectors representing monthly SMC coverage patterns.}
+
+\item{smc_day_of_month}{Day of month for simulated SMC coverage start (default = 1).}
 
 \item{model}{A compiled model object used for simulations.}
 
@@ -67,15 +73,22 @@ evaluate_multiple_scenarios(
 
 \item{outcome_fn}{A function defining the outcome to summarize (default: total cases).}
 
+\item{o1}{Baseline simulations for comparison.}
+
 \item{ci_level}{Confidence level for credible intervals (default = 0.95).}
 
 \item{out_dir}{Directory to save plots (optional).}
+
+\item{month}{Logical. Whether to summarize and simulate using weekly data. Default is FALSE.}
+
+\item{apply_decay}{Logical. Whether to apply decay to SMC coverage. Default is TRUE.}
 }
 \value{
-A list with two elements:
+A list with three elements:
 \describe{
-\item{outputs}{A named list of lists with estimates and plots for each scenario.}
+\item{outputs}{A named list of lists with estimates, plots, and summaries for each scenario.}
 \item{summaries}{A named list of time series summaries for each scenario.}
+\item{estimates}{A named list of scalar outcome estimates for each scenario.}
 }
 
 A list with three elements:
