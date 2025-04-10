@@ -50,8 +50,6 @@ init_r_C <- user(1.0)
 pop_growth_C <- user(1.000071)  # daily multiplier
 initial(r_C) <- init_r_C
 update(r_C) <- r_C * pop_growth_C
-
-
 init_r_A <- user(1.0)
 pop_growth_A <- user(1.000092)
 initial(r_A) <- init_r_A
