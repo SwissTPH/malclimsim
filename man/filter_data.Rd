@@ -5,28 +5,21 @@
 \title{Relate Time Steps to Observed Data for mcstate}
 \usage{
 filter_data(incidence_observed, month = FALSE, initial_time_obs = 0, rate = 7)
-
-filter_data(incidence_observed, month = FALSE, initial_time_obs = 0, rate = 7)
 }
 \arguments{
-\item{incidence_observed}{A data frame containing observed incidence data.}
+\item{incidence_observed}{A data frame containing observed incidence data (cumulative incidence or other types of observations).}
 
-\item{month}{Logical; TRUE for monthly data, FALSE for weekly data.}
+\item{month}{A logical value indicating whether the data is provided in monthly intervals (\code{TRUE}) or weekly intervals (\code{FALSE}).}
 
-\item{initial_time_obs}{Integer; initial time step (e.g., 0), used to align simulation and data.}
+\item{initial_time_obs}{An integer specifying the initial time step for monthly data (defaults to 0 for weekly data).}
 
-\item{rate}{Integer; time step rate (7 for weekly, 30 for monthly, etc.).}
+\item{rate}{An integer specifying the rate (e.g., 7 for weekly data, 30 for monthly data) for resampling the time steps.}
 }
 \value{
 A data frame with filtered data, including time intervals and the appropriate columns for particle filtering.
-
-A data frame formatted for particle filtering, with aligned start/end time steps.
 }
 \description{
 This function formats observed data into a form usable by the \code{mcstate} particle filter, adjusting for time steps (weeks or months) and ensuring the data is in the correct format for particle filtering.
-
-This function formats observed data into a form usable by the \code{mcstate} particle filter,
-adjusting for time steps (weekly or monthly) and ensuring consistency for particle filtering.
 }
 \examples{
 # Assuming 'incidence_observed' is a data frame with your observed data

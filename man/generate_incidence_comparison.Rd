@@ -10,7 +10,8 @@ generate_incidence_comparison(
   incidence_df,
   include_prev,
   use_SMC_as_covariate = FALSE,
-  log_link = TRUE
+  log_link = TRUE,
+  include_pop_growth = FALSE
 )
 }
 \arguments{

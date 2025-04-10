@@ -9,21 +9,43 @@ make_obs_config(
   age_group = "u5",
   include_prev = TRUE,
   use_SMC_as_covariate = FALSE,
-  log_link = TRUE
+  log_link = TRUE,
+  include_pop_growth = FALSE
 )
 }
 \arguments{
-\item{use_monthly}{Logical. TRUE for monthly data, FALSE for weekly.}
+\item{use_monthly}{Logical. If \code{TRUE}, observation and model outputs are matched at monthly resolution;
+otherwise, weekly data is assumed.}
 
-\item{age_group}{Character. One of "u5", "o5", "sep_ages", "total", "all_ages".}
+\item{age_group}{Character. One of \code{"u5"}, \code{"o5"}, \code{"sep_ages"}, \code{"total"}, or \code{"all_ages"}.
+This determines which age group(s) are included in the likelihood.}
 
-\item{include_prev}{Logical. Include prevalence likelihood.}
+\item{include_prev}{Logical. If \code{TRUE}, the observation function includes a prevalence likelihood term.}
 
-\item{use_SMC_as_covariate}{Logical. Use beta_1 as covariate for SMC coverage.}
+\item{use_SMC_as_covariate}{Logical. If \code{TRUE}, the incidence is adjusted using a regression effect (\code{beta_1}) on SMC coverage.}
+
+\item{log_link}{Logical. If \code{TRUE}, a log-link is used to transform the predicted incidence when adjusting by SMC coverage.
+If \code{FALSE}, a linear form is used.}
+
+\item{include_pop_growth}{Logical. If \code{TRUE}, model-predicted incidence is rescaled to account for
+population growth using the \code{r_C} and/or \code{r_A} outputs from the model.}
 }
 \value{
-A named list suitable for passing to comparison functions.
+A named list containing configuration options to pass to the observation likelihood function.
 }
 \description{
 Constructs a configuration list specifying how to compare observed and modeled data.
+This configuration is passed to the observation likelihood generator function
+(\code{generate_incidence_comparison()}) and determines which outcomes are compared and how.
+}
+\examples{
+obs_config <- make_obs_config(
+  use_monthly = TRUE,
+  age_group = "u5",
+  include_prev = FALSE,
+  use_SMC_as_covariate = TRUE,
+  log_link = TRUE,
+  include_pop_growth = TRUE
+)
+
 }
