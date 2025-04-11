@@ -2,22 +2,31 @@
 % Please edit documentation in R/aux_functions.R
 \name{export_param_table_tex}
 \alias{export_param_table_tex}
-\title{Export Parameter Tables as LaTeX Files}
+\title{Export Estimated and Fixed Parameters to LaTeX}
 \usage{
-export_param_table_tex(param_inputs, params_to_estimate, out_dir, sigfig = 3)
+export_param_table_tex(
+  results,
+  params_to_estimate,
+  out_dir,
+  suffix = NULL,
+  sigfig = 3
+)
 }
 \arguments{
-\item{param_inputs}{List of parameter inputs.}
+\item{results}{A list containing inference results with \code{coda_pars} and \code{param_inputs}.}
 
-\item{params_to_estimate}{Character vector of parameter names to treat as estimated.}
+\item{params_to_estimate}{Character vector of parameter names that were inferred.}
 
 \item{out_dir}{Directory to save the LaTeX files.}
 
-\item{sigfig}{Number of significant figures to round to.}
+\item{suffix}{Optional suffix to append to filenames (e.g., dataset name).}
+
+\item{sigfig}{Number of significant figures to use (default = 3).}
 }
 \value{
-No return value. Side effect: two .tex files saved.
+No return value; writes LaTeX tables to disk.
 }
 \description{
-Splits parameters into estimated and fixed, then saves each as a LaTeX .tex table.
+Extracts posterior summaries for estimated parameters and writes both estimated
+and fixed parameters as LaTeX tables.
 }

@@ -310,12 +310,16 @@ load_clean_smc_data <- function(path_to_SMC) {
 #' @param results A list containing inference results with `coda_pars` and `param_inputs`.
 #' @param params_to_estimate Character vector of parameter names that were inferred.
 #' @param out_dir Directory to save the LaTeX files.
+#' @param suffix Optional suffix to append to filenames (e.g., dataset name).
 #' @param sigfig Number of significant figures to use (default = 3).
 #'
 #' @return No return value; writes LaTeX tables to disk.
 #' @export
-export_param_table_tex <- function(results, params_to_estimate, out_dir, sigfig = 3) {
-  # ---- Estimated Parameters (from MCMC samples) ----
+export_param_table_tex <- function(results, params_to_estimate, out_dir, suffix = NULL, sigfig = 3) {
+  # Helper to build filenames with optional suffix
+  suffix_str <- if (!is.null(suffix)) paste0("_", suffix) else ""
+
+  # ---- Estimated Parameters ----
   post_samples <- results$coda_pars[, params_to_estimate, drop = FALSE]
 
   est_summary <- apply(post_samples, 2, function(x) {
@@ -330,13 +334,14 @@ export_param_table_tex <- function(results, params_to_estimate, out_dir, sigfig 
     row.names = NULL
   )
 
-  est_out_path <- file.path(out_dir, "estimated_params.tex")
+  est_out_path <- file.path(out_dir, paste0("estimated_params", suffix_str, ".tex"))
   print(
-    xtable::xtable(est_df, caption = "Estimated Parameters with 95\\% Credible Intervals", label = "tab:estimated_params"),
+    xtable::xtable(est_df, caption = "Estimated Parameters with 95\\% Credible Intervals",
+                   label = paste0("tab:estimated_params", suffix_str)),
     file = est_out_path, include.rownames = FALSE
   )
 
-  # ---- Fixed Parameters (from inputs not in estimated list) ----
+  # ---- Fixed Parameters ----
   param_inputs <- results$param_inputs
   param_scalar <- param_inputs[sapply(param_inputs, function(x) is.numeric(x) && length(x) == 1)]
   fixed_params <- param_scalar[!names(param_scalar) %in% params_to_estimate]
@@ -347,13 +352,15 @@ export_param_table_tex <- function(results, params_to_estimate, out_dir, sigfig 
       Value = signif(unlist(fixed_params), sigfig),
       row.names = NULL
     )
-    fix_out_path <- file.path(out_dir, "fixed_params.tex")
+    fix_out_path <- file.path(out_dir, paste0("fixed_params", suffix_str, ".tex"))
     print(
-      xtable::xtable(fix_df, caption = "Fixed Model Parameters", label = "tab:fixed_params"),
+      xtable::xtable(fix_df, caption = "Fixed Model Parameters",
+                     label = paste0("tab:fixed_params", suffix_str)),
       file = fix_out_path, include.rownames = FALSE
     )
   }
 }
+
 
 #' Save LaTeX Table of Scenario Estimates
 #'
@@ -364,6 +371,7 @@ export_param_table_tex <- function(results, params_to_estimate, out_dir, sigfig 
 #' @param file_name Name of the .tex file (default = "scenario_summary.tex").
 #'
 #' @return No return value. Side effect: saves LaTeX file to disk.
+#' @export
 save_scenario_summary_tex <- function(summary_estimates, out_dir, file_name = "scenario_summary.tex") {
   out_path <- file.path(out_dir, file_name)
   latex_tbl <- xtable::xtable(
