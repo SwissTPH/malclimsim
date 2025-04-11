@@ -302,32 +302,76 @@ load_clean_smc_data <- function(path_to_SMC) {
 }
 
 
-#' Export Parameter Tables as LaTeX Files
+#' Export Estimated and Fixed Parameters to LaTeX
 #'
-#' Splits parameters into estimated and fixed, then saves each as a LaTeX .tex table.
+#' Extracts posterior summaries for estimated parameters and writes both estimated
+#' and fixed parameters as LaTeX tables.
 #'
-#' @param param_inputs List of parameter inputs.
-#' @param params_to_estimate Character vector of parameter names to treat as estimated.
+#' @param results A list containing inference results with `coda_pars` and `param_inputs`.
+#' @param params_to_estimate Character vector of parameter names that were inferred.
 #' @param out_dir Directory to save the LaTeX files.
-#' @param sigfig Number of significant figures to round to.
+#' @param sigfig Number of significant figures to use (default = 3).
 #'
-#' @return No return value. Side effect: two .tex files saved.
+#' @return No return value; writes LaTeX tables to disk.
 #' @export
-export_param_table_tex <- function(param_inputs, params_to_estimate, out_dir, sigfig = 3) {
+export_param_table_tex <- function(results, params_to_estimate, out_dir, sigfig = 3) {
+  # ---- Estimated Parameters (from MCMC samples) ----
+  post_samples <- results$coda_pars[, params_to_estimate, drop = FALSE]
+
+  est_summary <- apply(post_samples, 2, function(x) {
+    quantile(x, probs = c(0.025, 0.5, 0.975), na.rm = TRUE)
+  })
+
+  est_df <- data.frame(
+    Parameter = colnames(est_summary),
+    `Lower 2.5%` = signif(est_summary[1, ], sigfig),
+    Median = signif(est_summary[2, ], sigfig),
+    `Upper 97.5%` = signif(est_summary[3, ], sigfig),
+    row.names = NULL
+  )
+
+  est_out_path <- file.path(out_dir, "estimated_params.tex")
+  print(
+    xtable::xtable(est_df, caption = "Estimated Parameters with 95\\% Credible Intervals", label = "tab:estimated_params"),
+    file = est_out_path, include.rownames = FALSE
+  )
+
+  # ---- Fixed Parameters (from inputs not in estimated list) ----
+  param_inputs <- results$param_inputs
   param_scalar <- param_inputs[sapply(param_inputs, function(x) is.numeric(x) && length(x) == 1)]
+  fixed_params <- param_scalar[!names(param_scalar) %in% params_to_estimate]
 
-  est <- param_scalar[names(param_scalar) %in% params_to_estimate]
-  fix <- param_scalar[!names(param_scalar) %in% params_to_estimate]
-
-  write_param_table <- function(data, name) {
-    df <- data.frame(Parameter = names(data), Value = signif(unlist(data), sigfig), row.names = NULL)
-    out_path <- file.path(out_dir, paste0(name, ".tex"))
-    print(xtable::xtable(df, caption = paste(name, "Parameters"), label = paste0("tab:", name)),
-          file = out_path, include.rownames = FALSE)
+  if (length(fixed_params) > 0) {
+    fix_df <- data.frame(
+      Parameter = names(fixed_params),
+      Value = signif(unlist(fixed_params), sigfig),
+      row.names = NULL
+    )
+    fix_out_path <- file.path(out_dir, "fixed_params.tex")
+    print(
+      xtable::xtable(fix_df, caption = "Fixed Model Parameters", label = "tab:fixed_params"),
+      file = fix_out_path, include.rownames = FALSE
+    )
   }
+}
 
-  write_param_table(est, "estimated_params")
-  write_param_table(fix, "fixed_params")
+#' Save LaTeX Table of Scenario Estimates
+#'
+#' Writes a LaTeX-formatted table summarizing scenario estimates to file.
+#'
+#' @param summary_estimates A data frame with columns: Scenario, Lower_2.5, Median, Upper_97.5.
+#' @param out_dir Directory to save the LaTeX file.
+#' @param file_name Name of the .tex file (default = "scenario_summary.tex").
+#'
+#' @return No return value. Side effect: saves LaTeX file to disk.
+save_scenario_summary_tex <- function(summary_estimates, out_dir, file_name = "scenario_summary.tex") {
+  out_path <- file.path(out_dir, file_name)
+  latex_tbl <- xtable::xtable(
+    summary_estimates,
+    caption = "Estimated Cases Averted per Scenario (95\\% CrI)",
+    label = "tab:scenario_summary"
+  )
+  print(latex_tbl, file = out_path, include.rownames = FALSE)
 }
 
 #' Save ggplot with Dynamic Filename

@@ -24,27 +24,6 @@ evaluate_multiple_scenarios(
   month = FALSE,
   apply_decay = TRUE
 )
-
-evaluate_multiple_scenarios(
-  patterns,
-  smc_day_of_month = 1,
-  model,
-  param_inputs,
-  param_samples,
-  start_date,
-  end_date,
-  avg_cov,
-  years,
-  exclude_years = 2023,
-  mu_transform_C = NULL,
-  mu_transform_A = NULL,
-  outcome_fn = function(y1, y0) sum(y1$inc_C_transformed),
-  o1 = NULL,
-  ci_level = 0.95,
-  out_dir = NULL,
-  month = FALSE,
-  apply_decay = TRUE
-)
 }
 \arguments{
 \item{patterns}{A named list of 12-element binary vectors representing monthly SMC coverage patterns.}
@@ -90,16 +69,7 @@ A list with three elements:
 \item{summaries}{A named list of time series summaries for each scenario.}
 \item{estimates}{A named list of scalar outcome estimates for each scenario.}
 }
-
-A list with three elements:
-\describe{
-\item{outputs}{A named list of lists with estimates, plots, and summaries for each scenario.}
-\item{summaries}{A named list of time series summaries for each scenario.}
-\item{estimates}{A named list of scalar outcome estimates for each scenario.}
-}
 }
 \description{
-Runs model simulations for a list of SMC coverage patterns and summarizes outcomes.
-
 Runs model simulations for a list of SMC coverage patterns and summarizes outcomes.
 }
