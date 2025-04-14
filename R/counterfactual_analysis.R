@@ -300,6 +300,7 @@ plot_estimate_distribution <- function(estimates,
 #' @param out_dir Directory to save plots (optional).
 #' @param month Logical. Whether to summarize and simulate using weekly data. Default is FALSE.
 #' @param apply_decay Logical. Whether to apply decay to SMC coverage. Default is TRUE.
+#' @param use_SMC_as_covariate Logical. Whether or not SMC is included in the model or as a covariate in the observation model.
 #'
 #' @return A list with three elements:
 #' \describe{
@@ -325,7 +326,8 @@ evaluate_multiple_scenarios <- function(patterns,
                                         ci_level = 0.95,
                                         out_dir = NULL,
                                         month = FALSE,
-                                        apply_decay = TRUE) {
+                                        apply_decay = TRUE,
+                                        use_SMC_as_covariate = FALSE) {
 
   outputs <- list()
   summaries <- list()
@@ -340,27 +342,49 @@ evaluate_multiple_scenarios <- function(patterns,
                                      months_active = months_active, coverage = avg_cov,
                                      smc_day_of_month = smc_day_of_month)
 
-    if (apply_decay) {
-      smc_schedule$cov <- smc_schedule$cov * smc_schedule$decay
+    if(use_SMC_as_covariate){
+      if (apply_decay) {
+        smc_schedule$cov <- smc_schedule$cov * smc_schedule$decay
+      }
+
+      if (month) {
+        smc_summary <- calculate_monthly_metrics(smc_schedule, exclude_years = exclude_years)
+      } else {
+        smc_summary <- calculate_weekly_metrics(smc_schedule, exclude_years = exclude_years)
+      }
+
+
+
+      covariate_matrix <- data.frame(
+        date_ymd = as.Date(smc_summary$date_ymd),
+        cov_SMC = smc_summary$cov
+      )
+
+      # Custom daily rates
+      r_df <- get_population_scaling(n = nrow(covariate_matrix), month = month,
+                                     growth_rate_C = 1.000071,
+                                     growth_rate_A = 1.000092)
+      # Apply population growth
+      covariate_matrix$r_C <- r_df$r_C
+
+    }else{
+      n_weeks <- length(seq(min(smc_schedule$dates), max(smc_schedule$dates), by = "week"))
+      r_df <- get_population_scaling(n = n_weeks, month = month,
+                                     growth_rate_C = 1.000071,
+                                     growth_rate_A = 1.000092)
+
+      covariate_matrix <- data.frame(date_ymd = obs_cases$date_ymd,
+                                     r_C = r_df$r_C)
+
+
+      param_inputs$SMC <- smc_schedule$SMC
+      param_inputs$decay <- smc_schedule$decay
+      param_inputs$cov_SMC <- smc_schedule$cov
+
+      if (!apply_decay) {
+        param_inputs$decay <- rep(1, length((param_inputs$decay)))
+      }
     }
-
-    if (month) {
-      smc_summary <- calculate_monthly_metrics(smc_schedule, exclude_years = exclude_years)
-    } else {
-      smc_summary <- calculate_weekly_metrics(smc_schedule, exclude_years = exclude_years)
-    }
-
-    covariate_matrix <- data.frame(
-      date_ymd = as.Date(smc_summary$date_ymd),
-      cov_SMC = smc_summary$cov
-    )
-
-    # Custom daily rates
-    r_df <- get_population_scaling(n = nrow(covariate_matrix), month = month,
-                                   growth_rate_C = 1.000071,
-                                   growth_rate_A = 1.000092)
-    # Apply population growth
-    covariate_matrix$r_C <- r_df$r_C
 
     sims <- run_simulations_from_samples(
       model = model,

@@ -22,7 +22,7 @@ update(SMC_effect_2) <- decay[time] * eff_SMC * cov_SMC[time]
 w1 <- user(0) # Gives some SMC to adults
 w2 <- user(0) # Controls removal effect
 #SMC_effect_A <- w1 * SMC_effect
-SMC_removal <- if (SMC[time] == 1) w2 else 0
+SMC_removal <- if (SMC[time] == 1) w2 * SMC_effect else 0
 SMC_removal_A <- w1 * SMC_removal
 #SMC_removal <- user(0)
 
