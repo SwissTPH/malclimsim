@@ -22,7 +22,9 @@ evaluate_multiple_scenarios(
   ci_level = 0.95,
   out_dir = NULL,
   month = FALSE,
-  apply_decay = TRUE
+  apply_decay = TRUE,
+  use_SMC_as_covariate = FALSE,
+  noise = FALSE
 )
 }
 \arguments{
@@ -61,6 +63,8 @@ evaluate_multiple_scenarios(
 \item{month}{Logical. Whether to summarize and simulate using weekly data. Default is FALSE.}
 
 \item{apply_decay}{Logical. Whether to apply decay to SMC coverage. Default is TRUE.}
+
+\item{use_SMC_as_covariate}{Logical. Whether or not SMC is included in the model or as a covariate in the observation model.}
 }
 \value{
 A list with three elements:

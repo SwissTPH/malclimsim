@@ -327,7 +327,8 @@ evaluate_multiple_scenarios <- function(patterns,
                                         out_dir = NULL,
                                         month = FALSE,
                                         apply_decay = TRUE,
-                                        use_SMC_as_covariate = FALSE) {
+                                        use_SMC_as_covariate = FALSE,
+                                        noise = FALSE) {
 
   outputs <- list()
   summaries <- list()
@@ -396,7 +397,8 @@ evaluate_multiple_scenarios <- function(patterns,
       mu_transform_C = mu_transform_C,
       mu_transform_A = mu_transform_A,
       covariate_matrix = covariate_matrix,
-      month = month
+      month = month,
+      noise = noise
     )
 
     est <- calculate_estimate(o1 = o1, o2 = sims, outcome_fn = outcome_fn)

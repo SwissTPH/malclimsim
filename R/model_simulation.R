@@ -190,6 +190,7 @@ sim_mod <- function(odin_mod, pars, time_start, n_particles, sim_time){
 #' @param mu_transform_A Optional function to transform adult incidence after simulation.
 #' @param mu_transform_C Optional function to transform child incidence after simulation.
 #' @param covariate_matrix Optional data frame of covariates to merge by date.
+#' @param noise Logical. If `TRUE`, each simulated value is a draw from a negative binomial distribution.
 #'
 #' @return A data frame with date, group-specific incidence (and optional transformed incidence).
 #' @export
@@ -202,7 +203,8 @@ sim_mod <- function(odin_mod, pars, time_start, n_particles, sim_time){
 data_sim <- function(model, param_inputs, start_date, end_date,
                      prewarm_years = 2, month = FALSE, round = TRUE, save = TRUE, file = "",
                      month_unequal_days = FALSE, return_EIR = FALSE, return_compartments = FALSE,
-                     mu_transform_A = NULL, mu_transform_C = NULL, covariate_matrix = NULL) {
+                     mu_transform_A = NULL, mu_transform_C = NULL, covariate_matrix = NULL,
+                     noise = FALSE, size = NULL) {
 
   # Extend time-varying parameters back by prewarm_years
   param_inputs <- extend_time_varying_inputs(param_inputs, days_per_year = 360,
@@ -256,6 +258,12 @@ data_sim <- function(model, param_inputs, start_date, end_date,
     n <- min(length(dates), length(inc_A), length(inc_C))
     week_no <- 0:(n - 1)
 
+    if(noise){
+      inc_C <- rnbinom(length(inc_C), size = size, mu = inc_C)
+      inc_A <- rnbinom(length(inc_A), size = size, mu = inc_A)
+
+    }
+
     if (return_EIR) {
       EIR <- x[mod$info()$index$EIR_monthly,,][week_ind][1:n]
       inc_df <- data.frame(date_ymd = dates[1:n], week_no, inc_A = inc_A[1:n], inc_C = inc_C[1:n],
@@ -279,7 +287,6 @@ data_sim <- function(model, param_inputs, start_date, end_date,
   if (!is.null(mu_transform_C)) {
     inc_df$inc_C_transformed <- mu_transform_C(inc_df, param_inputs)
   }
-
   # Recalculate total incidence (still untransformed)
   inc_df$inc <- inc_df$inc_A + inc_df$inc_C
 
@@ -290,6 +297,7 @@ data_sim <- function(model, param_inputs, start_date, end_date,
   # Trim prewarm period
   date_col <- if ("date_ymd" %in% names(inc_df)) "date_ymd" else "week"
   inc_df <- inc_df[inc_df[[date_col]] >= as.Date(start_date) & inc_df[[date_col]] <= as.Date(end_date), ]
+
 
   if (save) {
     saveRDS(inc_df, paste0(dir, file))
@@ -880,7 +888,8 @@ sample_mcmc_steps <- function(mcmc_results, num_samples) {
 #' @param param_samples Sampled parameter matrix.
 #' @param start_date, end_date Simulation date range.
 #' @param prewarm_years Years of prewarming.
-#' @param days_per_year Days in simulation year.
+#' @param days_per_year Days in simulation year
+#' @param noise Logical. If `TRUE`, each simulated value is a draw from a negative binomial distribution..
 #' @return List of simulation data frames.
 #' @export
 run_simulations_from_samples <- function(model, param_inputs, param_samples,
@@ -889,13 +898,15 @@ run_simulations_from_samples <- function(model, param_inputs, param_samples,
                                          mu_transform_C = NULL,
                                          mu_transform_A = NULL,
                                          covariate_matrix = NULL,
-                                         month = TRUE) {
+                                         month = TRUE,
+                                         noise = FALSE) {
   lapply(1:nrow(param_samples), function(i) {
     updated_inputs <- update_param_list(param_inputs, as.list(param_samples[i, ]))
+    size = updated_inputs$size_1
     #compartments_sim(model, updated_inputs, start_date, end_date, prewarm_years, days_per_year)
     data_sim(model, updated_inputs, as.Date(start_date), as.Date(end_date), prewarm_years = 2, save = FALSE,
              mu_transform_C = mu_transform_C, mu_transform_A = mu_transform_A, month = month,
-             covariate_matrix = covariate_matrix)
+             covariate_matrix = covariate_matrix, noise = noise, size = size)
   })
 }
 

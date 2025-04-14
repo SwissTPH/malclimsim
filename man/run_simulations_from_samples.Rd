@@ -14,7 +14,8 @@ run_simulations_from_samples(
   mu_transform_C = NULL,
   mu_transform_A = NULL,
   covariate_matrix = NULL,
-  month = TRUE
+  month = TRUE,
+  noise = FALSE
 )
 }
 \arguments{
@@ -28,7 +29,9 @@ run_simulations_from_samples(
 
 \item{prewarm_years}{Years of prewarming.}
 
-\item{days_per_year}{Days in simulation year.}
+\item{noise}{Logical. If \code{TRUE}, each simulated value is a draw from a negative binomial distribution..}
+
+\item{days_per_year}{Days in simulation year}
 }
 \value{
 List of simulation data frames.

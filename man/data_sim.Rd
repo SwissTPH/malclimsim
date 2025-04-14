@@ -19,7 +19,9 @@ data_sim(
   return_compartments = FALSE,
   mu_transform_A = NULL,
   mu_transform_C = NULL,
-  covariate_matrix = NULL
+  covariate_matrix = NULL,
+  noise = FALSE,
+  size = NULL
 )
 }
 \arguments{
@@ -52,6 +54,8 @@ data_sim(
 \item{mu_transform_C}{Optional function to transform child incidence after simulation.}
 
 \item{covariate_matrix}{Optional data frame of covariates to merge by date.}
+
+\item{noise}{Logical. If \code{TRUE}, each simulated value is a draw from a negative binomial distribution.}
 }
 \value{
 A data frame with date, group-specific incidence (and optional transformed incidence).
