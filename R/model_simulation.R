@@ -263,7 +263,7 @@ data_sim <- function(model, param_inputs, start_date, end_date,
   if(noise){
     inc_C <- rnbinom(length(inc_C), size = size, mu = inc_C)
     inc_A <- rnbinom(length(inc_A), size = size, mu = inc_A)
-
+  }
 
     if (return_EIR) {
       EIR <- x[mod$info()$index$EIR_monthly,,][week_ind][1:n]
@@ -273,7 +273,6 @@ data_sim <- function(model, param_inputs, start_date, end_date,
       inc_df <- data.frame(date_ymd = dates[1:n], week_no, inc_A = inc_A[1:n], inc_C = inc_C[1:n],
                            inc = inc_A[1:n] + inc_C[1:n])
     }
-  }
 
   # --- Optional Covariate Merge ---
   if (!is.null(covariate_matrix)) {
