@@ -213,13 +213,25 @@ calculate_eff_smc_confidence_intervals <- function(results, param_inputs, model,
 #' @return Numeric vector of outcomes (e.g., effectiveness or cases averted) for each parameter set.
 #' @export
 calculate_estimate <- function(o1, o2, outcome_fn) {
-  if(!(is.null(o1) | is.null(o2))){
+  if (!(is.null(o1) || is.null(o2))) {
     if (length(o1) != length(o2)) stop("Lists must be of equal length.")
   }
 
-  vapply(seq_along(o1), function(i) {
-    outcome_fn(o1[[i]], o2[[i]])
+  estimates <- vapply(seq_along(o1), function(i) {
+    result <- tryCatch({
+      val <- outcome_fn(o1[[i]], o2[[i]])
+      if (is.na(val) || is.nan(val)) {
+        warning(sprintf("NA or NaN in outcome for simulation %d", i))
+      }
+      val
+    }, error = function(e) {
+      warning(sprintf("Error in outcome_fn for simulation %d: %s", i, e$message))
+      NA_real_
+    })
+    result
   }, numeric(1))
+
+  return(estimates)
 }
 
 
@@ -242,12 +254,12 @@ plot_estimate_distribution <- function(estimates,
 
   # Central estimates
   median_est <- median(estimates)
-  lower_ci <- quantile(estimates, probs = (1 - ci_level) / 2)
-  upper_ci <- quantile(estimates, probs = 1 - (1 - ci_level) / 2)
+  lower_ci <- quantile(estimates, probs = (1 - ci_level) / 2, na.rm = TRUE)
+  upper_ci <- quantile(estimates, probs = 1 - (1 - ci_level) / 2, na.rm = TRUE)
 
   # Axis trimming (0.25% to 99.75%)
-  x_min <- quantile(estimates, 0.0025)
-  x_max <- quantile(estimates, 0.9975)
+  x_min <- quantile(estimates, 0.0025, na.rm = TRUE)
+  x_max <- quantile(estimates, 0.9975, na.rm = TRUE)
 
   ggplot(df, aes(x = estimate)) +
     geom_histogram(aes(y = ..density..), bins = bins, fill = "#2C3E50", alpha = 0.85, color = "white") +
