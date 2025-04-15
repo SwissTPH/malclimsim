@@ -258,11 +258,12 @@ data_sim <- function(model, param_inputs, start_date, end_date,
     n <- min(length(dates), length(inc_A), length(inc_C))
     week_no <- 0:(n - 1)
 
-    if(noise){
-      inc_C <- rnbinom(length(inc_C), size = size, mu = inc_C)
-      inc_A <- rnbinom(length(inc_A), size = size, mu = inc_A)
+  }
 
-    }
+  if(noise){
+    inc_C <- rnbinom(length(inc_C), size = size, mu = inc_C)
+    inc_A <- rnbinom(length(inc_A), size = size, mu = inc_A)
+
 
     if (return_EIR) {
       EIR <- x[mod$info()$index$EIR_monthly,,][week_ind][1:n]
