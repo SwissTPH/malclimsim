@@ -255,6 +255,8 @@ dim(cov_SMC) <- user()
 
 ## Initial conditions - user defined, defaults in parenthesis
 N <- user()
+s <- user()
+
 N_pop <- N
 percAdult <- user()
 percChild <- 1 - percAdult

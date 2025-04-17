@@ -351,7 +351,7 @@ evaluate_multiple_scenarios <- function(patterns,
     n_years <- (lubridate::year(end_date) + 1) - lubridate::year(start_date)
     months_active <- matrix(rep(month_pattern, n_years + 1), nrow = n_years + 1, byrow = TRUE)
 
-    smc_schedule <- gen_smc_schedule(start_date, end_date, years = years,
+    smc_schedule <- gen_smc_schedule(start_date, end_date, years = years, months_30_days = TRUE,
                                      months_active = months_active, coverage = avg_cov,
                                      smc_day_of_month = smc_day_of_month)
 

@@ -2,82 +2,158 @@
 % Please edit documentation in R/model_visualizations.R
 \name{plot_time_series}
 \alias{plot_time_series}
-\title{Plot Time Series Data of Malaria Incidence and Climate Variables}
+\title{#' Plot Time Series Data of Malaria Incidence and Climate Variables
+#'
+#' This function creates time series plots for malaria incidence and climate data,
+#' with options to customize which incidence types (under 5 years, 5 years and older,
+#' or total) and climate variables (temperature or rolling mean) are displayed.
+#' The user can also choose to facet the plots or overlay them for better visualization.
+#'
+#' @param results A data frame containing malaria incidence data with columns for
+#'                date (\code{date_ymd}), and incidence counts for different age groups (e.g.,
+#'                \code{inc_A}, \code{inc_C}, \code{inc} for \verb{<5}, \verb{>=5}, and \code{total} respectively).
+#' @param met A data frame containing climate data with columns for date (\code{date}),
+#'            rainfall, temperature, and other relevant climate variables.
+#'            The date column in this data must match the date format used in \code{results}.
+#' @param plot_title A string for the title of the plot. Default is "Time Series Data".
+#' @param incidence_y_label A string for the y-axis label of the incidence plot.
+#'                           Default is "Monthly Malaria Cases".
+#' @param climate_y_label A string for the y-axis label of the climate data plot.
+#'                        Default is "Temperature (°C)".
+#' @param climate_facet A boolean value indicating whether to facet the plots
+#'                      (separate plots for incidence and climate data) or not.
+#'                      Default is \code{FALSE} (plots will be overlaid).
+#' @param select_incidence A vector of incidence types to include in the plot.
+#'                         Options are \code{">=5"}, \code{"<5"}, and \code{"total"}. Default is all three.
+#' @param select_climate A vector of climate variables to include in the plot.
+#'                       Options are \code{"temp"} (temperature) and \code{"rollrain"} (rolling mean).
+#'                       Default is both \code{"temp"} and \code{"rollrain"}.
+#' @param incidence_colors A named vector of colors for the selected incidence types.
+#'                         Default is \code{">=5" = "blue"}, \code{"<5" = "red"}, \code{"total" = "green"}.
+#' @param climate_colors A named vector of colors for the selected climate variables.
+#'                       Default is \code{"temp" = "orange"}, \code{"rollrain" = "purple"}.
+#' @param climate_alpha A numeric value controlling the transparency of the climate data
+#'                      lines. Default is 0.7 (semi-transparent).
+#' @param base_size A numeric value controlling the base font size of the plot.
+#'                  Default is 15.
+#'
+#' @return A ggplot object containing the time series plot(s) of malaria incidence and climate data.
+#' @export
+#'
+#' @examples
+#' # Example 1: Plotting only the total incidence of malaria
+#' plot_time_series(results = results, plot_title = "Total Malaria Incidence", select_incidence = "total")
+#'
+#' # Example 2: Plotting malaria incidence and climate data (temperature only)
+#' plot_time_series(results = results, met = met, plot_title = "Malaria and Temperature",
+#'                  select_incidence = c(">=5", "<5"), select_climate = "temp")
+#'
+#' # Example 3: Plotting both incidence and climate data with faceting
+#' plot_time_series(results = results, met = met, plot_title = "Malaria and Climate Data",
+#'                  select_incidence = "total", select_climate = c("temp", "rollrain"),
+#'                  climate_facet = TRUE)}
 \usage{
 plot_time_series(
   results,
   met = NULL,
-  plot_title = "Time Series Data",
-  incidence_y_label = "Monthly Malaria Cases",
-  climate_y_label = "Temperature (°C)",
+  plot_title = "Malaria Incidence Time Series",
+  incidence_y_label = "Malaria Incidence",
+  climate_y_label = "Climate",
   climate_facet = FALSE,
   select_incidence = c(">=5", "<5", "total"),
   select_climate = c("temp", "cumrain"),
-  incidence_colors = c(`>=5` = "blue", `<5` = "red", total = "green"),
+  incidence_colors = c(`>=5` = "blue", `<5` = "red", total = "green", `transformed_>=5` =
+    "skyblue", `transformed_<5` = "orange", transformed_total = "darkgreen"),
   climate_colors = c(temp = "orange", cumrain = "purple"),
   climate_alpha = 0.7,
   base_size = 15
 )
 }
 \arguments{
-\item{results}{A data frame containing malaria incidence data with columns for
-date (\code{date_ymd}), and incidence counts for different age groups (e.g.,
-\code{inc_A}, \code{inc_C}, \code{inc} for \verb{<5}, \verb{>=5}, and \code{total} respectively).}
+\item{results}{A data frame from \code{data_sim()} containing columns like inc_C, inc_A,
+inc_C_transformed, inc_A_transformed, and date_ymd.}
 
-\item{met}{A data frame containing climate data with columns for date (\code{date}),
-rainfall, temperature, and other relevant climate variables.
-The date column in this data must match the date format used in \code{results}.}
+\item{met}{Optional data frame of climate covariates.}
 
-\item{plot_title}{A string for the title of the plot. Default is "Time Series Data".}
+\item{plot_title}{Title of the plot.}
 
-\item{incidence_y_label}{A string for the y-axis label of the incidence plot.
-Default is "Monthly Malaria Cases".}
+\item{incidence_y_label}{Y-axis label for incidence.}
 
-\item{climate_y_label}{A string for the y-axis label of the climate data plot.
-Default is "Temperature (°C)".}
+\item{climate_y_label}{Y-axis label for climate plot.}
 
-\item{climate_facet}{A boolean value indicating whether to facet the plots
-(separate plots for incidence and climate data) or not.
-Default is \code{FALSE} (plots will be overlaid).}
+\item{climate_facet}{Whether to facet incidence and climate plots.}
 
-\item{select_incidence}{A vector of incidence types to include in the plot.
-Options are \code{">=5"}, \code{"<5"}, and \code{"total"}. Default is all three.}
+\item{select_incidence}{Vector of incidence types to include. Options:
+\code{"<5"}, \code{">=5"}, \code{"total"}, \code{"transformed_<5"}, \code{"transformed_>=5"}, \code{"transformed_total"}.}
 
-\item{select_climate}{A vector of climate variables to include in the plot.
-Options are \code{"temp"} (temperature) and \code{"rollrain"} (rolling mean).
-Default is both \code{"temp"} and \code{"rollrain"}.}
+\item{select_climate}{Climate vars to include (e.g., \code{"temp"}, \code{"cumrain"}).}
 
-\item{incidence_colors}{A named vector of colors for the selected incidence types.
-Default is \code{">=5" = "blue"}, \code{"<5" = "red"}, \code{"total" = "green"}.}
+\item{incidence_colors}{Named vector of colors for incidence types.}
 
-\item{climate_colors}{A named vector of colors for the selected climate variables.
-Default is \code{"temp" = "orange"}, \code{"rollrain" = "purple"}.}
+\item{climate_colors}{Named vector of colors for climate vars.}
 
-\item{climate_alpha}{A numeric value controlling the transparency of the climate data
-lines. Default is 0.7 (semi-transparent).}
+\item{climate_alpha}{Transparency for climate lines.}
 
-\item{base_size}{A numeric value controlling the base font size of the plot.
-Default is 15.}
+\item{base_size}{Base font size.}
 }
 \value{
-A ggplot object containing the time series plot(s) of malaria incidence and climate data.
+A ggplot or grid of ggplots
 }
 \description{
-This function creates time series plots for malaria incidence and climate data,
-with options to customize which incidence types (under 5 years, 5 years and older,
-or total) and climate variables (temperature or rolling mean) are displayed.
-The user can also choose to facet the plots or overlay them for better visualization.
-}
-\examples{
-# Example 1: Plotting only the total incidence of malaria
-plot_time_series(results = results, plot_title = "Total Malaria Incidence", select_incidence = "total")
 
-# Example 2: Plotting malaria incidence and climate data (temperature only)
-plot_time_series(results = results, met = met, plot_title = "Malaria and Temperature",
-                 select_incidence = c(">=5", "<5"), select_climate = "temp")
-
-# Example 3: Plotting both incidence and climate data with faceting
-plot_time_series(results = results, met = met, plot_title = "Malaria and Climate Data",
-                 select_incidence = "total", select_climate = c("temp", "rollrain"),
-                 climate_facet = TRUE)
 }
+\section{Prepare the malaria data (assumed to be monthly)}{
+
+}
+
+\section{Reshape the malaria incidence data into a long format, so that each row represents}{
+
+}
+
+\section{a date and an incidence type, and we can easily filter the desired types.}{
+results_long <- results \%>\%
+select(date_ymd, inc_A, inc_C, inc) \%>\%
+pivot_longer(cols = c(inc_A, inc_C, inc),
+names_to = "Type",   # Create a column 'Type' for age group types
+values_to = "Incidence") \%>\%
+mutate(Type = recode(Type, inc_A = ">=5", inc_C = "<5", inc = "total")) \%>\%
+filter(Type \%in\% select_incidence)  # Filter based on the selected incidence types
+}
+
+\section{Prepare the climate data, if provided}{
+if (!is.null(met)) {
+# Ensure \code{met} data's \code{zoo} columns are converted to numeric for plotting
+met <- met \%>\%
+mutate(
+cumrain = as.numeric(cumrain),  # Convert rollrain to numeric
+anom = as.numeric(anom),          # Convert anomaly to numeric (if necessary)
+dates = as.Date(date)  # Convert date to proper format for merging
+)
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{# Filter the climate data to match the dates from `results` and the selected variables
+met_monthly <- met \%>\%
+  filter(dates \%in\% results$date_ymd) \%>\%
+  select(dates, all_of(select_climate)) \%>\%
+  pivot_longer(cols = all_of(select_climate),
+               names_to = "Climate_Var",  # Create a column 'Climate_Var' for climate types
+               values_to = "Value")  # Column for climate values
+}\if{html}{\out{</div>}}
+
+}
+}
+
+\section{Plot the malaria incidence data}{
+p_incidence <- ggplot(data = results_long, aes(x = date_ymd, y = Incidence, color = Type)) +
+geom_line(size = 1.2) +  # Create the line plot for incidence
+scale_color_manual(values = incidence_colors) +  # Custom colors for incidence types
+labs(title = plot_title, x = NULL, y = incidence_y_label, color = "Incidence Type") +
+theme_minimal(base_size = base_size) +  # Set the minimal theme with custom base size
+theme(axis.text.x = element_text(angle = 45, hjust = 1),  # Rotate x-axis labels
+plot.title = element_text(hjust = 0.5)) +  # Center the title
+scale_x_date(date_breaks = "6 months", date_labels = "\%b \%Y")  # Format x-axis as dates with 6-month breaks
+}
+
+\section{Plot the climate data if provided}{
+
+}
+

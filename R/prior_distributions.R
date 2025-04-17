@@ -46,7 +46,7 @@ return_default_priors <- function(){
     phi_A = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dbeta(p, 40, 12, log = TRUE)),
     mu_TS = list(initial = 0.2, min = 0, max = 2, prior = function(p) dunif(p, min = 0, max = 2, log = TRUE)),
     mu_IR = list(initial = 1/5, min = 0.001, max = 1, prior = function(p) dunif(p, min = 0.001, max = 1, log = TRUE)),
-    fT_C = list(initial = 0.27, min = 0.001, max = 3, prior = function(p) dunif(p, min = 0.001, max = 3, log = TRUE)),
+    fT_C = list(initial = 0.27, min = 0.001, max = 1, prior = function(p) dunif(p, min = 0.001, max = 1, log = TRUE)),
     #s_1 = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dunif(p, min = 0.01, max = 1, log = TRUE)),
     s_1 = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dnorm(p, mean = 0.875, sd = 0.05, log = TRUE)),
     #c_s = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dunif(p, min = 0.01, max = 1, log = TRUE)),
