@@ -25,7 +25,6 @@ date_to_weeks <- function(start_date, end_date) {
 }
 
 
-
 #' Convert Date Range to Monthly Format
 #'
 #' This function takes a start date and an end date, and converts the range into a vector of the first day
@@ -445,5 +444,142 @@ get_population_scaling <- function(n,
     r_C = r_C,
     r_A = r_A
   )
+}
+
+#' Extend Time-Varying Inputs to Match Simulation Duration
+#'
+#' Ensures that all relevant time-varying parameters (e.g., temperature, SMC coverage)
+#' are extended to match the required number of simulation days by prepending repeated
+#' values from the first year of data.
+#'
+#' @param param_inputs A named list of model input vectors. Some entries should be time-varying inputs.
+#' @param days_needed Integer specifying the total number of days required for simulation (e.g., `n_days`).
+#' @param days_per_year Integer number of days per model year (default is 360).
+#'
+#' @return A list of parameter inputs where time-varying entries have been extended (and trimmed) to exactly `days_needed` days.
+#'
+#' @details
+#' The following keys are treated as time-varying: `"cov_SMC"`, `"SMC"`, `"decay"`, `"c_R_D"`, `"temp"`.
+#' These are extended by repeatedly prepending the first year of values until the total length is sufficient.
+#' Non-time-varying keys are returned unchanged.
+#'
+#' @examples
+#' inputs <- list(temp = rep(25, 360), constant = 0.1)
+#' extended <- extend_time_varying_inputs_to_length(inputs, days_needed = 720)
+#' length(extended$temp)  # should be 720
+#'
+#' @export
+extend_time_varying_inputs_to_length <- function(param_inputs, days_needed, days_per_year = 360) {
+  time_varying_keys <- c("cov_SMC", "SMC", "decay", "c_R_D", "temp")
+  extended_inputs <- list()
+
+  for (key in names(param_inputs)) {
+    x <- param_inputs[[key]]
+    if (key %in% time_varying_keys) {
+      # Extract first year of data
+      first_year <- head(x, days_per_year)
+      # Repeat until we reach at least days_needed
+      while (length(x) < days_needed) {
+        x <- c(first_year, x)
+      }
+      # Trim to exact length
+      extended_inputs[[key]] <- x[1:days_needed]
+    } else {
+      extended_inputs[[key]] <- x
+    }
+  }
+
+  return(extended_inputs)
+}
+
+
+#' Prepend Prewarm Climate to Your True Analysis Series
+#'
+#' Takes your genuine, day‑1–to‑day‑N climate vectors (temp, rain, etc.)
+#' and builds a single vector of length prewarm_years*360 + analysis_days,
+#' where the first prewarm_years*360 days are just repeats of the first
+#' 360 days of your real series, and the last analysis_days days are the
+#' real data you passed in.
+#'
+#' @param param_inputs Named list of inputs, where time‑varying elements
+#'   include "cov_SMC", "SMC", "decay", "c_R_D", "temp".
+#'   Each of those should be a numeric vector of length = raw_analysis_days.
+#' @param start_date Date at which your real series begins (e.g. "2018-01-01").
+#' @param end_date   Date at which your real series ends   (e.g. "2023-12-31").
+#' @param prewarm_years Integer number of 360‑day years to prepend.
+#' @param days_per_year Number of days per model year (default: 360).
+#'
+#' @return A list like `param_inputs` but with each time‑varying vector
+#'   extended to length = prewarm_years*360 + floor(analysis_days/7)*7.
+#' @export
+extend_inputs_with_prewarm <- function(param_inputs,
+                                       start_date, end_date,
+                                       prewarm_years,
+                                       days_per_year = 360) {
+  start_date <- as.Date(start_date)
+  end_date   <- as.Date(end_date)
+
+  # how many real days you need?
+  raw_analysis_days <- calculate_360_day_difference(start_date, end_date) + 1
+  analysis_days_use <- floor(raw_analysis_days / 7) * 7
+
+  days_prewarm <- prewarm_years * days_per_year
+  total_days   <- days_prewarm + analysis_days_use
+
+  tv_keys <- c("cov_SMC","SMC","decay","c_R_D","temp")
+  out <- list()
+
+  for (k in names(param_inputs)) {
+    x <- param_inputs[[k]]
+    if (k %in% tv_keys) {
+      if (length(x) < analysis_days_use) {
+        stop(sprintf("Your '%s' vector is only length %d; you need at least %d days of real data.",
+                     k, length(x), analysis_days_use))
+      }
+      real_segment <- x[1:analysis_days_use]
+      baseline     <- real_segment[1:days_per_year]
+      prewarm_seg  <- rep(baseline, length.out = days_prewarm)
+      full_vec     <- c(prewarm_seg, real_segment)
+      out[[k]]     <- full_vec[1:total_days]
+    } else {
+      out[[k]] <- x
+    }
+  }
+
+  return(out)
+}
+
+
+#' Given a start-year and a 360-day offset, return (Year,Mon,Day) in 30‑day months
+#'
+#' @param day_index
+#' @param start_year
+#' @export
+model_date_360 <- function(day_index, start_year) {
+  # day_index: 1..N
+  year_num     <- start_year + (day_index - 1) %/% 360
+  day_in_year  <- ((day_index - 1) %% 360) + 1
+  month_num    <- ((day_in_year - 1) %/% 30) + 1
+  day_in_month <- ((day_in_year - 1) %% 30) + 1
+  data.frame(
+    year  = year_num,
+    month = month_num,
+    day   = day_in_month
+  )
+}
+
+#' Generate weekly model dates (by 7-day blocks) in 360‑day calendar
+#'
+#' @param start_year integer, year of day 1
+#' @param n_days     integer, total days (must be divisible by 7)
+#'
+#' @return A data.frame with one row per week: year, month, day (all numeric)
+#' @export
+date_to_weeks_360 <- function(start_year, n_days) {
+  if (n_days %% 7 != 0) stop("n_days must be multiple of 7")
+  wk_idxs <- seq(1, n_days, by = 7)
+  md      <- model_date_360(wk_idxs, start_year)
+  md$week_no <- seq_along(wk_idxs) - 1
+  md
 }
 

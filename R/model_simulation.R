@@ -3,7 +3,6 @@
 #' Loading an Odin Model
 #'
 #' @param name name of the model written in Odin DSL to be loaded. This is a path to an R file,
-#'
 #' @return the loaded model to be used for simulation, inference, etc
 #' @export
 #'
@@ -167,148 +166,170 @@ sim_mod <- function(odin_mod, pars, time_start, n_particles, sim_time){
   return(list(x, model))
 }
 
-
-#' Simulate Incidence Data from the Model
+#' Simulate Incidence Data Over Time (Monthly or Weekly)
 #'
-#' Runs a deterministic model simulation and returns incidence data aggregated
-#' either monthly or weekly. Allows for a warm-up period prior to the start date,
-#' optional rounding, and optional transformations to incidence values (e.g., to apply
-#' covariate effects used in observation models).
+#' Runs a deterministic dust model simulation with an optional pre‑warm period,
+#' then aggregates and returns incidence (and optional transformed incidence)
+#' at either monthly or weekly resolution.  Weekly output may use a 360‑day or
+#' 365‑day year for the prewarm and simulation period.
 #'
-#' @param model A dust model object used to simulate malaria transmission.
-#' @param param_inputs A named list of model parameter values.
-#' @param start_date Start date of the observation window (character or Date).
-#' @param end_date End date of the observation window (character or Date).
-#' @param prewarm_years Number of years to simulate before `start_date` for warm-up (default = 2).
-#' @param month Logical. If `TRUE`, aggregate and return monthly incidence (default).
-#' @param round Logical. If `TRUE`, round the incidence values to integers (default = TRUE).
-#' @param save Logical. If `TRUE`, save the result as an RDS file.
-#' @param file Character. Filename to use if saving to disk.
-#' @param month_unequal_days Logical. If `TRUE`, aggregate based on actual month boundaries.
-#' @param return_EIR Logical. If `TRUE`, include EIR values in the output.
-#' @param return_compartments Logical. (Currently unused.)
-#' @param mu_transform_A Optional function to transform adult incidence after simulation.
-#' @param mu_transform_C Optional function to transform child incidence after simulation.
-#' @param covariate_matrix Optional data frame of covariates to merge by date.
-#' @param noise Logical. If `TRUE`, each simulated value is a draw from a negative binomial distribution.
+#' @param model A dust model object (as returned by \code{load_model}) to simulate.
+#' @param param_inputs Named list of model parameters, including any time‑varying
+#'   vectors (e.g. \code{temp}, \code{c_R_D}, \code{cov_SMC}).
+#' @param start_date Character or \code{Date} giving the first day of the analysis.
+#' @param end_date   Character or \code{Date} giving the last day of the analysis.
+#' @param prewarm_years Integer number of years (360‑ or 365‑day) to run before
+#'   \code{start_date} as warm‑up.
+#' @param month Logical; if \code{TRUE}, returns monthly aggregates (30‑day or
+#'   unequal month lengths if \code{month_unequal_days = TRUE}); if \code{FALSE},
+#'   returns weekly aggregates.
+#' @param round Logical; if \code{TRUE}, round all incidence counts to integers.
+#' @param save Logical; if \code{TRUE}, save the returned data frame to disk as
+#'   an RDS file.
+#' @param file Character; path/filename to use when saving (if \code{save = TRUE}).
+#' @param month_unequal_days Logical; when \code{month = TRUE}, if \code{TRUE}
+#'   use actual month boundaries from \code{param_inputs\$day_count}, otherwise
+#'   use fixed 30‑day months.
+#' @param return_EIR Logical; if \code{TRUE}, include monthly EIR values.
+#' @param return_compartments Logical; currently unused.
+#' @param mu_transform_A Optional function to transform adult incidence after
+#'   simulation.  Should accept \code{(inc_df, param_inputs)} and return a vector.
+#' @param mu_transform_C Optional function to transform child incidence after
+#'   simulation.  Should accept \code{(inc_df, param_inputs)} and return a vector.
+#' @param covariate_matrix Optional data frame of external covariates (must have
+#'   a date column in the same name/location as \code{date_ymd} in the output);
+#'   will be joined by \code{date_ymd}.
+#' @param noise Logical; if \code{TRUE}, add negative‑binomial noise to each
+#'   weekly or monthly incidence draw, using \code{size} as dispersion.
+#' @param size Optional numeric; dispersion parameter for negative‑binomial noise.
 #'
-#' @return A data frame with date, group-specific incidence (and optional transformed incidence).
-#' @export
+#' @return A data frame with columns:
+#'   \item{date_ymd}{Date of each week (Sunday) or month (start day).}
+#'   \item{week_no, month_no}{Index of each period, starting at 0.}
+#'   \item{inc_A, inc_C, inc}{Adult, child, and total incidence.}
+#'   \item{EIR_monthly}{Monthly EIR, if \code{return_EIR = TRUE}.}
+#'   \item{inc_A_transformed, inc_C_transformed}{Transformed incidence, if
+#'     \code{mu_transform_A} or \code{mu_transform_C} supplied.}
+#'   plus any merged covariates from \code{covariate_matrix}.
 #'
 #' @examples
-#' # Simulate and apply a log-linear transformation to child incidence
-#' mu_C_adj <- function(df, pars) exp(log(df$inc_C) + 0.1 * df$cov_SMC / 30)
-#' sim_df <- data_sim(model, param_inputs, "2014-01-01", "2019-12-31",
-#'                    mu_transform_C = mu_C_adj, covariate_matrix = covariates)
+#' \dontrun{
+#' sim_df <- data_sim(
+#'   model             = model_1,
+#'   param_inputs      = param_inputs_wk,
+#'   start_date        = "2018-01-01",
+#'   end_date          = "2023-12-31",
+#'   prewarm_years     = 5,
+#'   month             = FALSE,
+#'   round             = FALSE,
+#'   save              = FALSE,
+#'   mu_transform_C    = mu_transform_C_wk,
+#'   covariate_matrix  = covariate_matrix_wk,
+#'   noise             = TRUE,
+#'   size              = 10,
+#'   year_360_days     = FALSE
+#' )
+#' }
+#' @export
 data_sim <- function(model, param_inputs, start_date, end_date,
                      prewarm_years = 2, month = FALSE, round = TRUE, save = TRUE, file = "",
                      month_unequal_days = FALSE, return_EIR = FALSE, return_compartments = FALSE,
                      mu_transform_A = NULL, mu_transform_C = NULL, covariate_matrix = NULL,
                      noise = FALSE, size = NULL) {
 
-  # Extend time-varying parameters back by prewarm_years
-  param_inputs <- extend_time_varying_inputs(param_inputs, days_per_year = 360,
-                                             years_to_extend = prewarm_years)
+  # --- Determine days_per_year & total days ---
+  if (month) {
+    days_per_year <- 360
+    # prewarm start in model calendar
+    prewarm_start <- paste0(year(start_date) - prewarm_years, "-", format.Date(start_date, "%m-%d"))
+    n_days    <- calculate_360_day_difference(prewarm_start, end_date) + 1
+  } else {
+    days_per_year <- if (month_unequal_days) 365 else 360
+    prewarm_start <- as.Date(start_date) - prewarm_years * days_per_year
+    n_days    <- as.integer(as.Date(end_date) - as.Date(prewarm_start)) + 1
+  }
 
-  # Prewarm start date
-  prewarm_start_date <- paste0(
-    year(as.Date(start_date)) - prewarm_years, "-",
-    format(as.Date(start_date), "%m-%d")
+  # --- Extend time-varying inputs ---
+  param_inputs <- extend_time_varying_inputs(
+    param_inputs,
+    days_per_year = days_per_year,
+    years_to_extend = prewarm_years
   )
 
-  # Total simulation duration
-  n_days <- calculate_360_day_difference(prewarm_start_date, end_date) + 1
-
-  # Run deterministic simulation
+  # --- Run model ---
   results <- sim_mod(model, pars = param_inputs, time_start = 0,
                      n_particles = 1, sim_time = n_days)
+  x   <- results[[1]]
+  mod <- results[[2]]$info()$index
 
-  x <- results[[1]]
-  mod <- results[[2]]
-
-  # --- Aggregate Incidence by Month or Week ---
+  # --- Aggregate ---
   if (month) {
     month_ind <- seq(1, n_days, by = 30)
-    if (month_unequal_days) {
-      month_ind <- which(param_inputs$day_count == 0)
-    }
+    if (month_unequal_days) month_ind <- which(param_inputs$day_count == 0)
 
-    inc_A <- x[mod$info()$index$month_inc_A,,][month_ind]
-    inc_C <- x[mod$info()$index$month_inc_C,,][month_ind]
+    inc_A <- x[mod$month_inc_A,,][month_ind]
+    inc_C <- x[mod$month_inc_C,,][month_ind]
+    dates <- date_to_months(prewarm_start, end_date)
 
-    dates <- date_to_months(prewarm_start_date, end_date)
-    n <- min(length(dates), length(inc_A), length(inc_C))
-    month_no <- 0:(n - 1)
-
-    if(noise){
-      inc_C <- rnbinom(length(inc_C), size = size, mu = inc_C)
-      inc_A <- rnbinom(length(inc_A), size = size, mu = inc_A)
-    }
-
+    idx <- seq_len(min(length(dates), length(inc_A), length(inc_C)))
+    inc_df <- data.frame(
+      date_ymd = dates[idx], month_no = 0:(length(idx)-1),
+      inc_A = inc_A[idx], inc_C = inc_C[idx],
+      inc   = inc_A[idx] + inc_C[idx]
+    )
     if (return_EIR) {
-      EIR <- x[mod$info()$index$EIR_monthly,,][month_ind][1:n]
-      inc_df <- data.frame(date_ymd = dates[1:n], month_no, inc_A = inc_A[1:n], inc_C = inc_C[1:n],
-                           inc = inc_A[1:n] + inc_C[1:n], EIR_monthly = EIR)
-    } else {
-      inc_df <- data.frame(date_ymd = dates[1:n], month_no, inc_A = inc_A[1:n], inc_C = inc_C[1:n],
-                           inc = inc_A[1:n] + inc_C[1:n])
+      EIR <- x[mod$EIR_monthly,,][month_ind][idx]
+      inc_df$EIR_monthly <- EIR
     }
   } else {
     week_ind <- seq(1, n_days, by = 7)
 
-    inc_A <- x[mod$info()$index$wk_inc_A,,][week_ind]
-    inc_C <- x[mod$info()$index$wk_inc_C,,][week_ind]
+    inc_A <- x[mod$wk_inc_A,,][week_ind]
+    inc_C <- x[mod$wk_inc_C,,][week_ind]
 
-    dates <- date_to_weeks(prewarm_start_date, end_date)
-    n <- min(length(dates), length(inc_A), length(inc_C))
-    week_no <- 0:(n - 1)
+    # use real calendar Sundays if using 365
+    dates <- date_to_weeks(prewarm_start, end_date)
+    #if (use_365_for_weeks) {
+    #  dates <- date_to_weeks(prewarm_start, end_date)
+    #} else {
+    #  dates <- date_to_weeks(prewarm_start, n_days)  # your 360-day helper
+    #}
 
-    if(noise){
-      inc_C <- rnbinom(length(inc_C), size = size, mu = inc_C)
-      inc_A <- rnbinom(length(inc_A), size = size, mu = inc_A)
-    }
-
+    idx <- seq_len(min(length(dates), length(inc_A), length(inc_C)))
+    inc_df <- data.frame(
+      date_ymd = dates[idx], week_no = 0:(length(idx)-1),
+      inc_A = inc_A[idx], inc_C = inc_C[idx],
+      inc   = inc_A[idx] + inc_C[idx]
+    )
     if (return_EIR) {
-      EIR <- x[mod$info()$index$EIR_monthly,,][week_ind][1:n]
-      inc_df <- data.frame(date_ymd = dates[1:n], week_no, inc_A = inc_A[1:n], inc_C = inc_C[1:n],
-                           inc = inc_A[1:n] + inc_C[1:n], EIR_monthly = EIR)
-    } else {
-      inc_df <- data.frame(date_ymd = dates[1:n], week_no, inc_A = inc_A[1:n], inc_C = inc_C[1:n],
-                           inc = inc_A[1:n] + inc_C[1:n])
+      EIR <- x[mod$EIR_monthly,,][week_ind][idx]
+      inc_df$EIR_monthly <- EIR
     }
-
   }
-  # --- Optional Covariate Merge ---
+
+  #inc_df$anom <- param_inputs$c_R_D[seq(1, length(param_inputs$c_R_D), by = 7)]
+  #inc_df$temp <- param_inputs$temp[seq(1, length(param_inputs$temp), by = 7)]
+
+  # --- Covariate merge & transform ---
   if (!is.null(covariate_matrix)) {
-    date_col <- if ("date_ymd" %in% names(inc_df)) "date_ymd" else "week"
-    inc_df <- dplyr::left_join(inc_df, covariate_matrix, by = setNames(colnames(covariate_matrix)[1], date_col))
+    inc_df <- dplyr::left_join(
+      inc_df, covariate_matrix,
+      by = c("date_ymd" = names(covariate_matrix)[1])
+    )
   }
+  if (!is.null(mu_transform_A)) inc_df$inc_A_transformed <- mu_transform_A(inc_df, param_inputs)
+  if (!is.null(mu_transform_C)) inc_df$inc_C_transformed <- mu_transform_C(inc_df, param_inputs)
 
-  # --- Optional Transformations ---
-  if (!is.null(mu_transform_A)) {
-    inc_df$inc_A_transformed <- mu_transform_A(inc_df, param_inputs)
-  }
-  if (!is.null(mu_transform_C)) {
-    inc_df$inc_C_transformed <- mu_transform_C(inc_df, param_inputs)
-  }
-  # Recalculate total incidence (still untransformed)
-  inc_df$inc <- inc_df$inc_A + inc_df$inc_C
-
-  if (round) {
-    inc_df[c("inc_A", "inc_C", "inc")] <- round(inc_df[c("inc_A", "inc_C", "inc")])
-  }
-
-  # Trim prewarm period
-  date_col <- if ("date_ymd" %in% names(inc_df)) "date_ymd" else "week"
-  inc_df <- inc_df[inc_df[[date_col]] >= as.Date(start_date) & inc_df[[date_col]] <= as.Date(end_date), ]
-
-
-  if (save) {
-    saveRDS(inc_df, paste0(dir, file))
-  }
+  # --- Round, trim, save ---
+  if (round) inc_df[c("inc_A","inc_C","inc")] <- round(inc_df[c("inc_A","inc_C","inc")])
+  inc_df <- inc_df[inc_df$date_ymd >= start_date & inc_df$date_ymd <= end_date, ]
+  if (save) saveRDS(inc_df, file)
 
   return(inc_df)
 }
+
+
+
 
 
 #' Simulate Data for Inference
@@ -659,13 +680,19 @@ compartments_sim <- function(model, param_inputs, start_date, end_date, prewarm_
 
   # Helper function for safe extraction
   extract_compartment <- function(index_name) {
-    values <- x[mod$info()$index[[index_name]], , ]
-    if (length(values) >= max(wk_ind)) {
-      values[wk_ind]
+    if (index_name %in% names(mod$info()$index)) {
+      values <- x[mod$info()$index[[index_name]], , ]
+      if (length(values) >= max(wk_ind)) {
+        values[wk_ind]
+      } else {
+        stop(paste("Mismatch in compartment size for:", index_name))
+      }
     } else {
-      stop(paste("Mismatch in compartment size for:", index_name))
+      # Return NA vector if not present in model
+      rep(NA_real_, length(wk_ind))
     }
   }
+
 
   # Vector of compartments to extract
   compartment_names <- c(
@@ -928,3 +955,6 @@ summarize_simulation_ci <- function(simulations, variables, ci_level = 0.95) {
     separate(var_stat, into = c("variable", "stat"), sep = "_(?=[^_]+$)") %>%
     pivot_wider(names_from = stat, values_from = value)
 }
+
+
+

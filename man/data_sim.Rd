@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_simulation.R
 \name{data_sim}
 \alias{data_sim}
-\title{Simulate Incidence Data from the Model}
+\title{Simulate Incidence Data Over Time (Monthly or Weekly)}
 \usage{
 data_sim(
   model,
@@ -25,50 +25,84 @@ data_sim(
 )
 }
 \arguments{
-\item{model}{A dust model object used to simulate malaria transmission.}
+\item{model}{A dust model object (as returned by \code{load_model}) to simulate.}
 
-\item{param_inputs}{A named list of model parameter values.}
+\item{param_inputs}{Named list of model parameters, including any time‑varying
+vectors (e.g. \code{temp}, \code{c_R_D}, \code{cov_SMC}).}
 
-\item{start_date}{Start date of the observation window (character or Date).}
+\item{start_date}{Character or \code{Date} giving the first day of the analysis.}
 
-\item{end_date}{End date of the observation window (character or Date).}
+\item{end_date}{Character or \code{Date} giving the last day of the analysis.}
 
-\item{prewarm_years}{Number of years to simulate before \code{start_date} for warm-up (default = 2).}
+\item{prewarm_years}{Integer number of years (360‑ or 365‑day) to run before
+\code{start_date} as warm‑up.}
 
-\item{month}{Logical. If \code{TRUE}, aggregate and return monthly incidence (default).}
+\item{month}{Logical; if \code{TRUE}, returns monthly aggregates (30‑day or
+unequal month lengths if \code{month_unequal_days = TRUE}); if \code{FALSE},
+returns weekly aggregates.}
 
-\item{round}{Logical. If \code{TRUE}, round the incidence values to integers (default = TRUE).}
+\item{round}{Logical; if \code{TRUE}, round all incidence counts to integers.}
 
-\item{save}{Logical. If \code{TRUE}, save the result as an RDS file.}
+\item{save}{Logical; if \code{TRUE}, save the returned data frame to disk as
+an RDS file.}
 
-\item{file}{Character. Filename to use if saving to disk.}
+\item{file}{Character; path/filename to use when saving (if \code{save = TRUE}).}
 
-\item{month_unequal_days}{Logical. If \code{TRUE}, aggregate based on actual month boundaries.}
+\item{month_unequal_days}{Logical; when \code{month = TRUE}, if \code{TRUE}
+use actual month boundaries from \code{param_inputs\$day_count}, otherwise
+use fixed 30‑day months.}
 
-\item{return_EIR}{Logical. If \code{TRUE}, include EIR values in the output.}
+\item{return_EIR}{Logical; if \code{TRUE}, include monthly EIR values.}
 
-\item{return_compartments}{Logical. (Currently unused.)}
+\item{return_compartments}{Logical; currently unused.}
 
-\item{mu_transform_A}{Optional function to transform adult incidence after simulation.}
+\item{mu_transform_A}{Optional function to transform adult incidence after
+simulation.  Should accept \code{(inc_df, param_inputs)} and return a vector.}
 
-\item{mu_transform_C}{Optional function to transform child incidence after simulation.}
+\item{mu_transform_C}{Optional function to transform child incidence after
+simulation.  Should accept \code{(inc_df, param_inputs)} and return a vector.}
 
-\item{covariate_matrix}{Optional data frame of covariates to merge by date.}
+\item{covariate_matrix}{Optional data frame of external covariates (must have
+a date column in the same name/location as \code{date_ymd} in the output);
+will be joined by \code{date_ymd}.}
 
-\item{noise}{Logical. If \code{TRUE}, each simulated value is a draw from a negative binomial distribution.}
+\item{noise}{Logical; if \code{TRUE}, add negative‑binomial noise to each
+weekly or monthly incidence draw, using \code{size} as dispersion.}
+
+\item{size}{Optional numeric; dispersion parameter for negative‑binomial noise.}
 }
 \value{
-A data frame with date, group-specific incidence (and optional transformed incidence).
+A data frame with columns:
+\item{date_ymd}{Date of each week (Sunday) or month (start day).}
+\item{week_no, month_no}{Index of each period, starting at 0.}
+\item{inc_A, inc_C, inc}{Adult, child, and total incidence.}
+\item{EIR_monthly}{Monthly EIR, if \code{return_EIR = TRUE}.}
+\item{inc_A_transformed, inc_C_transformed}{Transformed incidence, if
+\code{mu_transform_A} or \code{mu_transform_C} supplied.}
+plus any merged covariates from \code{covariate_matrix}.
 }
 \description{
-Runs a deterministic model simulation and returns incidence data aggregated
-either monthly or weekly. Allows for a warm-up period prior to the start date,
-optional rounding, and optional transformations to incidence values (e.g., to apply
-covariate effects used in observation models).
+Runs a deterministic dust model simulation with an optional pre‑warm period,
+then aggregates and returns incidence (and optional transformed incidence)
+at either monthly or weekly resolution.  Weekly output may use a 360‑day or
+365‑day year for the prewarm and simulation period.
 }
 \examples{
-# Simulate and apply a log-linear transformation to child incidence
-mu_C_adj <- function(df, pars) exp(log(df$inc_C) + 0.1 * df$cov_SMC / 30)
-sim_df <- data_sim(model, param_inputs, "2014-01-01", "2019-12-31",
-                   mu_transform_C = mu_C_adj, covariate_matrix = covariates)
+\dontrun{
+sim_df <- data_sim(
+  model             = model_1,
+  param_inputs      = param_inputs_wk,
+  start_date        = "2018-01-01",
+  end_date          = "2023-12-31",
+  prewarm_years     = 5,
+  month             = FALSE,
+  round             = FALSE,
+  save              = FALSE,
+  mu_transform_C    = mu_transform_C_wk,
+  covariate_matrix  = covariate_matrix_wk,
+  noise             = TRUE,
+  size              = 10,
+  year_360_days     = FALSE
+)
+}
 }
