@@ -21,10 +21,10 @@ initial(SMC_effect_2) <- decay[time] * eff_SMC * cov_SMC[time]
 update(SMC_effect_2) <- decay[time] * eff_SMC * cov_SMC[time]
 w1 <- user(0) # Gives some SMC to adults
 w2 <- user(0) # Controls removal effect
-#SMC_effect_A <- w1 * SMC_effect
+
 SMC_removal <- if (SMC[time] == 1) w2 * SMC_effect else 0
 SMC_removal_A <- w1 * SMC_removal
-#SMC_removal <- user(0)
+
 
 mu_SE_C <- (1 - exp(-p_MH_C * EIR))
 initial(mu_SE_C_2) <- (1 - exp(-p_MH_C * EIR))
@@ -36,32 +36,13 @@ update(mu_SE_A_2) <- (1 - exp(-rho * p_MH_C * EIR))
 
 
 # # Children
-# update(SC) <- (SC * r_C) * (1 - delta_a - delta_d - mu_SE_C) + delta_b * P + mu_RS_C * RC + mu_TS * TrC
-# update(EC) <- (EC * r_C) * (1 - delta_a - delta_d - mu_EI) + mu_SE_C * SC
-# update(IC) <- (IC * r_C) * (1 - delta_a - delta_d - mu_IR - SMC_removal) + (1 - fT_C) * mu_EI * EC
-# update(TrC) <- (TrC * r_C) * (1 - delta_a - delta_d - mu_TS) + fT_C * mu_EI * EC + SMC_removal * (IC)
-# update(RC) <- (RC * r_C) * (1 - delta_a - delta_d - mu_RS_C) + mu_IR * IC
-
-
 update(SC) <- SC - mu_SE_C * SC + mu_RS_C * RC + mu_TS * TrC - (delta_d + delta_a) * SC + delta_b * P - SC * SMC_removal
-update(EC) <- EC - mu_EI * EC + mu_SE_C * SC - (delta_d + delta_a) * EC
+update(EC) <- EC - mu_EI * EC + mu_SE_C * (SC+RC) - (delta_d + delta_a) * EC
 update(IC) <- IC - mu_IR * IC + phi_1 * (1 - fT_C) * mu_EI * EC - (delta_d + delta_a) * IC - IC * SMC_removal
 update(TrC) <- TrC - mu_TS * TrC + phi_1 * fT_C * mu_EI * EC - (delta_d + delta_a) * TrC + (IC + RC + SC) * SMC_removal
-update(RC) <- RC - mu_RS_C * RC + mu_IR * IC + (1 - phi_1) * mu_EI * EC - (delta_d + delta_a) * RC  - RC * SMC_removal
-
-# update(SC) <- SC -  mu_SE_C * SC + mu_RS_C * RC + mu_TS * TrC - (delta_d + delta_a) * SC + delta_b * P
-# update(EC) <- EC - mu_EI * EC + mu_SE_C * SC - (delta_d + delta_a) * EC
-# update(IC) <- IC - mu_IR * IC + phi_1 * (1 - fT_C) * mu_EI * EC - (delta_d + delta_a) * IC - IC * SMC_removal
-# update(TrC) <- TrC - mu_TS * TrC + phi_1 * fT_C * mu_EI * EC - (delta_d + delta_a) * TrC + (IC + RC) * SMC_removal
-# update(RC) <- RC - mu_RS_C * RC + mu_IR * IC + (1 - phi_1) * mu_EI * EC - (delta_d + delta_a) * RC  - RC * SMC_removal
+update(RC) <- RC - mu_SE_C * RC - mu_RS_C * RC + mu_IR * IC + (1 - phi_1) * mu_EI * EC - (delta_d + delta_a) * RC  - RC * SMC_removal
 
 # Adults
-# update(SA) <- (SA * r_A) * (1 - delta_d - mu_SE_A) + delta_a * SC + mu_RS_A * RA + mu_TS * TrA
-# update(EA) <- (EA * r_A) * (1 - delta_d - mu_EI) + delta_a * EC +  mu_SE_A * SA
-# update(IA) <- (IA * r_A) * (1 - delta_d - mu_IR) + delta_a * IC + (1 - fT_A) * mu_EI * EA
-# update(TrA) <- (TrA * r_A) * (1 - delta_d - mu_TS) + delta_a * TrC + fT_A * mu_EI * EA
-# update(RA) <- (RA * r_A) *  (1 - delta_d - mu_RS_A) + delta_a * RC + mu_IR * IA
-
 update(SA) <- SA - mu_SE_A * SA + mu_RS_A * RA + mu_TS * TrA - delta_d * SA + delta_a * SC
 update(EA) <- EA - mu_EI * EA +  mu_SE_A * SA - delta_d * EA + delta_a * EC
 update(IA) <- IA - mu_IR * IA + phi_2 * (1 - fT_A) * mu_EI * EA - delta_d * IA + delta_a * IC
@@ -87,23 +68,8 @@ update(day_inc_total) <- if ((step) %% steps_per_day == 0) mu_EI * (EC * fT_C * 
 initial(wk_inc_total) <- 0
 update(wk_inc_total) <-  if ((step) %% steps_per_week == 0) mu_EI * (EC * fT_C * phi_1 + EA * fT_A * phi_2) else wk_inc_total + mu_EI * (EC * fT_C * phi_1 + EA * fT_A * phi_2)
 
-# initial(month_inc_C) <- 0
-# update(month_inc_C) <- if ((step) %% steps_per_month == 0) mu_EI * EC * fT_C * phi_1 else month_inc_C + mu_EI * EC * fT_C * phi_1
-#
-# initial(month_inc_A) <- 0
-# update(month_inc_A) <- if ((step) %% steps_per_month == 0) mu_EI * EA * fT_A * phi_2 else month_inc_A + mu_EI * EA * fT_A * phi_2
 
-#beta_1 <- user()
-#beta_2 <- user()
 SMC_effective_coverage <- if (time > lag_SMC) decay[time - lag_SMC] * cov_SMC[time - lag_SMC] else decay[time] * cov_SMC[time]
-#SMC_X <- beta_1 * SMC_effective_coverage + beta_2 * SMC_effective_coverage * c_R_D_shift
-#SMC_X <- beta_1 * SMC_effective_coverage + beta_2 * c_R_D_shift * SMC_effective_coverage
-
-# initial(month_inc_C) <- 0
-# update(month_inc_C) <- if ((step) %% steps_per_month == 0) mu_EI * EC * fT_C * phi_1 * (1 - beta_1 * SMC_effective_coverage)  else month_inc_C + mu_EI * EC * fT_C * phi_1 * (1 - beta_1 * SMC_effective_coverage)
-#
-# initial(month_inc_A) <- 0
-# update(month_inc_A) <- if ((step) %% steps_per_month == 0) mu_EI * EA * fT_A * phi_2 else month_inc_A + mu_EI * EA * fT_A * phi_2
 
 initial(month_inc_C) <- 0
 update(month_inc_C) <- if ((step) %% steps_per_month == 0) mu_EI * EC * fT_C * phi_1 else month_inc_C + mu_EI * EC * fT_C * phi_1
@@ -149,12 +115,7 @@ mu_RS_A <- eta * mu_RS_C
 eta <- user(1)
 
 # Immunity related parameters
-#s_1 <- user(1)
-#s_2 <- c_s * s_1
-#c_s <- prop_p_2
 qR2 <- user()
-
-#qR2 <- c_qR * qR1
 
 qR1 <- qR2 + (1 - qR2) * c_qR
 
@@ -162,13 +123,7 @@ c_phi <- user() # alters
 c_qR <- user()
 c_s <- user()
 prop_p_1 <- user() # prop of all malaria infections that are patent in <5
-#prop_p_2 <- user() # prop of all malaria infections that are patent in >=5
 c_p_1 <- user() # prop of patent infections that are symptomatic in <5
-#c_p_2 <- user() # prop of patent infections that are symptomatic in >=5
-
-
-# phi_1 <- user(0.5)
-# phi_2 <- c_phi * phi_1
 
 prop_p_2 <- c_s * prop_p_1
 c_p_2 <- c_phi * c_p_1
@@ -222,11 +177,8 @@ update(temp_shift) <- if (time > lag_T) temp[time - lag_T] else temp[time]
 EIR <- alpha * (X / (b + X)) * temp_effect * rain_effect # Multiplicative effects
 initial(EIR2) <- alpha * (X / (b + X)) * temp_effect * rain_effect # Multiplicative effects
 update(EIR2) <- alpha * (X / (b + X)) * temp_effect * rain_effect # Multiplicative effects
-#temp_effect <- exp(-((temp_shift - T_opt)^2) / (2 * sigma_LT^2)) # Gaussian term for temperature
 temp_effect <- if (temp_shift <= T_opt) exp(-((temp_shift - T_opt)^2) / (2 * sigma_LT^2)) else exp(-((temp_shift - T_opt)^2) / (2 * sigma_RT^2))
 rain_effect <- 1 / (1 + exp(-k1 * (c_R_D_shift - R_opt))) # Logistic term for rainfall
-#X <- (qR2 * IA + IC + qR * (qR2 * RA + RC)) / P # Proportion of population infectious remains the same
-#X <- (IC + IA + qR1 * (s_1 * RC + s_2 * RA) + qR2 * ((1 - s_1) * RC + (1 - s_2) * RA)) / P # Proportion of population infectious remains the same
 X <- (IC + IA + qR1 * (s_1 * RC + s_2 * RA) + qR2 * ((1 - s_1) * RC + (1 - s_2) * RA)) / P # Proportion of population infectious remains the same
 
 initial(temp_effect_2) <- if (temp_shift <= T_opt) exp(-((temp_shift - T_opt)^2) / (2 * sigma_LT^2)) else exp(-((temp_shift - T_opt)^2) / (2 * sigma_RT^2))
