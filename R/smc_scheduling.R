@@ -71,7 +71,7 @@ gen_smc_schedule <- function(start_date, end_date, years, months_active,
   # --- Apply coverage for each SMC round (30-day window) ---
   smc_rounds <- which(smc_df$SMC == 1)
   for (idx in smc_rounds) {
-    window_end <- min(idx + 29, nrow(smc_df))  # Avoid going past end of data
+    window_end <- min(idx + 120, nrow(smc_df))  # Avoid going past end of data
     smc_df$cov[idx:window_end] <- coverage
   }
 
