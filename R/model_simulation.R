@@ -271,6 +271,11 @@ data_sim <- function(model, param_inputs, start_date, end_date,
     inc_C <- x[mod$month_inc_C,,][month_ind]
     dates <- date_to_months(prewarm_start, end_date)
 
+    if(noise){
+      inc_C <- rnbinom(length(inc_C), size = size, mu = inc_C)
+      inc_A <- rnbinom(length(inc_A), size = size, mu = inc_A)
+    }
+
     idx <- seq_len(min(length(dates), length(inc_A), length(inc_C)))
     inc_df <- data.frame(
       date_ymd = dates[idx], month_no = 0:(length(idx)-1),
@@ -286,6 +291,11 @@ data_sim <- function(model, param_inputs, start_date, end_date,
 
     inc_A <- x[mod$wk_inc_A,,][week_ind]
     inc_C <- x[mod$wk_inc_C,,][week_ind]
+
+    if(noise){
+      inc_C <- rnbinom(length(inc_C), size = size, mu = inc_C)
+      inc_A <- rnbinom(length(inc_A), size = size, mu = inc_A)
+    }
 
     # use real calendar Sundays if using 365
     dates <- date_to_weeks(prewarm_start, end_date)
