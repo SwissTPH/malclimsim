@@ -74,10 +74,10 @@ return_default_priors <- function(){
     z = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dunif(p, min = 0.01, max = 1, log = TRUE)),
     p_MH_C = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dunif(p, min = 0.01, max = 1, log = TRUE)),
     rho = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dunif(p, min = 0.01, max = 1, log = TRUE)),
+    w1 = list(initial = 0, min = 0, max = 0.2, prior = function(p) dunif(p, min = 0, max = 0.2, log = TRUE)),
+    w2 = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dunif(p, min = 0.01, max = 1, log = TRUE)),
 
     # Multiplicative constants (k parameters)
-    w1 = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dunif(p, min = 0.01, max = 1, log = TRUE)),
-    w2 = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dunif(p, min = 0.01, max = 1, log = TRUE)),
     #k1 = list(initial = 1, min = 0.01, max = 5, prior = function(p) dnorm(p, mean = 1, sd = 0.1, log = TRUE)),
     k2 = list(initial = 1, min = 0.5, max = 1.5, prior = function(p) dnorm(p, mean = 1, sd = 0.1, log = TRUE)),
     k3 = list(initial = 1, min = 0.5, max = 1.5, prior = function(p) dnorm(p, mean = 1, sd = 0.1, log = TRUE)),
@@ -96,7 +96,7 @@ return_default_priors <- function(){
     c9 = list(initial = 0.01, min = 0.005, max = 0.02, prior = function(p) dnorm(p, mean = 0.01, sd = 0.005, log = TRUE)),
 
     # 4. Population Proportions and Initial Conditions
-    s = list(initial = 0.8, min = 0.01, max = 10, prior = function(p) dunif(p, min = 0.01, max = 10, log = TRUE)),
+    s = list(initial = 0.8, min = 0.01, max = 20, prior = function(p) dunif(p, min = 0.01, max = 20, log = TRUE)),
     N = list(initial = 0.2, min = 0, max = 500000, prior = function(p) dunif(p, min = 0, max = 500000, log = TRUE)),
     percAdult = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dunif(p, min = 0.01, max = 1, log = TRUE)),
     percC1 = list(initial = 0.2, min = 0.01, max = 1, prior = function(p) dunif(p, min = 0.01, max = 1, log = TRUE)),
