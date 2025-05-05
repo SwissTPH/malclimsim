@@ -213,20 +213,7 @@ update(temp_effect_2) <- if (temp_shift <= T_opt) exp(-((temp_shift - T_opt)^2) 
 initial(rain_effect_2) <- 1 / (1 + exp(-k1 * (c_R_D_shift - R_opt))) # Logistic term for rainfall
 update(rain_effect_2) <-  1 / (1 + exp(-k1 * (c_R_D_shift - R_opt))) # Logistic term for rainfall
 
-
-#X <- (qR2 * IA + IC + qR * (qR2 * RA + RC)) / P # Proportion of population infectious remains the same
-#X <- (IC + IA + qR1 * (s_1 * RC + s_2 * RA) + qR2 * ((1 - s_1) * RC + (1 - s_2) * RA)) / P # Proportion of population infectious remains the same
 X <- (IC + IA + qR1 * (s_1 * RC + s_2 * RA) + qR2 * ((1 - s_1) * RC + (1 - s_2) * RA)) / P # Proportion of population infectious remains the same
-
-initial(X2) <- (IC + IA + qR1 * (s_1 * RC + s_2 * RA) + qR2 * ((1 - s_1) * RC + (1 - s_2) * RA)) / P  # Proportion of population infectious remains the same
-update(X2) <- (IC + IA + qR1 * (s_1 * RC + s_2 * RA) + qR2 * ((1 - s_1) * RC + (1 - s_2) * RA)) / P  # Proportion of population infectious remains the same
-initial(X_I) <- (IC + IA) / (IC + IA + qR1 * (s_1 * RC + s_2 * RA) + qR2 * ((1 - s_1) * RC + (1 - s_2) * RA))
-update(X_I) <- (IC + IA) / (IC + IA + qR1 * (s_1 * RC + s_2 * RA) + qR2 * ((1 - s_1) * RC + (1 - s_2) * RA))
-initial(X_AP) <- (qR1 * (s_1 * RC + s_2 * RA)) / (IC + IA + qR1 * (s_1 * RC + s_2 * RA) + qR2 * ((1 - s_1) * RC + (1 - s_2) * RA))
-update(X_AP) <- (qR1 * (s_1 * RC + s_2 * RA)) / (IC + IA + qR1 * (s_1 * RC + s_2 * RA) + qR2 * ((1 - s_1) * RC + (1 - s_2) * RA))
-initial(X_ASP) <- (qR2 * ((1 - s_1) * RC + (1 - s_2) * RA)) / (IC + IA + qR1 * (s_1 * RC + s_2 * RA) + qR2 * ((1 - s_1) * RC + (1 - s_2) * RA))
-update(X_ASP) <- (qR2 * ((1 - s_1) * RC + (1 - s_2) * RA)) / (IC + IA + qR1 * (s_1 * RC + s_2 * RA) + qR2 * ((1 - s_1) * RC + (1 - s_2) * RA))
-
 # Egg-adult Development time due to temperature
 
 # Dimensions of arrays
@@ -272,3 +259,14 @@ initial(P_A) <- SA + EA + IA + TrA + RA
 update(P_C) <- SC + EC + IC + TrC + RC
 update(P_A) <- SA + EA + IA + TrA + RA
 P = (SC + EC + IC + TrC + RC + SA + EA + IA + TrA + RA)
+
+## Relevant outputs to look at
+initial(X2) <- (IC + IA + qR1 * (s_1 * RC + s_2 * RA) + qR2 * ((1 - s_1) * RC + (1 - s_2) * RA)) / P  # Proportion of population infectious remains the same
+update(X2) <- (IC + IA + qR1 * (s_1 * RC + s_2 * RA) + qR2 * ((1 - s_1) * RC + (1 - s_2) * RA)) / P  # Proportion of population infectious remains the same
+initial(X_I) <- (IC + IA) / (IC + IA + qR1 * (s_1 * RC + s_2 * RA) + qR2 * ((1 - s_1) * RC + (1 - s_2) * RA))
+update(X_I) <- (IC + IA) / (IC + IA + qR1 * (s_1 * RC + s_2 * RA) + qR2 * ((1 - s_1) * RC + (1 - s_2) * RA))
+initial(X_AP) <- (qR1 * (s_1 * RC + s_2 * RA)) / (IC + IA + qR1 * (s_1 * RC + s_2 * RA) + qR2 * ((1 - s_1) * RC + (1 - s_2) * RA))
+update(X_AP) <- (qR1 * (s_1 * RC + s_2 * RA)) / (IC + IA + qR1 * (s_1 * RC + s_2 * RA) + qR2 * ((1 - s_1) * RC + (1 - s_2) * RA))
+initial(X_ASP) <- (qR2 * ((1 - s_1) * RC + (1 - s_2) * RA)) / (IC + IA + qR1 * (s_1 * RC + s_2 * RA) + qR2 * ((1 - s_1) * RC + (1 - s_2) * RA))
+update(X_ASP) <- (qR2 * ((1 - s_1) * RC + (1 - s_2) * RA)) / (IC + IA + qR1 * (s_1 * RC + s_2 * RA) + qR2 * ((1 - s_1) * RC + (1 - s_2) * RA))
+
