@@ -17,12 +17,14 @@ time <- step + 1
 lag_SMC <- user()
 SMC_effect <- if (time > lag_SMC) decay[time - lag_SMC] * eff_SMC * cov_SMC[time - lag_SMC] else decay[time] * eff_SMC * cov_SMC[time]
 
+initial(SMC_effect_2) <- decay[time] * eff_SMC * cov_SMC[time]
+update(SMC_effect_2) <- decay[time] * eff_SMC * cov_SMC[time]
 w1 <- user(0) # Gives some SMC to adults
 w2 <- user(0) # Controls removal effect
-SMC_removal <- if (SMC[time] == 1) w2 * SMC_effect else 0
 
-SMC_effect_A <- if (time > lag_SMC) decay[time - lag_SMC] * w1 * cov_SMC[time - lag_SMC] else decay[time] * w1 * cov_SMC[time]
-SMC_removal_A <- if (SMC[time] == 1) w2 * SMC_effect_A else 0
+SMC_removal <- if (SMC[time] == 1) w2 * SMC_effect else 0
+SMC_removal_A <- w1 * SMC_removal
+
 
 mu_SE_C <- (1 - exp(-p_MH_C * EIR))
 initial(mu_SE_C_2) <- (1 - exp(-p_MH_C * EIR))
@@ -35,21 +37,17 @@ update(mu_SE_A_2) <- (1 - exp(-rho * p_MH_C * EIR))
 
 # # Children
 update(SC) <- SC - mu_SE_C * SC + mu_RS_C * RC + mu_TS * TrC - (delta_d + delta_a) * SC + delta_b * P - SC * SMC_removal
-update(EC) <- EC - mu_EI * EC + mu_SE_C * SC - (delta_d + delta_a) * EC
+update(EC) <- EC - mu_EI * EC + mu_SE_C * (SC+RC) - (delta_d + delta_a) * EC
 update(IC) <- IC - mu_IR * IC + phi_1 * (1 - fT_C) * mu_EI * EC - (delta_d + delta_a) * IC - IC * SMC_removal
 update(TrC) <- TrC - mu_TS * TrC + phi_1 * fT_C * mu_EI * EC - (delta_d + delta_a) * TrC + (IC + RC + SC) * SMC_removal
-update(RC) <- RC - mu_RS_C * RC + mu_IR * IC + (1 - phi_1) * mu_EI * EC - (delta_d + delta_a) * RC  - RC * SMC_removal
+update(RC) <- RC - mu_SE_C * RC - mu_RS_C * RC + mu_IR * IC + (1 - phi_1) * mu_EI * EC - (delta_d + delta_a) * RC  - RC * SMC_removal
 
 # Adults
-<<<<<<< HEAD
 update(SA) <- SA - mu_SE_A * SA + mu_RS_A * RA + mu_TS * TrA - delta_d * SA + delta_a * SC
-=======
-update(SA) <- SA - mu_SE_A * SA + mu_RS_A * RA + mu_TS * TrA - delta_d * SA + delta_a * SC - SA * SMC_removal_A
->>>>>>> 8ab8423126fa4ace6331a3e2b872dc3edcbd45b3
 update(EA) <- EA - mu_EI * EA +  mu_SE_A * SA - delta_d * EA + delta_a * EC
-update(IA) <- IA - mu_IR * IA + phi_2 * (1 - fT_A) * mu_EI * EA - delta_d * IA + delta_a * IC - IA * SMC_removal_A
-update(TrA) <- TrA - mu_TS * TrA + phi_2 * fT_A * mu_EI * EA - delta_d * TrA + delta_a * TrC + (IA + RA + SA) * SMC_removal_A
-update(RA) <- RA - mu_RS_A * RA + mu_IR * IA + (1 - phi_2) * mu_EI * EA - delta_d * RA + delta_a * RC - RA * SMC_removal_A
+update(IA) <- IA - mu_IR * IA + phi_2 * (1 - fT_A) * mu_EI * EA - delta_d * IA + delta_a * IC
+update(TrA) <- TrA - mu_TS * TrA + phi_2 * fT_A * mu_EI * EA - delta_d * TrA + delta_a * TrC
+update(RA) <- RA - mu_RS_A * RA + mu_IR * IA + (1 - phi_2) * mu_EI * EA - delta_d * RA + delta_a * RC
 
 # daily and weekly incidence
 initial(day_inc_C) <- 0
@@ -117,32 +115,22 @@ mu_RS_A <- eta * mu_RS_C
 eta <- user(1)
 
 # Immunity related parameters
-
-<<<<<<< HEAD
 qR2 <- user()
-=======
-qR2 <- user()  # infectiousness of subpatent infections
->>>>>>> 8ab8423126fa4ace6331a3e2b872dc3edcbd45b3
 
-qR1 <- qR2 + (1 - qR2) * c_qR  # infectiousness of patent asymptomatic.
+qR1 <- qR2 + (1 - qR2) * c_qR
 
-c_phi <- user() # reduction in sympto rate in >5 compared to <5
-c_qR <- user()  # infectiousness of patent relative to subpatent. If 0, it's the same. If 1, patent asympto are fully infectious
-c_s <- user()   #  reduction in patent rate in >5 compared to <5
+c_phi <- user() # alters
+c_qR <- user()
+c_s <- user()
 prop_p_1 <- user() # prop of all malaria infections that are patent in <5
 c_p_1 <- user() # prop of patent infections that are symptomatic in <5
 
-<<<<<<< HEAD
 prop_p_2 <- c_s * prop_p_1
 c_p_2 <- c_phi * c_p_1
-=======
-prop_p_2 <- c_s * prop_p_1  # prop of all malaria infections that are patent in >5
-c_p_2 <- c_phi * c_p_1  # prop of patent infections that are symptomatic in >5
->>>>>>> 8ab8423126fa4ace6331a3e2b872dc3edcbd45b3
 
 # Proportion of population that is symptomatic
-phi_1 <- c_p_1 * prop_p_1  # in <5
-phi_2 <- c_p_2 * prop_p_2  # in >5
+phi_1 <- c_p_1 * prop_p_1
+phi_2 <- c_p_2 * prop_p_2
 
 
 # Proprtion of asymptomatic population that is patent
@@ -153,6 +141,7 @@ s_2 <- 1 - ((1 - prop_p_2) / (1 - phi_2))
 # Others
 mu_EI <- user()
 mu_TS <- user()
+#mu_IR <- user()
 fT_C <- user()
 fT_A <- z * fT_C
 z <- user(1) # z < 1, reporting rate of adults vs. children
@@ -218,7 +207,7 @@ dim(cov_SMC) <- user()
 
 ## Initial conditions - user defined, defaults in parenthesis
 N <- user()
-s <- user()
+s <- user(1)
 
 N_pop <- N * s
 percAdult <- user()

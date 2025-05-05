@@ -153,7 +153,7 @@ create_start_values <- function(params_to_estimate, control_params, min_max_star
       z_C2 = c(0.2, 0.6), rho = c(0.3, 0.9), eta = c(0.1, 0.9), size = c(5,30), size_1 = c(5, 30), size_2 = c(5, 30),
       phi_C2 = c(0.2, 0.6), phi_A = c(0.2, 0.6), tau = c(0.2, 0.6), p_surv = c(0.89, 0.92),
       mu_IR = c(1/10, 1/2), shift1 = c(1, 30), shift2 = c(1, 30), kappa = c(0.2, 0.6),
-      fT_C = c(0.1, 0.7), kappa_C = c(70, 200), kappa_A = c(70, 200), w1 = c(0.3, 0.7), w2 = c(0.3, 0.7),
+      fT_C = c(0.1, 0.7), kappa_C = c(70, 200), kappa_A = c(70, 200), w1 = c(0, 0.2), w2 = c(0, 1),
       s_1 = c(0.3, 0.9), c_s = c(0.3, 0.9), phi_1 = c(0.3, 0.9), c_phi = c(0.3, 0.9),
       qR1 = c(0.1, 0.9), qR2 = c(0.1, 0.9), c_qR = c(0.2, 0.9), eta = c(0.5, 0.9),
       # Multiplicative constants (k parameters)

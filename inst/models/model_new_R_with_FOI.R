@@ -26,25 +26,26 @@ SMC_removal <- if (SMC[time] == 1) w2 * SMC_effect else 0
 
 #SMC_removal <- user(0)
 
-mu_SE_C <- (1 - exp(-p_MH_C * EIR))
-initial(mu_SE_C_2) <- (1 - exp(-p_MH_C * EIR))
-update(mu_SE_C_2) <- (1 - exp(-p_MH_C * EIR))
+mu_SE_C <- (1 - SMC_effect) *(1 - exp(-p_MH_C * EIR))
+initial(mu_SE_C_2) <-(1 - SMC_effect) * (1 - exp(-p_MH_C * EIR))
+update(mu_SE_C_2) <- (1 - SMC_effect) *(1 - exp(-p_MH_C * EIR))
 
-mu_SE_A <- (1 - exp(-rho * p_MH_C * EIR))
-initial(mu_SE_A_2) <- (1 - exp(-rho * p_MH_C * EIR))
-update(mu_SE_A_2) <- (1 - exp(-rho * p_MH_C * EIR))
+mu_SE_A <- (1 - SMC_effect_A) *(1 - exp(-rho * p_MH_C * EIR))
+initial(mu_SE_A_2) <- (1 - SMC_effect_A) *(1 - exp(-rho * p_MH_C * EIR))
+update(mu_SE_A_2) <- (1 - SMC_effect_A) *(1 - exp(-rho * p_MH_C * EIR))
 
 
 # # Children
-update(SC) <- SC - (1 - SMC_effect) * mu_SE_C * SC + mu_RS_C * RC + mu_TS * TrC - (delta_d + delta_a) * SC + delta_b * P
-update(EC) <- EC - mu_EI * EC + (1 - SMC_effect) * mu_SE_C * SC - (delta_d + delta_a) * EC
+
+update(SC) <- SC -  mu_SE_C * SC + mu_RS_C * RC + mu_TS * TrC - (delta_d + delta_a) * SC + delta_b * P - SC * SMC_removal
+update(EC) <- EC - mu_EI * EC +  mu_SE_C * SC - (delta_d + delta_a) * EC
 update(IC) <- IC - mu_IR * IC + phi_1 * (1 - fT_C) * mu_EI * EC - (delta_d + delta_a) * IC - IC * SMC_removal
-update(TrC) <- TrC - mu_TS * TrC + phi_1 * fT_C * mu_EI * EC - (delta_d + delta_a) * TrC + (IC + RC) * SMC_removal
+update(TrC) <- TrC - mu_TS * TrC + phi_1 * fT_C * mu_EI * EC - (delta_d + delta_a) * TrC + (IC + RC +SC) * SMC_removal
 update(RC) <- RC - mu_RS_C * RC + mu_IR * IC + (1 - phi_1) * mu_EI * EC - (delta_d + delta_a) * RC  - RC * SMC_removal
 
 # Adults
-update(SA) <- SA - (1 - SMC_effect_A) * mu_SE_A * SA + mu_RS_A * RA + mu_TS * TrA - delta_d * SA + delta_a * SC
-update(EA) <- EA - mu_EI * EA + (1 - SMC_effect_A) * mu_SE_A * SA - delta_d * EA + delta_a * EC
+update(SA) <- SA -  mu_SE_A * SA + mu_RS_A * RA + mu_TS * TrA - delta_d * SA + delta_a * SC
+update(EA) <- EA - mu_EI * EA +  mu_SE_A * SA - delta_d * EA + delta_a * EC
 update(IA) <- IA - mu_IR * IA + phi_2 * (1 - fT_A) * mu_EI * EA - delta_d * IA + delta_a * IC
 update(TrA) <- TrA - mu_TS * TrA + phi_2 * fT_A * mu_EI * EA - delta_d * TrA + delta_a * TrC
 update(RA) <- RA - mu_RS_A * RA + mu_IR * IA + (1 - phi_2) * mu_EI * EA - delta_d * RA + delta_a * RC
@@ -225,7 +226,9 @@ dim(cov_SMC) <- user()
 
 ## Initial conditions - user defined, defaults in parenthesis
 N <- user()
-N_pop <- N
+s <- user()
+
+N_pop <- N * s
 percAdult <- user()
 percChild <- 1 - percAdult
 N_C <- N_pop * percChild
