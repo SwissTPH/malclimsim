@@ -69,12 +69,6 @@ update(day_inc_total) <- if ((step) %% steps_per_day == 0) mu_EI * (EC * fT_C * 
 initial(wk_inc_total) <- 0
 update(wk_inc_total) <-  if ((step) %% steps_per_week == 0) mu_EI * (EC * fT_C * phi_1 + EA * fT_A * phi_2) else wk_inc_total + mu_EI * (EC * fT_C * phi_1 + EA * fT_A * phi_2)
 
-# initial(month_inc_C) <- 0
-# update(month_inc_C) <- if ((step) %% steps_per_month == 0) mu_EI * EC * fT_C * phi_1 else month_inc_C + mu_EI * EC * fT_C * phi_1
-#
-# initial(month_inc_A) <- 0
-# update(month_inc_A) <- if ((step) %% steps_per_month == 0) mu_EI * EA * fT_A * phi_2 else month_inc_A + mu_EI * EA * fT_A * phi_2
-
 #beta_1 <- user()
 #beta_2 <- user()
 SMC_effective_coverage <- if (time > lag_SMC) decay[time - lag_SMC] * cov_SMC[time - lag_SMC] else decay[time] * cov_SMC[time]

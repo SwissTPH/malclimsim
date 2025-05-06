@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_simulation.R
 \name{run_simulations_from_samples}
 \alias{run_simulations_from_samples}
-\title{Run Simulations Given Sampled Parameters}
+\title{Run Simulations from Sampled Parameter Sets}
 \usage{
 run_simulations_from_samples(
   model,
@@ -19,23 +19,59 @@ run_simulations_from_samples(
 )
 }
 \arguments{
-\item{model}{Simulation model function.}
+\item{model}{A simulation model function (e.g., a compartmental ODE model)
+that takes in a parameter list and returns state trajectories.}
 
-\item{param_inputs}{Baseline parameter inputs.}
+\item{param_inputs}{A named list of baseline input parameters. These serve as the
+default values before updating with each row from \code{param_samples}.}
 
-\item{param_samples}{Sampled parameter matrix.}
+\item{param_samples}{A matrix or data frame of sampled parameter values,
+where each row corresponds to a unique parameter set to simulate.}
 
-\item{start_date, }{end_date Simulation date range.}
+\item{start_date, end_date}{The simulation date range as \code{Date} or character objects
+coercible to \code{Date}. Typically, these define the time window for prediction after prewarming.}
 
-\item{prewarm_years}{Years of prewarming.}
+\item{prewarm_years}{Number of years before \code{start_date} used for prewarming the model
+(e.g., to reach equilibrium or load past covariates). Defaults to 2.}
 
-\item{noise}{Logical. If \code{TRUE}, each simulated value is a draw from a negative binomial distribution..}
+\item{mu_transform_C}{Optional function to transform the underlying \code{mu}
+incidence into a predicted count (e.g., logistic or log link for cluster C).}
 
-\item{days_per_year}{Days in simulation year}
+\item{mu_transform_A}{Optional transformation function for cluster A (if used).}
+
+\item{covariate_matrix}{Optional covariate matrix used for transforming incidence
+(e.g., for climate-driven models or spatial heterogeneity).}
+
+\item{month}{Logical. If \code{TRUE}, the output will be aggregated or indexed monthly
+(rather than by week or day).}
+
+\item{noise}{Logical. If \code{TRUE}, draws the simulated incidence from a negative
+binomial distribution using \code{size_1} as the dispersion parameter.}
 }
 \value{
-List of simulation data frames.
+A list of data frames, each containing a simulation run with the
+same structure as the output of \code{data_sim()}. The list has one element per row
+in \code{param_samples}.
 }
 \description{
-Run Simulations Given Sampled Parameters
+This function runs a simulation model multiple times, each time using a different
+row from a sampled parameter matrix (e.g., from posterior draws). It is used to
+generate predictive simulations or counterfactual scenarios based on
+parameter uncertainty. Each simulation returns output from the \code{data_sim()} function,
+which integrates optional transformations and covariates.
+}
+\examples{
+\dontrun{
+sim_list <- run_simulations_from_samples(
+  model = malaria_model,
+  param_inputs = base_params,
+  param_samples = posterior_draws,
+  start_date = "2016-01-01",
+  end_date = "2022-12-31",
+  mu_transform_C = logit_transform,
+  covariate_matrix = climate_covariates,
+  noise = TRUE
+)
+}
+
 }
