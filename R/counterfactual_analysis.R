@@ -351,7 +351,7 @@ evaluate_multiple_scenarios <- function(patterns,
     n_years <- (lubridate::year(end_date) + 1) - lubridate::year(start_date)
     months_active <- matrix(rep(month_pattern, n_years + 1), nrow = n_years + 1, byrow = TRUE)
 
-    smc_schedule <- gen_smc_schedule(start_date, end_date, years = years, months_30_days = TRUE,
+    smc_schedule <- gen_smc_schedule(start_date, end_date, years = years, months_30_days = month,
                                      months_active = months_active, coverage = avg_cov,
                                      smc_day_of_month = smc_day_of_month)
 
@@ -381,7 +381,7 @@ evaluate_multiple_scenarios <- function(patterns,
       covariate_matrix$r_C <- r_df$r_C
 
     }else{
-      n_weeks <- length(seq(min(smc_schedule$dates), max(smc_schedule$dates), by = "week"))
+      n_weeks <- length(seq(min(smc_schedule$dates), max(smc_schedule$dates), by = "week")) - 1
       r_df <- get_population_scaling(n = n_weeks, month = month,
                                      growth_rate_C = 1.000071,
                                      growth_rate_A = 1.000092)
