@@ -439,3 +439,81 @@ evaluate_multiple_scenarios <- function(patterns,
     estimates = estimates
   ))
 }
+
+#' Plot Cases Averted Across SMC Scenarios
+#'
+#' Generates a bar plot of estimated cases averted for each SMC pattern/scenario,
+#' including standard error bars. Works with either:
+#' * A list of numeric vectors (cases-averted draws), or
+#' * A list of lists with `mean` and `se` elements.
+#'
+#' @param estimates A named list where each element is either
+#'   - a numeric vector of drawn estimates, or
+#'   - a list with components `mean` and `se`.
+#' @param out_dir Optional string. Directory to save the plot. If `NULL`, the plot is not saved.
+#' @param filename Optional string. File name for saving (default = `"cases_averted_barplot.png"`).
+#' @param width,height Numeric. Width and height (in inches) for the saved plot (default = 8×6).
+#'
+#' @return A `ggplot2` bar-plot object showing mean cases averted ± SE for each scenario.
+#' @export
+plot_cases_averted_barplot <- function(estimates,
+                                       out_dir   = NULL,
+                                       filename  = "cases_averted_barplot.png",
+                                       width     = 8,
+                                       height    = 6) {
+  # 1. build a data frame from 'estimates'
+  est_df <- purrr::imap_dfr(estimates, function(est, label) {
+    if (is.numeric(est) && !is.list(est)) {
+      # est is a vector of draws
+      vals <- est
+      tibble(
+        pattern        = label,
+        cases_averted  = mean(vals, na.rm = TRUE),
+        se             = sd(vals, na.rm = TRUE) / sqrt(length(na.omit(vals)))
+      )
+    } else if (is.list(est) && all(c("mean", "se") %in% names(est))) {
+      # est already has mean & se
+      tibble(
+        pattern       = label,
+        cases_averted = est$mean,
+        se            = est$se
+      )
+    } else {
+      stop("Each element of 'estimates' must be either a numeric vector or a list with 'mean' & 'se'.")
+    }
+  })
+
+  # 2. create the barplot
+  p <- ggplot(est_df, aes(x = pattern, y = cases_averted)) +
+    geom_col(fill = "#3182bd", alpha = 0.8) +
+    geom_errorbar(aes(ymin = cases_averted - se,
+                      ymax = cases_averted + se),
+                  width = 0.2, colour = "black") +
+    labs(
+      title = "Estimated Cases Averted for Different SMC Timings",
+      x     = "SMC Timing",
+      y     = "Mean Cases Averted (± SE)"
+    ) +
+    theme_minimal(base_size = 13) +
+    theme(
+      axis.text.x  = element_text(angle = 45, hjust = 1),
+      plot.title   = element_text(face = "bold", hjust = 0.5)
+    )
+
+  # 3. print to screen
+  print(p)
+
+  # 4. save if requested
+  if (!is.null(out_dir)) {
+    if (!dir.exists(out_dir)) {
+      dir.create(out_dir, recursive = TRUE)
+    }
+    ggsave(filename = file.path(out_dir, filename),
+           plot     = p,
+           width    = width,
+           height   = height,
+           dpi      = 300)
+  }
+
+  return(p)
+}
