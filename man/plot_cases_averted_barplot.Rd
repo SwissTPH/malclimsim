@@ -4,13 +4,7 @@
 \alias{plot_cases_averted_barplot}
 \title{Plot Cases Averted Across SMC Scenarios}
 \usage{
-plot_cases_averted_barplot(
-  estimates,
-  out_dir = NULL,
-  filename = "cases_averted_barplot.png",
-  width = 8,
-  height = 6
-)
+plot_cases_averted_barplot(estimates)
 }
 \arguments{
 \item{estimates}{A named list where each element is either
@@ -18,12 +12,6 @@ plot_cases_averted_barplot(
 \item a numeric vector of drawn estimates, or
 \item a list with components \code{mean} and \code{se}.
 }}
-
-\item{out_dir}{Optional string. Directory to save the plot. If \code{NULL}, the plot is not saved.}
-
-\item{filename}{Optional string. File name for saving (default = \code{"cases_averted_barplot.png"}).}
-
-\item{width, height}{Numeric. Width and height (in inches) for the saved plot (default = 8×6).}
 }
 \value{
 A \code{ggplot2} bar-plot object showing mean cases averted ± SE for each scenario.

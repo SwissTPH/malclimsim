@@ -450,17 +450,10 @@ evaluate_multiple_scenarios <- function(patterns,
 #' @param estimates A named list where each element is either
 #'   - a numeric vector of drawn estimates, or
 #'   - a list with components `mean` and `se`.
-#' @param out_dir Optional string. Directory to save the plot. If `NULL`, the plot is not saved.
-#' @param filename Optional string. File name for saving (default = `"cases_averted_barplot.png"`).
-#' @param width,height Numeric. Width and height (in inches) for the saved plot (default = 8×6).
 #'
 #' @return A `ggplot2` bar-plot object showing mean cases averted ± SE for each scenario.
 #' @export
-plot_cases_averted_barplot <- function(estimates,
-                                       out_dir   = NULL,
-                                       filename  = "cases_averted_barplot.png",
-                                       width     = 8,
-                                       height    = 6) {
+plot_cases_averted_barplot <- function(estimates) {
   # 1. build a data frame from 'estimates'
   est_df <- purrr::imap_dfr(estimates, function(est, label) {
     if (is.numeric(est) && !is.list(est)) {
@@ -499,21 +492,6 @@ plot_cases_averted_barplot <- function(estimates,
       axis.text.x  = element_text(angle = 45, hjust = 1),
       plot.title   = element_text(face = "bold", hjust = 0.5)
     )
-
-  # 3. print to screen
-  print(p)
-
-  # 4. save if requested
-  if (!is.null(out_dir)) {
-    if (!dir.exists(out_dir)) {
-      dir.create(out_dir, recursive = TRUE)
-    }
-    ggsave(filename = file.path(out_dir, filename),
-           plot     = p,
-           width    = width,
-           height   = height,
-           dpi      = 300)
-  }
 
   return(p)
 }
