@@ -1564,6 +1564,8 @@ prepare_plot_data <- function(sim_data, obs_data, sim_vars, obs_var, label = "Si
     filter(variable %in% sim_vars) %>%
     mutate(source = label)
 
+  sim_filtered$value = sim_filtered$median
+
   # --- Expand observed data to match each sim variable
   repeated_obs <- lapply(sim_vars, function(var_name) {
     obs_data %>%
@@ -1591,17 +1593,35 @@ prepare_plot_data <- function(sim_data, obs_data, sim_vars, obs_var, label = "Si
 #' @param plot_title Title for the plot.
 #' @return A ggplot object.
 #' @export
-plot_ppc <- function(plot_data, ci_data = NULL, plot_title = "Posterior Predictive Check") {
+plot_ppc <- function(plot_data, ci_data = NULL, plot_title = "Posterior Predictive Check",
+                     data_source = c("Simulation", "Observed")) {
+
   # Facet label mapping
   label_map <- c(
     inc_C = "No SMC",
     inc_C_transformed = "With SMC"
   )
 
-  p <- ggplot(plot_data, aes(x = date_ymd, y = value, color = source, group = source)) +
-    geom_point(data = subset(plot_data, source == "Observed"), size = 2.5, alpha = 0.8) +
-    geom_line(data = subset(plot_data, source != "Observed"), size = 1.3) +
-    facet_wrap(~ variable, scales = "free_y", labeller = as_labeller(label_map)) +
+
+  if(data_source == "Simulation"){
+    p <- ggplot(plot_data, aes(x = date_ymd, y = value, color = source, group = source)) +
+      geom_line(data = subset(plot_data, source != "Observed"), size = 1.3) +
+      facet_wrap(~ variable, scales = "free_y", labeller = as_labeller(label_map))
+  }
+
+  if(data_source == "Observed"){
+    p <- ggplot(plot_data, aes(x = date_ymd, y = value, color = source, group = source)) +
+      geom_point(data = subset(plot_data, source == "Observed"), size = 2.5, alpha = 0.8) +
+      facet_wrap(~ variable, scales = "free_y", labeller = as_labeller(label_map))
+
+  }else{
+    p <- ggplot(plot_data, aes(x = date_ymd, y = value, color = source, group = source)) +
+      geom_point(data = subset(plot_data, source == "Observed"), size = 2.5, alpha = 0.8) +
+      geom_line(data = subset(plot_data, source != "Observed"), size = 1.3) +
+      facet_wrap(~ variable, scales = "free_y", labeller = as_labeller(label_map))
+  }
+
+  p <- p +
     labs(
       title = plot_title,
       x = "Date",
@@ -1642,17 +1662,39 @@ plot_ppc <- function(plot_data, ci_data = NULL, plot_title = "Posterior Predicti
 #' @param plot_title Title for the plot.
 #' @return A ggplot object.
 #' @export
-plot_ppc <- function(plot_data, ci_data = NULL, plot_title = "Posterior Predictive Check") {
+plot_ppc <- function(plot_data, ci_data = NULL, plot_title = "Posterior Predictive Check",
+                     data_source = c("Simulated", "Observed"), ylim = NULL) {
   # Default to Simulated if no source column exists
   if (!"source" %in% colnames(plot_data)) {
     plot_data$source <- "Simulated"
   }
 
+  plot_data$source <- factor(
+    plot_data$source,
+    levels = c("Simulated","Observed")
+  )
+
+  #plot_df[which(plot_df$variable == "inc_C_transformed"),]$variable <- "<="
+  if(all(data_source == "Simulated")){
+    p <- ggplot(plot_data, aes(x = date_ymd, y = value, color = source)) +
+      geom_line(data = subset(plot_data, source != "Observed"), size = 1.3)
+  }else if(all(data_source == "Observed")){
+    p <- ggplot(plot_data, aes(x = date_ymd, y = value, color = source, group = interaction(source, variable))) +
+      geom_point(data = subset(plot_data, source == "Observed"), size = 2.5, alpha = 0.8)
+  }else if(all(data_source == c("Simulated", "Observed"))){
+    p <- ggplot(plot_data, aes(x = date_ymd, y = value, color = source, group = interaction(source, variable))) +
+      geom_point(data = subset(plot_data, source == "Observed"), size = 2.5, alpha = 0.8) +
+      geom_line(data = subset(plot_data, source != "Observed"), size = 1.3)
+  }else{
+    stop("data_source must be `Observed`, `Simulated`, or `c(Simulated, Observed)`")
+  }
+
+  if(length(unique(plot_data$variable)) > 1){
+    p <- p + facet_wrap(~ variable, scales = "free_y")
+  }
+
   # Base plot
-  p <- ggplot(plot_data, aes(x = date_ymd, y = value, color = source, group = interaction(source, variable))) +
-    geom_point(data = subset(plot_data, source == "Observed"), size = 2.5, alpha = 0.8) +
-    geom_line(data = subset(plot_data, source != "Observed"), size = 1.3) +
-    facet_wrap(~ variable, scales = "free_y") +
+  p <- p +
     labs(
       title = plot_title,
       x = "Date",
@@ -1667,8 +1709,20 @@ plot_ppc <- function(plot_data, ci_data = NULL, plot_title = "Posterior Predicti
       axis.title = element_text(size = 16),
       legend.position = "top",
       legend.title = element_text(size = 14),
-      legend.text = element_text(size = 13)
+      legend.text = element_text(size = 13))
+    #scale_color_manual(values = c("Observed" = "#201d69", "Simulated" = "#f5410a"))
+
+  p <- p +
+    scale_color_manual(
+      name   = "Source",
+      values = c("Simulated" = "#f5410a", "Observed" = "#201d69"),
+      drop   = FALSE,
+      breaks = c("Simulated","Observed")
     )
+
+  if(!is.null(ylim)){
+    p <- p + ylim(ylim)
+  }
 
   # Add credible interval ribbon if provided
   if (!is.null(ci_data)) {
@@ -1705,86 +1759,113 @@ plot_counterfactual_time_series <- function(summaries_list, title = "Counterfact
 
 #' Plot Time Series of Multiple SMC Scenarios
 #'
-#' This function creates a faceted time series plot comparing multiple SMC deployment scenarios.
+#' Creates a time series plot comparing multiple SMC deployment scenarios,
+#' with optional shaded rectangles for SMC timing and credible intervals.
 #'
-#' @param summary_list A named list of data frames from `summarize_simulation_ci()`, one per scenario.
-#'                      Each data frame must contain columns `date_ymd`, `variable`, `median`, `lower`, `upper`.
+#' @param summary_df Data frame containing columns: date_ymd, variable, median, lower, upper, scenario.
+#' @param scenarios_to_plot Optional vector of scenario names to include.
 #' @param title Plot title.
-#' @param out_dir Optional directory to save the plot.
-#' @param filename Optional filename (without extension) to save the plot.
-#' @param width Plot width in inches.
-#' @param height Plot height in inches.
+#' @param facet Whether to facet by scenario.
+#' @param save Logical. If TRUE, saves plot to out_dir.
+#' @param out_dir Directory to save the plot.
+#' @param filename Base filename to save (without extension).
+#' @param width Plot width (in inches).
+#' @param height Plot height (in inches).
+#' @param smc_patterns Optional named list of month vectors (length 12) with 1/0 indicating SMC months.
+#' @param smc_day_of_month Day of month to anchor rectangles (default 15).
+#' @param month_cov Optional named numeric vector giving relative coverage for each month (1–12).
+#' @param years Vector of years for which to generate rectangles.
 #'
 #' @return A ggplot object.
 #' @export
 plot_scenario_time_series <- function(summary_df,
-                                      title = "SMC Scenario Time Series",
-                                      save = TRUE,
-                                      out_dir = NULL,
-                                      filename = "ts_scenario_comparison") {
-
-  p <- ggplot(summary_df, aes(x = date_ymd, y = median)) +
-    geom_line(color = "#1f77b4", size = 1.2) +
-    geom_ribbon(aes(ymin = lower, ymax = upper), fill = "#1f77b4", alpha = 0.3) +
-    facet_wrap(~ scenario, scales = "free_y") +
-    labs(
-      title = title,
-      x = "Date",
-      y = "Monthly Incidence",
-      color = NULL
-    ) +
-    theme_minimal(base_size = 14) +
-    theme(
-      plot.title = element_text(hjust = 0.5, face = "bold"),
-      strip.text = element_text(face = "bold"),
-      axis.text = element_text(size = 12),
-      axis.title = element_text(size = 14)
-    )
-
-  if (save && !is.null(out_dir)) {
-    ggsave(
-      filename = file.path(out_dir, paste0(filename, ".png")),
-      plot = p, width = 12, height = 6, dpi = 300
-    )
-  }
-
-  return(p)
-}
-
-#' Plot Time Series of Multiple SMC Scenarios
-#'
-#' This function creates either a faceted or combined time series plot comparing multiple SMC deployment scenarios.
-#'
-#' @param summary_df A data frame from `summarize_simulation_ci()`, with all scenarios stacked.
-#'                   Must include `date_ymd`, `variable`, `median`, `lower`, `upper`, and `scenario`.
-#' @param title Plot title.
-#' @param facet Logical. If TRUE (default), plot each scenario in a separate facet. If FALSE, overlay all on the same axis.
-#' @param save Logical. If TRUE, saves the plot.
-#' @param out_dir Optional directory to save the plot.
-#' @param filename Optional filename (without extension) to save the plot.
-#' @param width Plot width in inches.
-#' @param height Plot height in inches.
-#'
-#' @return A ggplot object.
-#' @export
-plot_scenario_time_series <- function(summary_df,
+                                      scenarios_to_plot = NULL,
                                       title = "SMC Scenario Time Series",
                                       facet = TRUE,
                                       save = TRUE,
                                       out_dir = NULL,
                                       filename = "ts_scenario_comparison",
                                       width = 12,
-                                      height = 6) {
+                                      height = 6,
+                                      smc_patterns = NULL,
+                                      smc_day_of_month = 15,
+                                      month_cov = NULL,
+                                      years = NULL) {
 
+  # Predefine manual colorblind-friendly palette
+  scenario_colors <- c(
+    "4 rounds (July start)"   = "#0072B2",  # Blue
+    "4 rounds (June start)"   = "#E69F00",  # Orange
+    "5 rounds (July start)"     = "#009E73",  # Green
+    "5 rounds (June start)"    = "#D55E00"  # Red
+  )
+
+  # Filter scenario data if requested
+  if (!is.null(scenarios_to_plot)) {
+    summary_df <- summary_df %>% dplyr::filter(scenario %in% scenarios_to_plot)
+    scenario_colors <- scenario_colors[names(scenario_colors) %in% scenarios_to_plot]
+    if (!is.null(smc_patterns)) {
+      smc_patterns <- smc_patterns[names(smc_patterns) %in% scenarios_to_plot]
+    }
+  }
+
+  # Axis limits
+  xlim <- range(summary_df$date_ymd, na.rm = TRUE)
+  ylim <- range(c(summary_df$lower, summary_df$upper, summary_df$median), na.rm = TRUE)
+  ylim[2] <- ylim[2] * 1.05  # Add padding
+
+  # Create rectangles if SMC pattern info is available
+  smc_rects <- NULL
+  if (!is.null(smc_patterns) && !is.null(years)) {
+    smc_rects <- purrr::imap_dfr(smc_patterns, function(pattern_vec, scenario_name) {
+      stopifnot(length(pattern_vec) == 12)
+      purrr::map_dfr(years, function(y) {
+        active_months <- which(pattern_vec == 1)
+        if (length(active_months) == 0) return(NULL)
+        tibble::tibble(
+          scenario   = scenario_name,
+          date_start = as.Date(sprintf("%d-%02d-%02d", y, min(active_months), smc_day_of_month)),
+          date_end   = as.Date(sprintf("%d-%02d-%02d", y, max(active_months), smc_day_of_month)) + 30,
+          alpha      = if (!is.null(month_cov)) {
+            mean(month_cov[as.character(active_months)], na.rm = TRUE)
+          } else {
+            0.2
+          }
+        )
+      })
+    })
+  }
+
+  # Plot base
   p <- ggplot(summary_df, aes(x = date_ymd, y = median, color = scenario, fill = scenario)) +
     geom_line(size = 1.2) +
     geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, color = NA)
 
+  # Add shaded rectangles for SMC periods
+  if (!is.null(smc_rects)) {
+    p <- p +
+      geom_rect(data = smc_rects,
+                aes(xmin = date_start, xmax = date_end,
+                    ymin = -Inf, ymax = Inf, alpha = alpha),
+                fill = "grey50", inherit.aes = FALSE) +
+      scale_alpha_continuous(range = c(0.1, 0.4), guide = "none")
+  }
+
+  # Apply manual color scale
+  p <- p +
+    scale_color_manual(values = scenario_colors, drop = FALSE) +
+    scale_fill_manual(values = scenario_colors, drop = FALSE)
+
+  # Consistent axis limits
+  p <- p + coord_cartesian(xlim = xlim, ylim = ylim)
+
+  # Faceting if desired
   if (facet) {
     p <- p + facet_wrap(~ scenario, scales = "free_y") +
       guides(color = "none", fill = "none")
   }
 
+  # Theme and labels
   p <- p +
     labs(
       title = title,
@@ -1795,12 +1876,178 @@ plot_scenario_time_series <- function(summary_df,
     ) +
     theme_minimal(base_size = 14) +
     theme(
-      plot.title = element_text(hjust = 0.5, face = "bold"),
-      strip.text = element_text(face = "bold"),
-      axis.text = element_text(size = 12),
-      axis.title = element_text(size = 14)
+      plot.title      = element_text(hjust = 0.5, face = "bold"),
+      strip.text      = element_text(face = "bold"),
+      axis.text       = element_text(size = 12),
+      axis.title      = element_text(size = 14),
+      legend.position = "top",
+      legend.title    = element_text(size = 12),
+      legend.text     = element_text(size = 11),
+      legend.margin   = margin(b = 8),
+      legend.justification = "left",
+      legend.box = "horizontal"
+    ) +
+    guides(
+      color = guide_legend(
+        nrow = 1, byrow = TRUE,
+        title.position = "top",
+        label.position = "right"
+      ),
+      fill = guide_legend(
+        nrow = 1, byrow = TRUE,
+        title.position = "top",
+        label.position = "right"
+      )
     )
 
+  # Save to disk if requested
+  if (save && !is.null(out_dir)) {
+    ggsave(
+      filename = file.path(out_dir, paste0(filename, ".png")),
+      plot = p, width = width, height = height, dpi = 300
+    )
+  }
+
+  return(p)
+}
+
+plot_scenario_time_series <- function(summary_df,
+                                      scenarios_to_plot = NULL,
+                                      title = "SMC Scenario Time Series",
+                                      facet = TRUE,
+                                      save = TRUE,
+                                      out_dir = NULL,
+                                      filename = "ts_scenario_comparison",
+                                      width = 12,
+                                      height = 6,
+                                      smc_patterns = NULL,
+                                      smc_day_of_month = 15,
+                                      month_cov = NULL,
+                                      years = NULL) {
+
+  # Predefine manual colorblind-friendly palette
+  scenario_colors <- c(
+    "4 rounds (July start)"  = "#0072B2",  # Blue
+    "4 rounds (June start)"  = "#E69F00",  # Orange
+    "5 rounds (July start)"  = "#009E73",  # Green
+    "5 rounds (June start)"  = "#D55E00"   # Red
+  )
+
+  # Filter scenario data if requested
+  if (!is.null(scenarios_to_plot)) {
+    summary_df <- summary_df %>% dplyr::filter(scenario %in% scenarios_to_plot)
+    if (!is.null(smc_patterns)) {
+      smc_patterns <- smc_patterns[names(smc_patterns) %in% scenarios_to_plot]
+    }
+  }
+
+  # Ensure scenario is a factor with all levels from the palette
+  summary_df <- summary_df %>%
+    mutate(scenario = factor(scenario, levels = names(scenario_colors)))
+
+  # Add dummy rows for scenarios not present (to fix legend ordering)
+  missing_levels <- setdiff(names(scenario_colors), unique(as.character(summary_df$scenario)))
+  if (length(missing_levels) > 0) {
+    dummy_rows <- tibble::tibble(
+      date_ymd = as.Date(NA),
+      variable = NA_character_,
+      median   = NA_real_,
+      lower    = NA_real_,
+      upper    = NA_real_,
+      scenario = factor(missing_levels, levels = names(scenario_colors))
+    )
+    summary_df <- bind_rows(summary_df, dummy_rows)
+  }
+
+  # Axis limits
+  xlim <- range(summary_df$date_ymd, na.rm = TRUE)
+  ylim <- range(c(summary_df$lower, summary_df$upper, summary_df$median), na.rm = TRUE)
+  ylim[2] <- ylim[2] * 1.05  # Add padding
+
+  # Construct SMC rectangles
+  smc_rects <- NULL
+  if (!is.null(smc_patterns) && !is.null(years)) {
+    smc_rects <- purrr::imap_dfr(smc_patterns, function(pattern_vec, scenario_name) {
+      stopifnot(length(pattern_vec) == 12)
+      purrr::map_dfr(years, function(y) {
+        active_months <- which(pattern_vec == 1)
+        if (length(active_months) == 0) return(NULL)
+        tibble::tibble(
+          scenario   = factor(scenario_name, levels = names(scenario_colors)),
+          date_start = as.Date(sprintf("%d-%02d-%02d", y, min(active_months), smc_day_of_month)),
+          date_end   = as.Date(sprintf("%d-%02d-%02d", y, max(active_months), smc_day_of_month)) + 30,
+          alpha      = if (!is.null(month_cov)) {
+            mean(month_cov[as.character(active_months)], na.rm = TRUE)
+          } else {
+            0.2
+          }
+        )
+      })
+    })
+  }
+
+  # Base ggplot
+  p <- ggplot(summary_df, aes(x = date_ymd, y = median, color = scenario, fill = scenario)) +
+    geom_line(na.rm = TRUE, size = 1.2) +
+    geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, color = NA, na.rm = TRUE)
+
+  # Add rectangles if available
+  if (!is.null(smc_rects)) {
+    p <- p +
+      geom_rect(data = smc_rects,
+                aes(xmin = date_start, xmax = date_end, ymin = -Inf, ymax = Inf, alpha = alpha),
+                fill = "grey50", inherit.aes = FALSE) +
+      scale_alpha_continuous(range = c(0.1, 0.4), guide = "none")
+  }
+
+  # Axis and colors
+  p <- p +
+    coord_cartesian(xlim = xlim, ylim = ylim) +
+    scale_color_manual(values = scenario_colors, drop = FALSE) +
+    scale_fill_manual(values = scenario_colors, drop = FALSE)
+
+  # Faceting
+  if (facet) {
+    p <- p + facet_wrap(~ scenario, scales = "free_y") +
+      guides(color = "none", fill = "none")
+  }
+
+  # Labels and theme
+  p <- p +
+    labs(
+      title = title,
+      x = "Date",
+      y = "Monthly Cases",
+      color = NULL,
+      fill = NULL
+    ) +
+    theme_minimal(base_size = 14) +
+    theme(
+      plot.title      = element_text(hjust = 0.5, face = "bold"),
+      strip.text      = element_text(face = "bold"),
+      axis.text       = element_text(size = 12),
+      axis.title      = element_text(size = 14),
+      legend.position = "top",
+      legend.title    = element_text(size = 12),
+      legend.text     = element_text(size = 11),
+      legend.margin   = margin(b = 8),
+      legend.justification = "left",
+      legend.box = "horizontal"
+    ) +
+    guides(
+      color = guide_legend(
+        nrow = 1, byrow = TRUE,
+        title.position = "top",
+        label.position = "right"
+      ),
+      fill = guide_legend(
+        nrow = 1, byrow = TRUE,
+        title.position = "top",
+        label.position = "right"
+      )
+    )
+
+  # Save if requested
   if (save && !is.null(out_dir)) {
     ggsave(
       filename = file.path(out_dir, paste0(filename, ".png")),
@@ -1812,36 +2059,254 @@ plot_scenario_time_series <- function(summary_df,
 }
 
 
-#' Plot Single Time Series Comparison (With vs. Without SMC)
-#'
-#' Generates a single time series plot showing two scenarios (e.g., With SMC vs. Without SMC),
-#' each with their respective credible interval ribbons.
-#'
-#' @param plot_data Data frame with columns: date_ymd, value, variable (e.g., "With SMC", "Without SMC").
-#' @param ci_data Optional data frame with columns: date_ymd, lower, upper, variable.
-#' @param plot_title Title for the plot.
-#' @return A ggplot object.
-#' @export
-plot_ppc_single <- function(plot_data, ci_data = NULL, plot_title = "Time Series Comparison") {
+
+#’ Plot Single Time Series Comparison (With vs. Without SMC + Observed)
+#’
+#’ Ensures legend always shows all four series: Observed, With SMC, Without SMC, SMC in 2019
+#’
+#’ @param plot_data Data frame with columns: date_ymd (Date), value (numeric), variable
+#’ @param ci_data   Optional data frame: date_ymd, lower, upper, variable
+#’ @param obs_data  Optional observed data (must have date_ymd)
+#’ @param obs_col   Name of obs column in obs_data
+#’ @param plot_title Title
+#’ @param xlim      x‐axis limits (Date vector)
+#’ @param ylim      y‐axis limits (numeric vector)
+#’ @return ggplot2 object
+#’ @export
+plot_ppc_single <- function(plot_data,
+                            ci_data    = NULL,
+                            obs_data   = NULL,
+                            obs_col    = NULL,
+                            plot_title = "Time Series Comparison",
+                            xlim       = NULL,
+                            ylim       = NULL) {
+  # 1) Ensure variable factor with all levels
+  plot_data <- plot_data %>%
+    mutate(variable = factor(variable,
+                             levels = c("With SMC","Without SMC","SMC in 2019","Observed")
+    ))
+
+  # 2) Append observed
+  if (!is.null(obs_data) && !is.null(obs_col)) {
+    obs_df <- obs_data %>%
+      select(date_ymd, !!sym(obs_col)) %>%
+      rename(value = !!sym(obs_col)) %>%
+      mutate(variable = factor("Observed",
+                               levels = levels(plot_data$variable)
+      ))
+    plot_data <- bind_rows(plot_data, obs_df)
+  }
+
+  # 3) Dummy rows for missing legend entries
+  all_lvls     <- levels(plot_data$variable)
+  present_lvls <- unique(plot_data$variable)
+  missing_lvls <- setdiff(all_lvls, present_lvls)
+  if (length(missing_lvls)) {
+    dummies <- tibble(
+      date_ymd = as.Date(NA),
+      value    = NA_real_,
+      variable = factor(missing_lvls, levels = all_lvls)
+    )
+    plot_data <- bind_rows(plot_data, dummies)
+  }
+
+  # 4) Base plot
   p <- ggplot(plot_data, aes(x = date_ymd, y = value, color = variable)) +
-    geom_line(size = 1.2) +
-    labs(
-      title = plot_title,
-      x = "Date",
-      y = "Monthly Number of Cases",
-      color = "Scenario"
-    ) +
     theme_minimal(base_size = 16) +
     theme(
-      plot.title = element_text(hjust = 0.5, face = "bold", size = 18),
-      axis.text = element_text(size = 14),
-      axis.title = element_text(size = 16),
+      plot.title      = element_text(hjust=0.5, face="bold", size=18),
+      axis.text       = element_text(size=14),
+      axis.title      = element_text(size=16),
       legend.position = "top",
-      legend.title = element_text(size = 14),
-      legend.text = element_text(size = 13)
-    )
+      legend.title    = element_text(size=14),
+      legend.text     = element_text(size=13)
+    ) +
+    labs(
+      title = plot_title,
+      x     = "",
+      y     = "Weekly Cases",
+      color = ""
+    ) +
+    scale_color_manual(
+      values = c(
+        "With SMC"     = "#6b6363",
+        "Without SMC"  = "#201d69",
+        "SMC in 2019"  = "#30baff",
+        "Observed"     = "black"
+      ),
+      breaks = c("Observed","With SMC","Without SMC","SMC in 2019"),
+      drop   = FALSE
+    ) +
+    guides(color = guide_legend(
+      override.aes = list(
+        linetype = c("blank","solid","solid","solid"),
+        shape    = c(16,       NA,      NA,      NA),
+        size     = c(2.5,      1.2,     1.2,     1.2)
+      )
+    ))
 
-  # Add credible intervals if provided
+  # 5) Add CI ribbons
+  if (!is.null(ci_data)) {
+    ci_data <- ci_data %>%
+      mutate(variable = factor(variable, levels = levels(plot_data$variable)))
+    p <- p + geom_ribbon(
+      data        = ci_data,
+      aes(x = date_ymd, ymin = lower, ymax = upper, fill = variable),
+      alpha       = 0.25,
+      inherit.aes = FALSE,
+      show.legend = FALSE
+    )
+  }
+
+  # 6) Add lines & points
+  p <- p +
+    geom_line(data = filter(plot_data, variable != "Observed"), size = 1.2, na.rm = TRUE) +
+    geom_point(data = filter(plot_data, variable == "Observed"), size = 2.5, alpha = 0.8, na.rm = TRUE) +
+    labs(subtitle = "Uncomplicated") +
+    theme(plot.subtitle = element_text(hjust=0.5, face="italic"))
+
+  # 7) Axis limits
+  if (!is.null(xlim) || !is.null(ylim)) {
+    p <- p + coord_cartesian(xlim = xlim, ylim = ylim)
+  }
+
+  return(p)
+}
+
+#' Plot Single Time Series Comparison (Uncomplicated or Severe Cases)
+#'
+#' Ensures legend always shows all four series: Observed, With SMC, Without SMC, SMC in 2019.
+#'
+#' @param plot_data Data frame with columns: date_ymd (Date), value (numeric), variable
+#' @param ci_data   Optional data frame: date_ymd, lower, upper, variable
+#' @param obs_data  Optional observed data (must have date_ymd)
+#' @param obs_col   Name of obs column in obs_data
+#' @param plot_title Title
+#' @param xlim      x‐axis limits (Date vector)
+#' @param ylim      y‐axis limits (numeric vector)
+#' @param severity  Either "Uncomplicated" or "Severe"
+#' @param scale_severe Scaling factor for severe cases (used if no per-year mapping is provided)
+#' @param scale_severe_by_year Named vector of multipliers (e.g., c("2018" = 0.1, "2019" = 0.2, ...))
+#'
+#' @return ggplot2 object
+#' @export
+plot_ppc_single <- function(plot_data,
+                            ci_data    = NULL,
+                            obs_data   = NULL,
+                            obs_col    = NULL,
+                            plot_title = "Time Series Comparison",
+                            xlim       = NULL,
+                            ylim       = NULL,
+                            severity   = "Uncomplicated",
+                            scale_severe = 1,
+                            scale_severe_by_year = NULL) {
+
+  library(dplyr); library(ggplot2); library(lubridate)
+
+  # Normalize severity input
+  severity <- match.arg(severity, choices = c("Uncomplicated", "Severe"))
+
+  # Scaling helper
+  get_mult <- function(d) {
+    if (!is.null(scale_severe_by_year)) {
+      m <- scale_severe_by_year[as.character(year(d))]
+      ifelse(is.na(m), scale_severe, m)
+    } else {
+      scale_severe
+    }
+  }
+
+  # Ensure variable is a factor with all four levels
+  plot_data <- plot_data %>%
+    mutate(variable = factor(variable, levels = c("With SMC", "Without SMC", "SMC in 2019", "Observed")))
+
+  # Scale if severe
+  if (severity == "Severe") {
+    plot_data <- plot_data %>%
+      mutate(value = value * get_mult(date_ymd))
+  }
+
+  # Add observed data
+  if (!is.null(obs_data) && !is.null(obs_col)) {
+    obs_df <- obs_data %>%
+      select(date_ymd, !!sym(obs_col)) %>%
+      rename(value = !!sym(obs_col)) %>%
+      mutate(variable = factor("Observed", levels = levels(plot_data$variable)))
+
+    if (severity == "Severe") {
+      obs_df <- obs_df %>%
+        mutate(value = value * get_mult(date_ymd))
+    }
+
+    plot_data <- bind_rows(plot_data, obs_df)
+  }
+
+  # Add dummy rows for missing legend entries
+  all_lvls <- levels(plot_data$variable)
+  present_lvls <- unique(plot_data$variable)
+  missing_lvls <- setdiff(all_lvls, present_lvls)
+
+  if (length(missing_lvls)) {
+    dummies <- tibble(
+      date_ymd = as.Date(NA),
+      value    = NA_real_,
+      variable = factor(missing_lvls, levels = all_lvls)
+    )
+    plot_data <- bind_rows(plot_data, dummies)
+  }
+
+  # Prepare CI
+  if (!is.null(ci_data)) {
+    ci_data <- ci_data %>%
+      mutate(variable = factor(variable, levels = levels(plot_data$variable)))
+
+    if (severity == "Severe") {
+      ci_data <- ci_data %>%
+        mutate(
+          lower = lower * get_mult(date_ymd),
+          upper = upper * get_mult(date_ymd)
+        )
+    }
+  }
+
+  # Base plot
+  p <- ggplot(plot_data, aes(x = date_ymd, y = value, color = variable)) +
+    theme_minimal(base_size = 16) +
+    theme(
+      plot.title      = element_text(hjust = 0.5, face = "bold", size = 18),
+      plot.subtitle   = element_text(hjust = 0.5, face = "italic"),
+      axis.text       = element_text(size = 14),
+      axis.title      = element_text(size = 16),
+      legend.position = "top",
+      legend.title    = element_text(size = 14),
+      legend.text     = element_text(size = 13)
+    ) +
+    labs(
+      title    = plot_title,
+      subtitle = severity,
+      x        = "",
+      y        = "Weekly Cases",
+      color    = ""
+    ) +
+    scale_color_manual(
+      values = c(
+        "With SMC"    = "#6b6363",
+        "Without SMC" = "#201d69",
+        "SMC in 2019" = "#30baff",
+        "Observed"    = "black"
+      ),
+      breaks = c("Observed", "With SMC", "Without SMC", "SMC in 2019"),
+      drop   = FALSE
+    ) +
+    guides(color = guide_legend(
+      override.aes = list(
+        linetype = c("blank","solid","solid","solid"),
+        shape    = c(16,       NA,      NA,      NA),
+        size     = c(2.5,      1.2,     1.2,     1.2)
+      )
+    ))
+
+  # Add ribbons
   if (!is.null(ci_data)) {
     p <- p + geom_ribbon(
       data = ci_data,
@@ -1852,6 +2317,100 @@ plot_ppc_single <- function(plot_data, ci_data = NULL, plot_title = "Time Series
     )
   }
 
+  # Add lines and points
+  p <- p +
+    geom_line(data = filter(plot_data, variable != "Observed"), size = 1.2, na.rm = TRUE) +
+    geom_point(data = filter(plot_data, variable == "Observed"), size = 2.5, alpha = 0.8, na.rm = TRUE)
+
+  # Axis limits
+  if (!is.null(xlim) || !is.null(ylim)) {
+    p <- p + coord_cartesian(xlim = xlim, ylim = ylim)
+  }
+
   return(p)
+}
+
+
+
+#’ Plot Uncomplicated & Severe panels by calling plot_ppc_single twice
+#’
+#’ @param plot_data            as for plot_ppc_single
+#’ @param ci_data              as for plot_ppc_single
+#’ @param obs_data             as for plot_ppc_single
+#’ @param obs_col              as for plot_ppc_single
+#’ @param plot_title           overall title
+#’ @param xlim                 x‐axis limits
+#’ @param ylim_unc             y‐limits for Uncomplicated panel
+#’ @param ylim_sev             y‐limits for Severe panel
+#’ @param scale_severe         single multiplier
+#’ @param scale_severe_by_year named vector of year→multiplier
+#’ @return patchwork
+#’ @export
+plot_ppc_dual <- function(plot_data,
+                          ci_data              = NULL,
+                          obs_data             = NULL,
+                          obs_col              = NULL,
+                          plot_title           = "",
+                          xlim                 = NULL,
+                          ylim_unc             = NULL,
+                          ylim_sev             = NULL,
+                          scale_severe         = 1,
+                          scale_severe_by_year = NULL) {
+
+  # helper multiplier
+  get_mult <- function(d) {
+    if (!is.null(scale_severe_by_year)) {
+      m <- scale_severe_by_year[as.character(year(d))]
+      ifelse(is.na(m), scale_severe, m)
+    } else {
+      scale_severe
+    }
+  }
+
+  # panel 1: Uncomplicated
+  p1 <- plot_ppc_single(
+    plot_data  = plot_data,
+    ci_data    = ci_data,
+    obs_data   = obs_data,
+    obs_col    = obs_col,
+    plot_title = plot_title,
+    xlim       = xlim,
+    ylim       = ylim_unc
+  ) + labs(subtitle = "Uncomplicated") +
+    theme(plot.subtitle = element_text(hjust=0.5, face="italic"))
+
+  # panel 2: Severe (scale both sim & obs)
+  pd2 <- plot_data %>%
+    mutate(value = value * get_mult(date_ymd))
+  ci2 <- if (!is.null(ci_data)) {
+    ci_data %>%
+      select(date_ymd, lower, upper, variable) %>%  # ensure required cols
+      mutate(
+        lower = lower * get_mult(date_ymd),
+        upper = upper * get_mult(date_ymd)
+      )
+  } else NULL
+
+  if (!"date_ymd" %in% names(ci2)) stop("ci_data must contain 'date_ymd' for ribbon plotting.")
+
+  if(!is.null(obs_data)){
+    obs_data_severe <- obs_data %>%
+    select(date_ymd, !!sym(obs_col)) %>%
+    mutate(!!sym(obs_col) := !!sym(obs_col) * get_mult(date_ymd))
+  }else{obs_data_severe = NULL}
+
+  p2 <- plot_ppc_single(
+    plot_data  = pd2,
+    ci_data    = ci2,
+    obs_data   = obs_data_severe,
+    obs_col    = obs_col,
+    plot_title = NULL,
+    xlim       = xlim,
+    ylim       = ylim_sev
+  ) + labs(subtitle = "Severe") +
+    theme(plot.subtitle = element_text(hjust=0.5, face="italic"))
+
+  # stack
+  return(p1 / p2 + plot_layout(ncol=1, heights=c(1,1)))
 }
 

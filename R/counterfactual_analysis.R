@@ -440,58 +440,103 @@ evaluate_multiple_scenarios <- function(patterns,
   ))
 }
 
-#' Plot Cases Averted Across SMC Scenarios
+#' Plot Cases Averted Across SMC Scenarios (with 95% Credible Intervals)
 #'
 #' Generates a bar plot of estimated cases averted for each SMC pattern/scenario,
-#' including standard error bars. Works with either:
-#' * A list of numeric vectors (cases-averted draws), or
-#' * A list of lists with `mean` and `se` elements.
+#' including 95% credible interval error bars. Supports either:
+#' * A list of numeric vectors (posterior samples), or
+#' * A list of lists with `mean`, `lower`, and `upper`.
 #'
-#' @param estimates A named list where each element is either
-#'   - a numeric vector of drawn estimates, or
-#'   - a list with components `mean` and `se`.
+#' @param estimates A named list where each element is either:
+#'   - A numeric vector of posterior draws, or
+#'   - A list with elements `mean`, `lower`, and `upper`.
+#' @param title Plot title.
+#' @param x_lab Label for the x-axis.
+#' @param y_lab Label for the y-axis.
+#' @param horizontal Logical. If TRUE, produces a horizontal bar plot.
 #'
-#' @return A `ggplot2` bar-plot object showing mean cases averted ± SE for each scenario.
+#' @return A `ggplot2` bar plot object showing mean cases averted with 95% CI.
 #' @export
-plot_cases_averted_barplot <- function(estimates) {
-  # 1. build a data frame from 'estimates'
+plot_cases_averted_barplot <- function(estimates,
+                                       title      = "Estimated Cases Averted for Different SMC Timings",
+                                       x_lab      = "SMC Timing",
+                                       y_lab      = "Mean Cases Averted (95% CI)",
+                                       horizontal = FALSE) {
+
+  # Define colorblind-friendly scenario colors
+  scenario_colors <- c(
+    "4 rounds (July start)" = "#0072B2",  # Blue
+    "4 rounds (June start)" = "#E69F00",  # Orange
+    "5 rounds (July start)" = "#009E73",  # Green
+    "5 rounds (June start)" = "#D55E00"   # Red
+  )
+
+  # 1. Convert input into tidy data frame
   est_df <- purrr::imap_dfr(estimates, function(est, label) {
     if (is.numeric(est) && !is.list(est)) {
-      # est is a vector of draws
-      vals <- est
-      tibble(
-        pattern        = label,
-        cases_averted  = mean(vals, na.rm = TRUE),
-        se             = sd(vals, na.rm = TRUE) / sqrt(length(na.omit(vals)))
+      quant <- quantile(est, probs = c(0.025, 0.975), na.rm = TRUE)
+      tibble::tibble(
+        pattern       = label,
+        cases_averted = mean(est, na.rm = TRUE),
+        lower         = quant[1],
+        upper         = quant[2]
       )
-    } else if (is.list(est) && all(c("mean", "se") %in% names(est))) {
-      # est already has mean & se
-      tibble(
+    } else if (is.list(est) && all(c("mean", "lower", "upper") %in% names(est))) {
+      tibble::tibble(
         pattern       = label,
         cases_averted = est$mean,
-        se            = est$se
+        lower         = est$lower,
+        upper         = est$upper
       )
     } else {
-      stop("Each element of 'estimates' must be either a numeric vector or a list with 'mean' & 'se'.")
+      stop("Each element of 'estimates' must be a numeric vector or a list with 'mean', 'lower', and 'upper'.")
     }
   })
 
-  # 2. create the barplot
-  p <- ggplot(est_df, aes(x = pattern, y = cases_averted)) +
-    geom_col(fill = "#3182bd", alpha = 0.8) +
-    geom_errorbar(aes(ymin = cases_averted - se,
-                      ymax = cases_averted + se),
-                  width = 0.2, colour = "black") +
+  # 2. Sort by descending value and fix factor levels
+  est_df <- est_df %>%
+    arrange(desc(cases_averted)) %>%
+    mutate(
+      pattern = factor(pattern, levels = unique(pattern)),
+      fill_color = scenario_colors[as.character(pattern)]
+    )
+
+  # 3. Plot
+  p <- ggplot(est_df, aes(x = pattern, y = cases_averted, fill = pattern)) +
+    geom_col(alpha = 0.9) +
+    geom_errorbar(
+      aes(ymin = lower, ymax = upper),
+      width = 0.2, color = "black"
+    ) +
+    scale_fill_manual(values = scenario_colors, drop = FALSE) +
     labs(
-      title = "Estimated Cases Averted for Different SMC Timings",
-      x     = "SMC Timing",
-      y     = "Mean Cases Averted (± SE)"
+      title = title,
+      x     = x_lab,
+      y     = y_lab,
+      fill  = NULL
     ) +
     theme_minimal(base_size = 13) +
     theme(
-      axis.text.x  = element_text(angle = 45, hjust = 1),
-      plot.title   = element_text(face = "bold", hjust = 0.5)
+      plot.title = element_text(face = "bold", hjust = 0.5),
+      axis.text  = element_text(size = 11),
+      axis.title = element_text(size = 13),
+      legend.position = "none"
     )
+
+  # 4. Optional horizontal layout
+  if (horizontal) {
+    p <- p +
+      coord_flip() +
+      theme(axis.text.y = element_text(hjust = 1))
+  } else {
+    p <- p +
+      theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  }
 
   return(p)
 }
+
+
+
+
+
