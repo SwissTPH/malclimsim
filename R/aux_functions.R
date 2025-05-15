@@ -285,14 +285,30 @@ filter_by_year <- function(data, date_column, years_range) {
 
 #' Load and clean raw SMC coverage data
 #'
-#' @param path_to_SMC Path to Excel file containing SMC data
+#' Cleans and formats SMC coverage data. Allows for flexibility in input:
+#' the user can supply either a data frame directly or a path to a file
+#' (Excel or RDS). If both `data` and paths are `NULL`, the function returns an error.
 #'
-#' @return A cleaned data frame with columns: date_start, coverage
+#' @param data A data frame containing raw SMC coverage data (default = NULL).
+#' @param path_to_excel Optional. Path to an Excel file containing SMC data (default = NULL).
+#' @param path_to_rds Optional. Path to an RDS file containing SMC data (default = NULL).
+#'
+#' @return A cleaned data frame with columns: `date_start` and `coverage`.
+#'         Only one row per Year-Month is retained (the first entry chronologically).
 #' @export
-load_clean_smc_data <- function(path_to_excel = NULL, path_to_rds = NULL) {
-  if(!is.null(path_to_rds)){
-    data <- readRDS(path_to_rds)
-  }else{data <- readxl::read_excel(path_to_excel)}
+load_clean_smc_data <- function(data = NULL, path_to_excel = NULL, path_to_rds = NULL) {
+  # Load data depending on inputs
+  if (is.null(data)) {
+    if (!is.null(path_to_rds)) {
+      data <- readRDS(path_to_rds)
+    } else if (!is.null(path_to_excel)) {
+      data <- readxl::read_excel(path_to_excel)
+    } else {
+      stop("Please provide either a data frame or a path to an Excel or RDS file.")
+    }
+  }
+
+  # Clean and format the data
   data %>%
     dplyr::select(date_start, smc_couv_tot) %>%
     dplyr::rename(coverage = smc_couv_tot) %>%
@@ -302,6 +318,7 @@ load_clean_smc_data <- function(path_to_excel = NULL, path_to_rds = NULL) {
     dplyr::ungroup() %>%
     dplyr::select(-YearMonth)
 }
+
 
 
 

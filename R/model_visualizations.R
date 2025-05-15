@@ -2213,6 +2213,14 @@ plot_ppc_single <- function(plot_data,
 
   library(dplyr); library(ggplot2); library(lubridate)
 
+  # Ensure label exists
+  if (!"label" %in% colnames(plot_data)) {
+    plot_data <- plot_data %>% mutate(label = as.character(variable))
+  }
+  if (!is.null(ci_data) && !"label" %in% colnames(ci_data)) {
+    ci_data <- ci_data %>% mutate(label = as.character(variable))
+  }
+
   # Normalize severity input
   severity <- match.arg(severity, choices = c("Uncomplicated", "Severe"))
 
@@ -2279,8 +2287,32 @@ plot_ppc_single <- function(plot_data,
     }
   }
 
+  label_levels <- unique(plot_data$label)
+
+  color_palette <- c(
+    "With SMC"     = "#6b6363",
+    "Without SMC"  = "#201d69",
+    "SMC in 2019"  = "#30baff",
+    "Observed"     = "black",
+    "2023 June"    = "#e41a1c",
+    "2023 July"    = "#377eb8"
+  )
+
+  linetypes <- ifelse(legend_levels == "Observed", "blank", "solid")
+  shapes    <- ifelse(legend_levels == "Observed", 16, NA)
+  sizes     <- ifelse(legend_levels == "Observed", 2.5, 1.2)
+
+  # Filter these by what's actually present
+  present_idx <- legend_levels %in% label_levels
+
+  override_aes <- list(
+    linetype = linetypes[present_idx],
+    shape    = shapes[present_idx],
+    size     = sizes[present_idx]
+  )
+
   # Base plot
-  p <- ggplot(plot_data, aes(x = date_ymd, y = value, color = variable)) +
+  p <- ggplot(plot_data, aes(x = date_ymd, y = value, color = label)) +
     theme_minimal(base_size = 16) +
     theme(
       plot.title      = element_text(hjust = 0.5, face = "bold", size = 18),
@@ -2299,28 +2331,18 @@ plot_ppc_single <- function(plot_data,
       color    = ""
     ) +
     scale_color_manual(
-      values = c(
-        "With SMC"    = "#6b6363",
-        "Without SMC" = "#201d69",
-        "SMC in 2019" = "#30baff",
-        "Observed"    = "black"
-      ),
-      breaks = c("Observed", "With SMC", "Without SMC", "SMC in 2019"),
-      drop   = FALSE
+      values = color_palette[label_levels],
+      breaks = label_levels,
+      drop = FALSE
     ) +
-    guides(color = guide_legend(
-      override.aes = list(
-        linetype = c("blank","solid","solid","solid"),
-        shape    = c(16,       NA,      NA,      NA),
-        size     = c(2.5,      1.2,     1.2,     1.2)
-      )
-    ))
+    guides(color = guide_legend(override.aes = override_aes))
+
 
   # Add ribbons
   if (!is.null(ci_data)) {
     p <- p + geom_ribbon(
       data = ci_data,
-      aes(x = date_ymd, ymin = lower, ymax = upper, fill = variable),
+      aes(x = date_ymd, ymin = lower, ymax = upper, fill = label),
       alpha = 0.25,
       inherit.aes = FALSE,
       show.legend = FALSE
@@ -2340,7 +2362,164 @@ plot_ppc_single <- function(plot_data,
   return(p)
 }
 
+#' Plot Single Time Series Comparison (Uncomplicated or Severe Cases)
+#'
+#' Displays time series with optional credible intervals, observed points, and
+#' consistent legend formatting across scenarios (e.g., With/Without SMC, June/July 2023, etc.)
+#'
+#' @param plot_data Data frame with columns: date_ymd (Date), value (numeric), label
+#' @param ci_data   Optional data frame: date_ymd, lower, upper, label
+#' @param obs_data  Optional observed data (must have date_ymd)
+#' @param obs_col   Name of obs column in obs_data
+#' @param plot_title Title
+#' @param xlim      x‐axis limits (Date vector)
+#' @param ylim      y‐axis limits (numeric vector)
+#' @param severity  Either "Uncomplicated" or "Severe"
+#' @param scale_severe Scaling factor for severe cases (used if no per-year mapping is provided)
+#' @param scale_severe_by_year Named vector of multipliers by year (optional)
+#'
+#' @return ggplot2 plot object
+#' @export
+plot_ppc_single <- function(plot_data,
+                            ci_data    = NULL,
+                            obs_data   = NULL,
+                            obs_col    = NULL,
+                            plot_title = "Time Series Comparison",
+                            xlim       = NULL,
+                            ylim       = NULL,
+                            severity   = "Uncomplicated",
+                            scale_severe = 1,
+                            scale_severe_by_year = NULL) {
 
+  library(dplyr)
+  library(ggplot2)
+  library(lubridate)
+
+  # Define full label set (for consistent legends)
+  legend_levels <- c("Observed", "With SMC", "Without SMC", "SMC in 2019", "2023 June", "2023 July")
+
+  # Ensure label column exists
+  if (!"label" %in% colnames(plot_data)) {
+    plot_data <- plot_data %>% mutate(label = as.character(variable))
+  }
+  if (!is.null(ci_data) && !"label" %in% colnames(ci_data)) {
+    ci_data <- ci_data %>% mutate(label = as.character(variable))
+  }
+
+  # Severity scaling helper
+  get_mult <- function(d) {
+    if (!is.null(scale_severe_by_year)) {
+      m <- scale_severe_by_year[as.character(year(d))]
+      ifelse(is.na(m), scale_severe, m)
+    } else {
+      scale_severe
+    }
+  }
+
+  # Apply scaling if severe
+  if (severity == "Severe") {
+    plot_data <- plot_data %>% mutate(value = value * get_mult(date_ymd))
+    if (!is.null(ci_data)) {
+      ci_data <- ci_data %>%
+        mutate(lower = lower * get_mult(date_ymd),
+               upper = upper * get_mult(date_ymd))
+    }
+  }
+
+  # Add observed data if present
+  if (!is.null(obs_data) && !is.null(obs_col)) {
+    obs_df <- obs_data %>%
+      select(date_ymd, !!sym(obs_col)) %>%
+      rename(value = !!sym(obs_col)) %>%
+      mutate(label = "Observed")
+
+    if (severity == "Severe") {
+      obs_df <- obs_df %>% mutate(value = value * get_mult(date_ymd))
+    }
+
+    plot_data <- bind_rows(plot_data, obs_df)
+  }
+
+  # Enforce label as factor with fixed levels
+  plot_data <- plot_data %>%
+    mutate(label = factor(label, levels = legend_levels))
+
+  if (!is.null(ci_data)) {
+    ci_data <- ci_data %>%
+      mutate(label = factor(label, levels = legend_levels))
+  }
+
+  # Determine which labels are present
+  label_levels <- levels(droplevels(plot_data$label))
+  present_idx <- legend_levels %in% label_levels
+
+  # Define color palette
+  color_palette <- c(
+    "Observed"     = "black",
+    "With SMC"     = "#6b6363",
+    "Without SMC"  = "#201d69",
+    "SMC in 2019"  = "#30baff",
+    "2023 June"    = "#e41a1c",
+    "2023 July"    = "#377eb8"
+  )
+
+  # Define legend override aesthetics dynamically
+  override_aes <- list(
+    linetype = ifelse(legend_levels == "Observed", "blank", "solid")[present_idx],
+    shape    = ifelse(legend_levels == "Observed", 16, NA)[present_idx],
+    size     = ifelse(legend_levels == "Observed", 2.5, 1.2)[present_idx]
+  )
+
+  # Start plot
+  p <- ggplot(plot_data, aes(x = date_ymd, y = value, color = label)) +
+    theme_minimal(base_size = 16) +
+    theme(
+      plot.title      = element_text(hjust = 0.5, face = "bold", size = 18),
+      plot.subtitle   = element_text(hjust = 0.5, face = "italic"),
+      axis.text       = element_text(size = 14),
+      axis.title      = element_text(size = 16),
+      legend.position = "top",
+      legend.title    = element_text(size = 14),
+      legend.text     = element_text(size = 13)
+    ) +
+    labs(
+      title    = plot_title,
+      subtitle = severity,
+      x        = "",
+      y        = "Weekly Cases",
+      color    = ""
+    ) +
+    scale_color_manual(
+      values = color_palette[label_levels],
+      breaks = label_levels,
+      drop   = FALSE
+    ) +
+    guides(color = guide_legend(override.aes = override_aes))
+
+  # Add CI ribbons
+  if (!is.null(ci_data)) {
+    p <- p + geom_ribbon(
+      data = ci_data,
+      aes(x = date_ymd, ymin = lower, ymax = upper, fill = label),
+      alpha = 0.25,
+      inherit.aes = FALSE,
+      show.legend = FALSE
+    ) +
+      scale_fill_manual(values = color_palette[label_levels], drop = FALSE)
+  }
+
+  # Plot lines and points
+  p <- p +
+    geom_line(data = filter(plot_data, label != "Observed"), size = 1.2, na.rm = TRUE) +
+    geom_point(data = filter(plot_data, label == "Observed"), size = 2.5, alpha = 0.8, na.rm = TRUE)
+
+  # Axis limits
+  if (!is.null(xlim) || !is.null(ylim)) {
+    p <- p + coord_cartesian(xlim = xlim, ylim = ylim)
+  }
+
+  return(p)
+}
 
 #’ Plot Uncomplicated & Severe panels by calling plot_ppc_single twice
 #’
