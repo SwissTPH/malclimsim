@@ -1986,10 +1986,20 @@ plot_scenario_time_series <- function(summary_df,
     })
   }
 
-  # Base ggplot
   p <- ggplot(summary_df, aes(x = date_ymd, y = median, color = scenario, fill = scenario)) +
-    geom_line(na.rm = TRUE, size = 1.2) +
-    geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, color = NA, na.rm = TRUE)
+    geom_line(na.rm = TRUE, size = 1.2)
+
+  #if (nrow(summary_df) > 0 && all(c("lower", "upper") %in% names(summary_df))) {
+  #  p <- p + geom_ribbon(
+  #    aes(ymin = lower, ymax = upper, x = date_ymd, fill = scenario),
+  #    alpha = 0.3
+  #  )
+  #}
+  # Base ggplot
+  #p <- ggplot(summary_df, aes(x = date_ymd, y = median, color = scenario, fill = scenario)) +
+  #  geom_line(na.rm = TRUE, size = 1.2) +
+  #  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, color = NA, na.rm = TRUE)
+
 
   # Add rectangles if available
   if (!is.null(smc_rects)) {
