@@ -115,97 +115,99 @@ define_transformations <- function(temp, c_R_D, SMC, decay, cov_SMC) {
 }
 
 
-#' Define Priors and Proposals for MCMC Parameters
-#'
-#' Sets up priors, proposals, and parameter fixing for MCMC estimation, including validation and transformation of parameters.
-#'
-#' @param param_inputs A named list of initial parameter values (may include fixed and to-be-estimated parameters).
-#' @param proposal_matrix A named matrix of proposal standard deviations (row and column names should match parameters).
-#' @param params_to_estimate A character vector of parameter names to estimate using MCMC.
-#' @param transform_fn A function that transforms the parameter list into model input format (typically created with `define_transformations()`).
-#' @param param_priors Optional list of prior definitions. If `NULL`, defaults will be generated using `initialize_priors()`.
-#'
-#' @return A list with three elements:
-#' \describe{
-#'   \item{mcmc_pars}{An MCMC parameter object created using `mcstate::pmcmc_parameters$new()`.}
-#'   \item{paramFix}{A named vector of parameters fixed during inference (not estimated).}
-#'   \item{param_priors}{The full list of prior definitions, either provided or generated.}
-#' }
-#'
-#' @details
-#' This function performs several validation steps:
-#' \itemize{
-#'   \item Ensures all `params_to_estimate` exist in `param_inputs` and `proposal_matrix`.
-#'   \item Verifies each prior includes a `min`, `max`, and a valid density function `prior`.
-#'   \item Ensures transformed parameters match those to be estimated.
-#'   \item Identifies and fixes parameters in `param_inputs` not selected for estimation.
-#' }
-#'
-#' @examples
-#' \dontrun{
-#' transform_fn <- define_transformations(...)
-#' result <- define_priors_and_proposals(
-#'   param_inputs = init_params,
-#'   proposal_matrix = proposal_mat,
-#'   params_to_estimate = c("beta", "sigma"),
-#'   transform_fn = transform_fn
-#' )
-#' }
-#'
-#' @export
-define_priors_and_proposals <- function(param_inputs, proposal_matrix, params_to_estimate, transform_fn, param_priors = NULL) {
-  if(is.null(param_priors)){
-    param_priors <- initialize_priors(param_inputs, proposal_matrix, params_to_estimate)
+#’ Define Priors and Proposals for MCMC Parameters
+#’
+#’ Sets up priors, proposals, and parameter fixing for MCMC estimation,
+#’ including validation and transformation of parameters.
+#’
+#’ @param param_inputs      Named list of initial parameter values.
+#’ @param proposal_matrix   Named matrix of proposal SDs.
+#’ @param params_to_estimate Character vector of parameter names to estimate.
+#’ @param transform_fn      Function that transforms param_inputs → model inputs.
+#’ @param param_priors      Optional: named list of pmcmc_parameter() objects.
+#’                          If NULL, we will call build_priors() internally.
+#’ @param override_priors   Optional: same structure as used by build_priors();
+#’                          only used if param_priors is NULL.
+#’ @return A list with components:
+#’   - `mcmc_pars`: an mcstate::pmcmc_parameters object,
+#’   - `paramFix`: named numeric of fixed parameters,
+#’   - `param_priors`: the list of pmcmc_parameter objects.
+#’ @export
+define_priors_and_proposals <- function(param_inputs,
+                                        proposal_matrix,
+                                        params_to_estimate,
+                                        transform_fn,
+                                        param_priors = NULL,
+                                        override_priors = NULL) {
+  # 1. If the user did NOT supply pmcmc_parameter objects directly, build them:
+  if (is.null(param_priors)) {
+    param_priors <- build_priors(
+      param_inputs,
+      proposal_matrix,
+      params_to_estimate,
+      override_priors = override_priors
+    )
   }
 
-  # Ensure all parameters are valid
+  # 2. Validation: ensure params_to_estimate are present in param_inputs, proposal_matrix, and param_priors
   missing_from_inputs <- setdiff(params_to_estimate, names(param_inputs))
   if (length(missing_from_inputs) > 0) {
-    stop(paste("The following parameters are missing from param_inputs:", paste(missing_from_inputs, collapse = ", ")))
+    stop("Parameters missing from param_inputs: ", paste(missing_from_inputs, collapse = ", "))
   }
 
   missing_from_proposals <- setdiff(params_to_estimate, rownames(proposal_matrix))
   if (length(missing_from_proposals) > 0) {
-    stop(paste("The following parameters are missing from proposal_matrix:", paste(missing_from_proposals, collapse = ", ")))
+    stop("Parameters missing from proposal_matrix: ", paste(missing_from_proposals, collapse = ", "))
   }
 
-  # Validate priors
-  for (param in params_to_estimate) {
-    prior <- param_priors[[param]]
-    if (is.null(prior$min) || is.null(prior$max)) {
-      stop(paste("Missing min or max for parameter:", param))
+  missing_from_priors <- setdiff(params_to_estimate, names(param_priors))
+  if (length(missing_from_priors) > 0) {
+    stop("Parameters missing from param_priors: ", paste(missing_from_priors, collapse = ", "))
+  }
+
+  # 3. Validate each prior has min, max, and a valid prior function:
+  for (nm in params_to_estimate) {
+    this_prior <- param_priors[[nm]]
+    if (is.null(this_prior$min) || is.null(this_prior$max)) {
+      stop("Missing min/max for parameter ", nm)
     }
-    if (!is.function(prior$prior)) {
-      stop(paste("Prior function is missing or invalid for parameter:", param))
+    if (!is.function(this_prior$prior)) {
+      stop("Invalid prior function for parameter ", nm)
     }
   }
 
-  # Apply transformations (if any)
+  # 4. Apply transformations to the raw param_inputs:
   transformed_params <- transform_fn(param_inputs)
 
-  # Validate transformed parameters
-  for (param in params_to_estimate) {
-    if (!param %in% names(transformed_params)) {
-      stop(paste("Transformed parameter missing for:", param))
-    }
+  # 5. Ensure every param_to_estimate appears in the transformed list:
+  missing_transformed <- setdiff(params_to_estimate, names(transformed_params))
+  if (length(missing_transformed) > 0) {
+    stop("Transformed parameters missing: ", paste(missing_transformed, collapse = ", "))
   }
 
-  # Define priors and proposals (remaining logic here)
-  if(is.null(param_priors)){
-    param_priors <- initialize_priors(param_inputs, proposal_matrix, params_to_estimate)
-  }
+  # 6. Identify parameters to fix (all valid names MINUS those being estimated):
+  valid_names <- intersect(names(param_inputs), names(param_priors))
+  paramFix <- setdiff(valid_names, params_to_estimate)
+  paramFix <- param_inputs[paramFix]
+  # Keep only scalar (length = 1) fixes:
+  paramFix <- Filter(function(x) length(x) == 1, paramFix)
+  paramFix <- unlist(paramFix, use.names = TRUE)
 
-  valid_params <- names(param_inputs)[names(param_inputs) %in% names(param_priors)]
-  paramFix <- param_inputs[valid_params]
-  paramFix <- paramFix[setdiff(names(paramFix), params_to_estimate)]
-  paramFix <- paramFix[sapply(paramFix, function(x) length(x) == 1)]
-  paramFix <- unlist(paramFix)
-
-  mcmc_pars <- mcstate::pmcmc_parameters$new(param_priors, proposal_matrix, transform_fn)
+  # 7. Build the mcstate::pmcmc_parameters object:
+  mcmc_pars <- mcstate::pmcmc_parameters$new(
+    param_priors,
+    proposal_matrix,
+    transform_fn
+  )
   mcmc_pars <- mcmc_pars$fix(paramFix)
 
-  return(list(mcmc_pars = mcmc_pars, paramFix = paramFix, param_priors = param_priors))
+  return(list(
+    mcmc_pars   = mcmc_pars,
+    paramFix    = paramFix,
+    param_priors = param_priors
+  ))
 }
+
 
 
 
@@ -322,10 +324,12 @@ inf_run <- function(model, param_inputs, control_params, params_to_estimate, pro
                     adaptive_params, start_values, noise = FALSE, seed = 24,
                     month_unequal_days = FALSE, dates, synthetic = TRUE, incidence_df = NULL,
                     save_trajectories = TRUE, rerun_n = Inf, rerun_random = FALSE,
-                    param_priors = NULL, n_years_warmup = 3, obs_config) {
+                    param_priors = NULL, override_priors = NULL, n_years_warmup = 3, obs_config) {
+
+  days_per_year <- if(obs_config$time == "week") 365 else 360
 
   # --- Extend inputs to include warm-up period ---
-  param_inputs_ext <- extend_time_varying_inputs(param_inputs, days_per_year = 360,
+  param_inputs_ext <- extend_time_varying_inputs(param_inputs, days_per_year = days_per_year,
                                                  years_to_extend = n_years_warmup)
   extend_dates <- dates
   extend_dates[1] <- paste0(year(as.Date(dates[1])) - n_years_warmup, "-", format(as.Date(dates[1]), "%m-%d"))
@@ -355,7 +359,12 @@ inf_run <- function(model, param_inputs, control_params, params_to_estimate, pro
   )
 
   priors_and_proposals <- define_priors_and_proposals(
-    param_inputs, proposal_matrix, params_to_estimate, transform_fn
+    param_inputs,
+    proposal_matrix,
+    params_to_estimate,
+    transform_fn,
+    param_priors   = param_priors,
+    override_priors = override_priors   # <— FORWARD THE OVERRIDES
   )
 
   mcmc_pars <- priors_and_proposals$mcmc_pars
@@ -444,116 +453,6 @@ inf_run <- function(model, param_inputs, control_params, params_to_estimate, pro
 
   return(results)
 }
-# inf_run <- function(model, param_inputs, control_params, params_to_estimate, proposal_matrix,
-#                     adaptive_params, start_values, noise = FALSE, seed = 24,
-#                     month_unequal_days = FALSE, dates, synthetic = TRUE, incidence_df = NULL,
-#                     save_trajectories = TRUE, rerun_n = Inf, rerun_random = FALSE,
-#                     param_priors = NULL, n_years_warmup = 3, obs_config) {
-#
-#   # --- Extend inputs to include warm-up period ---
-#   param_inputs_ext <- extend_time_varying_inputs(param_inputs, days_per_year = 360,
-#                                                  years_to_extend = n_years_warmup)
-#   extend_dates <- dates
-#   extend_dates[1] <- paste0(year(as.Date(dates[1])) - n_years_warmup, "-", format(as.Date(dates[1]), "%m-%d"))
-#
-#   # --- Filter incidence data to extended date range ---
-#   incidence_df <- filter_incidence_by_dates(incidence_df, extend_dates)
-#
-#   # --- Optionally generate synthetic incidence data ---
-#   if (synthetic) {
-#     incidence_df <- generate_synthetic_data(
-#       model, param_inputs_ext, dates,
-#       month = (obs_config$time == "month"),
-#       month_unequal_days = month_unequal_days,
-#       noise = noise, seed = seed,
-#       synthetic = TRUE,
-#       incidence_df = incidence_df
-#     )
-#   }
-#
-#   # --- Define parameter transforms and priors ---
-#   transform_fn <- define_transformations(
-#     temp = param_inputs_ext$temp,
-#     c_R_D = param_inputs_ext$c_R_D,
-#     SMC = param_inputs_ext$SMC,
-#     decay = param_inputs_ext$decay,
-#     cov_SMC = param_inputs_ext$cov_SMC
-#   )
-#
-#   priors_and_proposals <- define_priors_and_proposals(
-#     param_inputs, proposal_matrix, params_to_estimate, transform_fn
-#   )
-#
-#   mcmc_pars <- priors_and_proposals$mcmc_pars
-#   paramFix <- priors_and_proposals$paramFix
-#
-#   # --- Set up observation comparison function ---
-#   is_month_time <- obs_config$time == "month"
-#   incidence_observed <- incidence_df[-1]  # remove date column if needed
-#   comparison_fn <- generate_incidence_comparison(
-#     month = is_month_time,
-#     age_for_inf = obs_config$age_group,
-#     incidence_df = incidence_observed,
-#     include_prev = obs_config$include_prev,
-#     use_SMC_as_covariate = obs_config$use_SMC_as_covariate,
-#     log_link = obs_config$log_link
-#   )
-#
-#   # --- Simulate data using the model ---
-#   simulated_result <- data_sim_for_inference(
-#     model, param_inputs = param_inputs_ext, dates = extend_dates,
-#     noise = FALSE, month = (obs_config$time == "month")
-#   )
-#
-#   simulated_result <- filter_incidence_by_dates(simulated_result, dates)
-#   simulated_result$month_no <- 0:(nrow(simulated_result) - 1)
-#
-#   incidence_observed <- filter_incidence_by_dates(incidence_df, dates)[-1]
-#   incidence_observed$month_no <- 0:(nrow(incidence_observed) - 1)
-#
-#   initial_time_obs <- initialize_observation_time(simulated_result, incidence_df)
-#   filt_data <- filter_data_setup(incidence_observed, (obs_config$time == "month"), initial_time_obs)
-#
-#   # --- Initialize particle filter ---
-#   filter <- mcstate::particle_deterministic$new(
-#     data = filt_data,
-#     model = model,
-#     index = index,
-#     compare = comparison_fn
-#   )
-#
-#   filter$run(c(param_inputs))
-#
-#   # --- MCMC control ---
-#   control_settings <- define_mcmc_control(
-#     control_params, adaptive_params,
-#     save_trajectories, rerun_n, rerun_random
-#   )
-#
-#   control1 <- control_settings$control1
-#   control2 <- control_settings$control2
-#
-#   # --- Run MCMC simulation ---
-#   start_values <- reorder_start_values(start_values, priors_and_proposals$param_priors)
-#   mcmc_run <- run_mcmc_simulation(mcmc_pars, filter, start_values, control1, control2)
-#   coda_pars <- coda::as.mcmc(cbind(mcmc_run$probabilities, mcmc_run$pars))
-#
-#   # --- Return results ---
-#   results <- list(
-#     mcmc_run = mcmc_run,
-#     coda_pars = coda_pars,
-#     paramFix = paramFix,
-#     param_inputs = param_inputs,
-#     incidence_df = incidence_df,
-#     model = model,
-#     param_priors = priors_and_proposals$param_priors,
-#     n_chains = control_params$n_chains
-#   )
-#
-#   return(results)
-# }
-
-
 
 #' Extend Time-Varying Inputs Backwards in Time
 #'

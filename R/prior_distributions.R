@@ -131,7 +131,7 @@ return_default_priors <- function(){
     lag_T = list(initial = 0, min = 0, max = 60, integer = TRUE, prior = function(p) dunif(p, min = 0, max = 60, log = TRUE)),
     lag_SMC = list(initial = 0, min = 0, max = 30, integer = TRUE, prior = function(p) dunif(p, min = 0, max = 30, log = TRUE)),
     # Gamma distribution to ensure positivity
-    alpha = list(initial = 2.5, min = 0, max = 100, prior = function(p) dunif(p, min = 0, max = 1000, log = TRUE)),
+    alpha = list(initial = 0.5, min = 0, max = 1, prior = function(p) dunif(p, min = 0, max = 1, log = TRUE)),
     #beta_1 = list(initial = 0, min = 0, max = 1, prior = function(p) dunif(p, min = 0, max = 1, log = TRUE)),
     beta_1 = list(initial = 0, min = -100, max = 100, prior = function(p) dunif(p, min = -100, max = 100, log = TRUE)),
     beta_2 = list(initial = 0, min = 0, max = 1, prior = function(p) dunif(p, min = 0, max = 1, log = TRUE)),
@@ -157,64 +157,55 @@ return_default_priors <- function(){
 }
 
 
-# Define a function to initialize priors based on parameters in the model
-initialize_priors <- function(param_inputs = NULL, proposal_matrix = NULL, params_to_estimate = NULL) {
-  if(is.null(param_inputs) | is.null(proposal_matrix) | is.null(params_to_estimate)){
-    stop("Values required for param_inputs, proposal_matrix, and params_to_estimate")
+#’ Build a list of mcstate::pmcmc_parameter() objects,
+#’ starting from the return_default_priors() template and then layering on any overrides.
+#’
+#’ @param param_inputs      Named list of initial values (so that we know which parameters actually exist).
+#’ @param proposal_matrix   Numeric matrix (rownames must match param names).
+#’ @param params_to_estimate Character vector of names we actually want to estimate.
+#’ @param override_priors   Optional named list of lists: each element must match the structure
+#’                          returned by return_default_priors(). If you supply an element “phi” here,
+#’                          it replaces the entire `phi` block in the default.
+#’ @return Named list of mcstate::pmcmc_parameter objects, one per parameter in `params_to_estimate`.
+#’ @export
+build_priors <- function(param_inputs,
+                         proposal_matrix,
+                         params_to_estimate,
+                         override_priors = NULL) {
+  # 1. Grab the “package defaults”:
+  base_priors <- return_default_priors()
+
+  # 2. If the user supplied overrides, overlay them:
+  if (!is.null(override_priors)) {
+    # modifyList() merges named elements, replacing any named components.
+    base_priors <- modifyList(base_priors, override_priors)
   }
 
-  # Step 1: Extract parameter names from the proposal matrix to ensure we match the model
-  param_names <- rownames(proposal_matrix)
+  # 3. Only keep those parameters that are actually in param_inputs ∩ params_to_estimate ∩ proposal_matrix
+  all_names   <- intersect(names(param_inputs), rownames(proposal_matrix))
+  valid_names <- intersect(all_names, params_to_estimate)
 
-  # Step 2: Get the valid parameters (those that exist in both param_inputs and proposal_matrix)
-  valid_params_in_model <- names(param_inputs)[names(param_inputs) %in% param_names]
-
-  # Step 3: Ensure we include parameters from params_to_estimate
-  valid_params <- unique(c(valid_params_in_model, params_to_estimate))
-
-  # Step 4: Filter out parameters that are vectors (i.e., those whose length is greater than 1)
-  valid_params <- valid_params[sapply(param_inputs[valid_params], length) == 1]
-
-  # Define the prior functions and parameter bounds as specified in the model
-
-  default_priors <- return_default_priors()
-
-  # Initialize an empty list to store priors for each parameter in the proposal matrix
-  priors <- list()
-
-  # Loop through each parameter in the proposal matrix and assign priors
-  for (param in valid_params) {
-    # Check if a specific prior is defined for this parameter in default_priors
-    if (param %in% names(default_priors)) {
-      param_info <- default_priors[[param]]
-      prior_function <- param_info$prior
-      initial_value <- param_info$initial
-      min_value <- param_info$min
-      max_value <- param_info$max
-      integer <- if (!is.null(param_info$integer)) param_info$integer else FALSE
-    } else {
-      # Apply a generic default prior if none specified
-      prior_function <- function(p) dunif(p, min = 0, max = 1, log = TRUE)
-      initial_value <- 0.2
-      min_value <- 0.01
-      max_value <- 1
-      integer <- FALSE
+  # 4. Build pmcmc_parameter() for each valid parameter:
+  priors_list <- list()
+  for (nm in valid_names) {
+    if (! nm %in% names(base_priors)) {
+      # If someone forgot to specify a prior in the “defaults,” you could throw an error or fallback:
+      stop(paste0("No default prior found for parameter ‘", nm, "’."))
     }
-
-    # Initialize the parameter with the appropriate prior, setting bounds and initial values
-    priors[[param]] <- mcstate::pmcmc_parameter(
-      name = param,
-      initial = initial_value,
-      min = min_value,
-      max = max_value,
-      prior = prior_function,
-      integer = integer
+    info <- base_priors[[nm]]
+    priors_list[[nm]] <- mcstate::pmcmc_parameter(
+      name    = nm,
+      initial = info$initial,
+      min     = info$min,
+      max     = info$max,
+      prior   = info$prior,
+      integer = if (!is.null(info$integer)) info$integer else FALSE
     )
   }
 
-  # Return the list of initialized priors
-  return(priors)
+  return(priors_list)
 }
+
 
 
 #' View Default Priors

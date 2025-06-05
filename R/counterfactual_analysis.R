@@ -345,11 +345,51 @@ evaluate_multiple_scenarios <- function(patterns,
   outputs <- list()
   summaries <- list()
   estimates <- list()
+  cases_df1 <- list()
+  cases_df2 <- list()
+  # for (label in names(patterns)) {
+  #   #month_pattern <- patterns[[label]]
+  #   #n_years <- (lubridate::year(end_date) + 1) - lubridate::year(start_date)
+  #   #months_active <- matrix(rep(month_pattern, n_years + 1), nrow = n_years + 1, byrow = TRUE)
+  #
+  #   month_pattern <- patterns[[label]]
+  #
+  #   # NEW: Detect whether the pattern is a named list (per-year) or a single vector
+  #   if (is.list(month_pattern)) {
+  #     # Confirm named by year and length 12 per year
+  #     if (!all(names(month_pattern) %in% as.character(years))) {
+  #       stop("Named pattern list does not match specified 'years'.")
+  #     }
+  #     if (!all(vapply(month_pattern, length, integer(1)) == 12)) {
+  #       stop("Each entry in a named list pattern must be a vector of length 12.")
+  #     }
+  #     months_active <- month_pattern  # pass directly to gen_smc_schedule
+  #   } else {
+  #     # Legacy behavior: repeat same pattern across all years
+  #     n_years <- length(years)
+  #     months_active <- matrix(rep(month_pattern, n_years), nrow = n_years, byrow = TRUE)
+  #   }
 
   for (label in names(patterns)) {
     month_pattern <- patterns[[label]]
-    n_years <- (lubridate::year(end_date) + 1) - lubridate::year(start_date)
-    months_active <- matrix(rep(month_pattern, n_years + 1), nrow = n_years + 1, byrow = TRUE)
+
+    # --- NEW BLOCK: unify to an n_years × 12 matrix ---
+    if (is.list(month_pattern) && all(names(month_pattern) %in% as.character(years))) {
+      # ensure rows are in the same order as `years`
+      year_strs     <- as.character(years)
+      mat           <- do.call(rbind, month_pattern[year_strs])
+      rownames(mat) <- year_strs
+      months_active <- mat
+    } else if (is.numeric(month_pattern) && length(month_pattern) == 12) {
+      # legacy single‐pattern: repeat it for each year
+      months_active <- matrix(
+        rep(month_pattern, length(years)),
+        nrow   = length(years),
+        byrow  = TRUE
+      )
+    } else {
+      stop("Each element of `patterns` must be either a 12‐vector or a named list-of-12-vectors.")
+    }
 
     smc_schedule <- gen_smc_schedule(start_date, end_date, years = years, months_30_days = month,
                                      months_active = months_active, coverage = avg_cov,
@@ -431,12 +471,16 @@ evaluate_multiple_scenarios <- function(patterns,
     )
 
     summaries[[label]] <- sim_summary
+    cases_df1[[label]] <- o1
+    cases_df2[[label]] <- sims
   }
 
   return(list(
     outputs = outputs,
     summaries = summaries,
-    estimates = estimates
+    estimates = estimates,
+    o1 = cases_df1,
+    o2 = cases_df2
   ))
 }
 
@@ -495,7 +539,7 @@ plot_cases_averted_barplot <- function(estimates,
 
   # 2. Sort by descending value and fix factor levels
   est_df <- est_df %>%
-    arrange(desc(cases_averted)) %>%
+    #arrange(desc(cases_averted)) %>%
     mutate(
       pattern = factor(pattern, levels = unique(pattern)),
       fill_color = scenario_colors[as.character(pattern)]
@@ -535,6 +579,122 @@ plot_cases_averted_barplot <- function(estimates,
 
   return(p)
 }
+
+#' Plot Cases Averted Across SMC Scenarios (with 95% Credible Intervals)
+#'
+#' Generates a bar plot of estimated cases averted for each SMC pattern/scenario,
+#' including 95% credible interval error bars. Supports either:
+#' * A list of numeric vectors (posterior samples), or
+#' * A list of lists with `mean`, `lower`, and `upper`.
+#'
+#' @param estimates A named list where each element is either:
+#'   - A numeric vector of posterior draws, or
+#'   - A list with elements `mean`, `lower`, and `upper`.
+#' @param title Plot title.
+#' @param x_lab Label for the x-axis.
+#' @param y_lab Label for the y-axis.
+#' @param horizontal Logical. If TRUE, produces a horizontal bar plot.
+#' @param by_year Logical. If TRUE, scales all values to per-year estimates.
+#' @param n_years Numeric. The number of years to divide by when `by_year = TRUE`.
+#'
+#' @return A `ggplot2` bar plot object showing mean cases averted with 95% CI.
+#' @export
+plot_cases_averted_barplot <- function(estimates,
+                                       title      = "Estimated Cases Averted for Different SMC Timings",
+                                       x_lab      = "SMC Timing",
+                                       y_lab      = "Mean Cases Averted (95% CI)",
+                                       horizontal = FALSE,
+                                       by_year    = FALSE,
+                                       n_years    = 1,
+                                       bar_colors = c(
+                                         "4 rounds (July start)" = "#0072B2",  # Blue
+                                         "4 rounds (June start)" = "#E69F00",  # Orange
+                                         "5 rounds (July start)" = "#009E73",  # Green
+                                         "5 rounds (June start)" = "#D55E00"   # Red
+                                       )) {
+
+  # 1. Convert input into tidy data frame
+  est_df <- purrr::imap_dfr(estimates, function(est, label) {
+    if (is.numeric(est) && !is.list(est)) {
+      quant <- quantile(est, probs = c(0.025, 0.975), na.rm = TRUE)
+      tibble::tibble(
+        pattern       = label,
+        cases_averted = mean(est, na.rm = TRUE),
+        lower         = quant[1],
+        upper         = quant[2]
+      )
+    } else if (is.list(est) && all(c("mean", "lower", "upper") %in% names(est))) {
+      tibble::tibble(
+        pattern       = label,
+        cases_averted = est$mean,
+        lower         = est$lower,
+        upper         = est$upper
+      )
+    } else {
+      stop("Each element of 'estimates' must be a numeric vector or a list with 'mean', 'lower', and 'upper'.")
+    }
+  })
+
+  # 2. Optionally scale to per-year values
+  if (by_year) {
+    if (!is.numeric(n_years) || n_years <= 0) {
+      stop("`n_years` must be a positive number when `by_year = TRUE`.")
+    }
+    est_df <- est_df %>%
+      mutate(
+        cases_averted = cases_averted / n_years,
+        lower         = lower         / n_years,
+        upper         = upper         / n_years
+      )
+    if (y_lab == "Mean Cases Averted (95% CI)") {
+      y_lab <- "Mean Yearly Cases Averted (95% CI)"
+    }
+  }
+
+  # 3. Sort and add colors
+  est_df <- est_df %>%
+    #arrange(desc(cases_averted)) %>%
+    mutate(
+      pattern = factor(pattern, levels = unique(pattern)),
+      fill_color = bar_colors[as.character(pattern)]
+    )
+
+  # 4. Plot
+  p <- ggplot(est_df, aes(x = pattern, y = cases_averted, fill = pattern)) +
+    geom_col(alpha = 0.9) +
+    geom_errorbar(
+      aes(ymin = lower, ymax = upper),
+      width = 0.2, color = "black"
+    ) +
+    scale_fill_manual(values = bar_colors, drop = FALSE) +
+    labs(
+      title = title,
+      x     = x_lab,
+      y     = y_lab,
+      fill  = NULL
+    ) +
+    theme_minimal(base_size = 13) +
+    theme(
+      plot.title = element_text(face = "bold", hjust = 0.5),
+      axis.text  = element_text(size = 11),
+      axis.title = element_text(size = 13),
+      legend.position = "none"
+    )
+
+  # 5. Optional horizontal layout
+  if (horizontal) {
+    p <- p +
+      coord_flip() +
+      theme(axis.text.y = element_text(hjust = 1))
+  } else {
+    p <- p +
+      theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  }
+
+  return(p)
+}
+
+
 
 
 

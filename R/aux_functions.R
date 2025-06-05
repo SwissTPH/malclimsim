@@ -283,43 +283,6 @@ filter_by_year <- function(data, date_column, years_range) {
 #   utils::file.edit(paste0(package_code_path, "observation_functions.R"))
 # }
 
-#' Load and clean raw SMC coverage data
-#'
-#' Cleans and formats SMC coverage data. Allows for flexibility in input:
-#' the user can supply either a data frame directly or a path to a file
-#' (Excel or RDS). If both `data` and paths are `NULL`, the function returns an error.
-#'
-#' @param data A data frame containing raw SMC coverage data (default = NULL).
-#' @param path_to_excel Optional. Path to an Excel file containing SMC data (default = NULL).
-#' @param path_to_rds Optional. Path to an RDS file containing SMC data (default = NULL).
-#'
-#' @return A cleaned data frame with columns: `date_start` and `coverage`.
-#'         Only one row per Year-Month is retained (the first entry chronologically).
-#' @export
-load_clean_smc_data <- function(data = NULL, path_to_excel = NULL, path_to_rds = NULL) {
-  # Load data depending on inputs
-  if (is.null(data)) {
-    if (!is.null(path_to_rds)) {
-      data <- readRDS(path_to_rds)
-    } else if (!is.null(path_to_excel)) {
-      data <- readxl::read_excel(path_to_excel)
-    } else {
-      stop("Please provide either a data frame or a path to an Excel or RDS file.")
-    }
-  }
-
-  # Clean and format the data
-  data %>%
-    dplyr::select(date_start, smc_couv_tot) %>%
-    dplyr::rename(coverage = smc_couv_tot) %>%
-    dplyr::mutate(YearMonth = format(date_start, "%Y-%m")) %>%
-    dplyr::group_by(YearMonth) %>%
-    dplyr::slice(1) %>%
-    dplyr::ungroup() %>%
-    dplyr::select(-YearMonth)
-}
-
-
 
 
 
@@ -605,3 +568,77 @@ date_to_weeks_360 <- function(start_year, n_days) {
   md
 }
 
+#' Impute Missing Climate Data Using Climatological Daily Means
+#'
+#' This function imputes missing dates in a climate time series using the average
+#' value for each (month, day) combination across all prior years in the dataset.
+#' It is useful for filling in short gaps at the end of a time series, such as
+#' imputing values for December 2023 using earlier years' averages.
+#'
+#' @param data A data frame with at least the following columns:
+#'   - `date` (Date): The observation date.
+#'   - `CumulativeRainfall`, `anom`, `temp`: Numeric climate variables to impute.
+#' @param end_date A `Date` object indicating the final date that should be present.
+#'   The function will impute values from the last available date up to `end_date`.
+#'   Assumes `date` column ends before this value.
+#'
+#' @return A data frame with the original data and appended imputed values, sorted by date.
+#' @export
+#'
+#' @examples
+#' # Suppose your climate data ends at 2023-12-01
+#' # met_360_completed <- impute_climate_to_end_date(met_360, as.Date("2023-12-31"))
+impute_climate_to_end_date <- function(data, end_date) {
+  library(dplyr)
+  library(lubridate)
+
+  # Ensure required columns are present
+  required_vars <- c("date", "CumulativeRainfall", "anom", "temp")
+  missing_vars <- setdiff(required_vars, colnames(data))
+  if (length(missing_vars) > 0) {
+    stop("Missing required columns: ", paste(missing_vars, collapse = ", "))
+  }
+
+  # Add date components
+  data <- data %>%
+    mutate(month = month(date),
+           day   = day(date),
+           year  = year(date))
+
+  # Find last available date
+  last_date <- max(data$date, na.rm = TRUE)
+
+  if (last_date >= end_date) {
+    warning("No missing dates to impute; last date is already >= end_date.")
+    return(data)
+  }
+
+  # Sequence of dates to impute
+  missing_dates <- seq.Date(from = last_date + 1, to = end_date, by = "day")
+
+  # Compute daily climatology (excluding the target year)
+  clim_means <- data %>%
+    filter(year < year(end_date)) %>%
+    group_by(month, day) %>%
+    summarise(
+      CumulativeRainfall = mean(CumulativeRainfall, na.rm = TRUE),
+      anom               = mean(anom, na.rm = TRUE),
+      temp               = mean(temp, na.rm = TRUE),
+      .groups = "drop"
+    )
+
+  # Create imputed data frame
+  imputed_data <- data.frame(date = missing_dates) %>%
+    mutate(month = month(date),
+           day   = day(date),
+           year  = year(date),
+           week  = isoweek(date)) %>%
+    left_join(clim_means, by = c("month", "day")) %>%
+    select(date, CumulativeRainfall, anom, month, week, day, temp)
+
+  # Bind and sort
+  completed_data <- bind_rows(data, imputed_data) %>%
+    arrange(date)
+
+  return(completed_data)
+}

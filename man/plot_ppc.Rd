@@ -4,9 +4,21 @@
 \alias{plot_ppc}
 \title{Plot Posterior Predictive Check (PPC)}
 \usage{
-plot_ppc(plot_data, ci_data = NULL, plot_title = "Posterior Predictive Check")
+plot_ppc(
+  plot_data,
+  ci_data = NULL,
+  plot_title = "Posterior Predictive Check",
+  data_source = c("Simulated", "Observed"),
+  ylim = NULL
+)
 
-plot_ppc(plot_data, ci_data = NULL, plot_title = "Posterior Predictive Check")
+plot_ppc(
+  plot_data,
+  ci_data = NULL,
+  plot_title = "Posterior Predictive Check",
+  data_source = c("Simulated", "Observed"),
+  ylim = NULL
+)
 }
 \arguments{
 \item{plot_data}{Long-format tibble with \code{date_ymd}, \code{value}, \code{variable}, and optionally \code{source}.}

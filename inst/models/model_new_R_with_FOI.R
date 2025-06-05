@@ -35,8 +35,7 @@ initial(mu_SE_A_2) <- (1 - SMC_effect_A) *(1 - exp(-rho * p_MH_C * EIR))
 update(mu_SE_A_2) <- (1 - SMC_effect_A) *(1 - exp(-rho * p_MH_C * EIR))
 
 
-# # Children
-
+# Children
 update(SC) <- SC -  mu_SE_C * SC + mu_RS_C * RC + mu_TS * TrC - (delta_d + delta_a) * SC + delta_b * P - SC * SMC_removal
 update(EC) <- EC - mu_EI * EC +  mu_SE_C * SC - (delta_d + delta_a) * EC
 update(IC) <- IC - mu_IR * IC + phi_1 * (1 - fT_C) * mu_EI * EC - (delta_d + delta_a) * IC - IC * SMC_removal

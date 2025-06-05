@@ -174,7 +174,7 @@ create_start_values <- function(params_to_estimate, control_params, min_max_star
       c8 = c(34, 36),        # Based on prior: mean = 35, sd = 0.5
       c9 = c(0.005, 0.02),    # Based on prior: mean = 0.01, sd = 0.005
 
-      alpha = c(4, 6),         # Based on prior: Gamma distribution, most likely values < 5
+      alpha = c(0.2, 0.8),         # Based on prior: Gamma distribution, most likely values < 5
       T_opt = c(24, 27),       # Based on prior: Normal distribution centered at 28, sd = 3
       R_opt = c(0.5, 0.9),        # Based on prior: Normal distribution centered at 0, sd = 5
       k1 = c(0.1, 0.8),            # Based on prior: Normal distribution centered at 1, sd = 0.5
@@ -276,7 +276,7 @@ create_proposal_matrix <- function(params_to_estimate, proposal_variance = NULL,
       phi = 0.1, k_par = 0.1, delta_temp = 0.1, mu_RS_C = 0.1, z = 0.1,
       z_A = 0.1, z_C2 = 0.1, rho = 2, eta = 0.1, size = 5, size_1 = 5, size_2 = 5, phi_C2 = 0.1,
       phi_A = 0.1, tau = 0.1, p_surv = 0.1, mu_IR = 0.1, shift1 = 0.1, T_opt = 5, sigma_LT = 3, sigma_RT = 3, alpha = 4,
-      shift2 = 0.1, kappa = 0.1, fT_C = 0.1, lag_T = 800, lag_R = 800, lag_SMC = 100, alpha = 10,
+      shift2 = 0.1, kappa = 0.1, fT_C = 0.1, lag_T = 800, lag_R = 800, lag_SMC = 100, alpha = 1,
       kappa_C = 50, kappa_A = 50, w1 = 0.5, w2 = 0.5, s_1 = 2, c_s = 2, c_phi = 2, qR1 = 2,
       qR2 = 2, c_qR = 2, eta = 2, beta_1 = 2, beta_2 = 5
     )

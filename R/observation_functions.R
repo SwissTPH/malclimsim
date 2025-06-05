@@ -237,6 +237,7 @@ generate_incidence_comparison <- function(month,
   # --- Helper: Unadjusted likelihood ---
   ll_inc_nb <- function(observed, predicted, size) {
     if (is.na(observed)) return(0)
+    #cat(paste0(round(predicted, 0), ","))
     dnbinom(x = observed, mu = predicted, size = size, log = TRUE)
   }
 

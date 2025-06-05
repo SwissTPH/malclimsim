@@ -6,54 +6,54 @@
 \usage{
 plot_scenario_time_series(
   summary_df,
+  scenarios_to_plot = NULL,
   title = "SMC Scenario Time Series",
   facet = TRUE,
+  ncol = NULL,
   save = TRUE,
   out_dir = NULL,
   filename = "ts_scenario_comparison",
   width = 12,
-  height = 6
-)
-
-plot_scenario_time_series(
-  summary_df,
-  title = "SMC Scenario Time Series",
-  facet = TRUE,
-  save = TRUE,
-  out_dir = NULL,
-  filename = "ts_scenario_comparison",
-  width = 12,
-  height = 6
+  height = 6,
+  smc_patterns = NULL,
+  smc_day_of_month = 15,
+  month_cov = NULL,
+  years = NULL,
+  x_lab = "",
+  y_lab = "Weekly Cases"
 )
 }
 \arguments{
-\item{summary_df}{A data frame from \code{summarize_simulation_ci()}, with all scenarios stacked.
-Must include \code{date_ymd}, \code{variable}, \code{median}, \code{lower}, \code{upper}, and \code{scenario}.}
+\item{summary_df}{Data frame containing columns: date_ymd, variable, median, lower, upper, scenario.}
+
+\item{scenarios_to_plot}{Optional vector of scenario names to include.}
 
 \item{title}{Plot title.}
 
-\item{facet}{Logical. If TRUE (default), plot each scenario in a separate facet. If FALSE, overlay all on the same axis.}
+\item{facet}{Whether to facet by scenario.}
 
-\item{save}{Logical. If TRUE, saves the plot.}
+\item{save}{Logical. If TRUE, saves plot to out_dir.}
 
-\item{out_dir}{Optional directory to save the plot.}
+\item{out_dir}{Directory to save the plot.}
 
-\item{filename}{Optional filename (without extension) to save the plot.}
+\item{filename}{Base filename to save (without extension).}
 
-\item{width}{Plot width in inches.}
+\item{width}{Plot width (in inches).}
 
-\item{height}{Plot height in inches.}
+\item{height}{Plot height (in inches).}
 
-\item{summary_list}{A named list of data frames from \code{summarize_simulation_ci()}, one per scenario.
-Each data frame must contain columns \code{date_ymd}, \code{variable}, \code{median}, \code{lower}, \code{upper}.}
+\item{smc_patterns}{Optional named list of month vectors (length 12) with 1/0 indicating SMC months.}
+
+\item{smc_day_of_month}{Day of month to anchor rectangles (default 15).}
+
+\item{month_cov}{Optional named numeric vector giving relative coverage for each month (1–12).}
+
+\item{years}{Vector of years for which to generate rectangles.}
 }
 \value{
 A ggplot object.
-
-A ggplot object.
 }
 \description{
-This function creates a faceted time series plot comparing multiple SMC deployment scenarios.
-
-This function creates either a faceted or combined time series plot comparing multiple SMC deployment scenarios.
+Creates a time series plot comparing multiple SMC deployment scenarios,
+with optional shaded rectangles for SMC timing and credible intervals.
 }

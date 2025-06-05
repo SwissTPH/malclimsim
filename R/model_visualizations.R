@@ -1782,6 +1782,7 @@ plot_scenario_time_series <- function(summary_df,
                                       scenarios_to_plot = NULL,
                                       title = "SMC Scenario Time Series",
                                       facet = TRUE,
+                                      ncol = NULL,
                                       save = TRUE,
                                       out_dir = NULL,
                                       filename = "ts_scenario_comparison",
@@ -1861,7 +1862,7 @@ plot_scenario_time_series <- function(summary_df,
 
   # Faceting if desired
   if (facet) {
-    p <- p + facet_wrap(~ scenario, scales = "free_y") +
+    p <- p + facet_wrap(~ scenario, scales = "free_y", ncol = ncol) +
       guides(color = "none", fill = "none")
   }
 
@@ -1915,6 +1916,7 @@ plot_scenario_time_series <- function(summary_df,
                                       scenarios_to_plot = NULL,
                                       title = "SMC Scenario Time Series",
                                       facet = TRUE,
+                                      ncol = NULL,
                                       save = TRUE,
                                       out_dir = NULL,
                                       filename = "ts_scenario_comparison",
@@ -1923,7 +1925,9 @@ plot_scenario_time_series <- function(summary_df,
                                       smc_patterns = NULL,
                                       smc_day_of_month = 15,
                                       month_cov = NULL,
-                                      years = NULL) {
+                                      years = NULL,
+                                      x_lab = "",
+                                      y_lab = "Weekly Cases") {
 
   # Predefine manual colorblind-friendly palette
   scenario_colors <- c(
@@ -2018,7 +2022,7 @@ plot_scenario_time_series <- function(summary_df,
 
   # Faceting
   if (facet) {
-    p <- p + facet_wrap(~ scenario, scales = "free_y") +
+    p <- p + facet_wrap(~ scenario, scales = "free_y", ncol = ncol) +
       guides(color = "none", fill = "none")
   }
 
@@ -2026,8 +2030,8 @@ plot_scenario_time_series <- function(summary_df,
   p <- p +
     labs(
       title = title,
-      x = "Date",
-      y = "Monthly Cases",
+      x = x_lab,
+      y = y_lab,
       color = NULL,
       fill = NULL
     ) +
@@ -2396,7 +2400,8 @@ plot_ppc_single <- function(plot_data,
   library(lubridate)
 
   # Define full label set (for consistent legends)
-  legend_levels <- c("Observed", "With SMC", "Without SMC", "SMC in 2019", "2023 June", "2023 July")
+  legend_levels <- c("Observed", "With SMC", "Without SMC", "SMC in 2019", "2023 June", "2023 July",
+                     "2023 True SMC Timing")
 
   # Ensure label column exists
   if (!"label" %in% colnames(plot_data)) {
@@ -2460,7 +2465,9 @@ plot_ppc_single <- function(plot_data,
     "Without SMC"  = "#201d69",
     "SMC in 2019"  = "#30baff",
     "2023 June"    = "#e41a1c",
-    "2023 July"    = "#377eb8"
+    "2023 July"    = "#377eb8",
+    "2023 True SMC Timing" = "#e41a1c"
+
   )
 
   # Define legend override aesthetics dynamically

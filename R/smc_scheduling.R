@@ -1,86 +1,3 @@
-#' #' Generate an SMC Deployment Schedule and Calculate Efficacy Decay
-#' #'
-#' #' This function simulates an SMC (Seasonal Malaria Chemoprevention) schedule based on given parameters
-#' #' and calculates efficacy decay over time.
-#' #'
-#' #' @param start_date A string specifying the start date of the SMC deployment (format: "YYYY-MM-DD").
-#' #' @param end_date A string specifying the end date of the SMC deployment (format: "YYYY-MM-DD").
-#' #' @param years A numeric vector of years for which SMC will be deployed.
-#' #' @param months_active A matrix where each row corresponds to a year and columns represent months
-#' #' (1 = active, 0 = inactive).
-#' #' @param months_30_days A logical flag to simulate a 360-day calendar. Default is \code{FALSE}.
-#' #' @param coverage A numeric value specifying the coverage rate of SMC. Default is \code{0.90}.
-#' #' @param smc_day_of_month Determines which day of the month the SMC round begins.
-#' #'
-#' #' @return A dataframe with columns:
-#' #' \item{dates}{The sequence of dates for the given period.}
-#' #' \item{SMC}{Binary values indicating SMC deployment (1 = deployed, 0 = not deployed).}
-#' #' \item{cov}{The coverage rate of SMC over the period.}
-#' #' \item{decay}{The calculated efficacy decay over time.}
-#' #'
-#' #' @details
-#' #' The function generates a sequence of dates and assigns SMC deployments based on active months
-#' #' provided for each year. It also calculates the decay in efficacy over time for the deployed SMC.
-#' #'
-#' #' @examples
-#' #' # Example usage:
-#' #' years <- 2023:2024
-#' #' months_active <- matrix(c(1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0,  # Year 2023
-#' #'                           1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0), # Year 2024
-#' #'                         nrow = 2, byrow = TRUE)
-#' #' start_date <- "2023-01-01"
-#' #' end_date <- "2024-12-31"
-#' #' schedule <- gen_smc_schedule(start_date, end_date, years, months_active, coverage = 0.85)
-#' #' head(schedule)
-#' #'
-#' #' @export
-#' gen_smc_schedule <- function(start_date, end_date, years, months_active,
-#'                              months_30_days = FALSE, coverage = 0.90,
-#'                              smc_day_of_month = 1) {
-#'
-#'   if (months_30_days) {
-#'     dates <- generate_360_day_dates(years[1], years[length(years)])
-#'   } else {
-#'     dates <- seq(as.Date(start_date), as.Date(end_date), by = "day")
-#'   }
-#'
-#'   smc_df <- data.frame(
-#'     dates = dates,
-#'     SMC = 0,
-#'     cov = 0
-#'   )
-#'
-#'   # --- Assign SMC = 1 to selected day of active months ---
-#'   for (i in seq_along(years)) {
-#'     active_months <- which(months_active[i, ] == 1)
-#'     year_i <- years[i]
-#'     for (month in active_months) {
-#'       # Ensure smc_day_of_month does not exceed the number of days in that month
-#'       first_day <- as.Date(sprintf("%04d-%02d-01", year_i, month))
-#'       days_in_month <- as.integer(format(first_day + months(1) - 1, "%d"))
-#'       actual_day <- min(smc_day_of_month, days_in_month)
-#'       smc_date <- as.Date(sprintf("%04d-%02d-%02d", year_i, month, actual_day))
-#'
-#'       idx <- which(smc_df$dates == smc_date)
-#'       if (length(idx) == 1) {
-#'         smc_df$SMC[idx] <- 1
-#'       }
-#'     }
-#'   }
-#'
-#'   # --- Apply coverage for each SMC round (30-day window) ---
-#'   smc_rounds <- which(smc_df$SMC == 1)
-#'   for (idx in smc_rounds) {
-#'     window_end <- min(idx + 120, nrow(smc_df))  # Avoid going past end of data
-#'     smc_df$cov[idx:window_end] <- coverage
-#'   }
-#'
-#'   # --- Decay is only calculated from SMC = 1 onward ---
-#'   smc_df$decay <- calc_decay_arr(smc_df$SMC, const = -0.1806)
-#'
-#'   return(smc_df)
-#' }
-
 #' Generate an SMC deployment schedule with optional month-specific coverages
 #'
 #' @param start_date Character. First date of the schedule ("YYYY-MM-DD").
@@ -172,6 +89,93 @@ gen_smc_schedule <- function(start_date, end_date, years, months_active,
 
   smc_df
 }
+
+
+gen_smc_schedule <- function(start_date, end_date, years, months_active,
+                             months_30_days = FALSE,
+                             coverage = 0.90,
+                             smc_day_of_month = 1) {
+
+  ## -------- 1. Build date skeleton ----------------------------------------
+  dates <- if (months_30_days) {
+    generate_360_day_dates(years[1], tail(years, 1))
+  } else {
+    seq(as.Date(start_date), as.Date(end_date), by = "day")
+  }
+
+  smc_df <- tibble::tibble(
+    dates = dates,
+    SMC   = 0,
+    cov   = 0
+  )
+
+  ## -------- 2. Helper: resolve month-specific coverage --------------------
+  if (length(coverage) == 1) coverage <- rep(coverage, 12)
+
+  if (!is.null(names(coverage)) && any(names(coverage) != "")) {
+    cov_vec <- numeric(12)
+    month_names <- c(month.abb, month.name)
+    for (m in 1:12) {
+      name_hits <- c(as.character(m), month.abb[m], month.name[m])
+      hit <- intersect(name_hits, names(coverage))
+      cov_vec[m] <- if (length(hit)) coverage[hit[1]] else NA_real_
+    }
+    if (anyNA(cov_vec))
+      stop("Coverage missing for some months; supply all 12 values.")
+    coverage <- cov_vec
+  } else if (length(coverage) != 12) {
+    stop("When coverage is a vector it must have length 12 or names for all months.")
+  }
+
+  ## -------- 3. Handle flexible months_active ------------------------------
+  get_months_row <- function(y) {
+    if (is.matrix(months_active)) {
+      if (nrow(months_active) != length(years)) {
+        stop("Number of rows in 'months_active' matrix must match length of 'years'")
+      }
+      return(months_active[which(years == y), ])
+    } else if (is.list(months_active)) {
+      y_str <- as.character(y)
+      if (!y_str %in% names(months_active)) {
+        stop(sprintf("Year %s not found in months_active list.", y_str))
+      }
+      row <- months_active[[y_str]]
+      if (length(row) != 12) stop("Each months_active entry must have length 12.")
+      return(row)
+    } else {
+      stop("'months_active' must be either a matrix or a named list.")
+    }
+  }
+
+  ## -------- 4. Mark round days -------------------------------------------
+  for (y in years) {
+    active <- which(get_months_row(y) == 1)
+    for (m in active) {
+      first_day_m <- as.Date(sprintf("%04d-%02d-01", y, m))
+      n_days_m <- as.integer(format(first_day_m + months(1) - 1, "%d"))
+      round_day <- as.Date(sprintf("%04d-%02d-%02d",
+                                   y, m, min(smc_day_of_month, n_days_m)))
+      idx <- match(round_day, smc_df$dates, nomatch = 0L)
+      if (idx) smc_df$SMC[idx] <- 1
+    }
+  }
+
+  ## -------- 5. Apply coverage in 120-day window ---------------------------
+  round_idx <- which(smc_df$SMC == 1)
+  for (idx in round_idx) {
+    this_month <- lubridate::month(smc_df$dates[idx])
+    cov_value  <- coverage[this_month]
+    window_end <- min(idx + 120, nrow(smc_df))
+    smc_df$cov[idx:window_end] <- cov_value
+  }
+
+  ## -------- 6. Compute decay ----------------------------------------------
+  smc_df$decay <- calc_decay_arr(smc_df$SMC, const = -0.1806)
+
+  smc_df
+}
+
+
 
 #' Generate a schedule of coverage values for a given period with decay
 #'
@@ -324,4 +328,40 @@ calculate_weekly_metrics <- function(schedule, exclude_years = NULL) {
       .groups = "drop"
     ) %>%
     dplyr::filter(!(lubridate::year(date_ymd) %in% exclude_years))
+}
+
+#' Load and clean raw SMC coverage data
+#'
+#' Cleans and formats SMC coverage data. Allows for flexibility in input:
+#' the user can supply either a data frame directly or a path to a file
+#' (Excel or RDS). If both `data` and paths are `NULL`, the function returns an error.
+#'
+#' @param data A data frame containing raw SMC coverage data (default = NULL).
+#' @param path_to_excel Optional. Path to an Excel file containing SMC data (default = NULL).
+#' @param path_to_rds Optional. Path to an RDS file containing SMC data (default = NULL).
+#'
+#' @return A cleaned data frame with columns: `date_start` and `coverage`.
+#'         Only one row per Year-Month is retained (the first entry chronologically).
+#' @export
+load_clean_smc_data <- function(data = NULL, path_to_excel = NULL, path_to_rds = NULL) {
+  # Load data depending on inputs
+  if (is.null(data)) {
+    if (!is.null(path_to_rds)) {
+      data <- readRDS(path_to_rds)
+    } else if (!is.null(path_to_excel)) {
+      data <- readxl::read_excel(path_to_excel)
+    } else {
+      stop("Please provide either a data frame or a path to an Excel or RDS file.")
+    }
+  }
+
+  # Clean and format the data
+  data %>%
+    dplyr::select(date_start, smc_couv_tot) %>%
+    dplyr::rename(coverage = smc_couv_tot) %>%
+    dplyr::mutate(YearMonth = format(date_start, "%Y-%m")) %>%
+    dplyr::group_by(YearMonth) %>%
+    dplyr::slice(1) %>%
+    dplyr::ungroup() %>%
+    dplyr::select(-YearMonth)
 }
