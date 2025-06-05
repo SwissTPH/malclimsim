@@ -157,17 +157,17 @@ return_default_priors <- function(){
 }
 
 
-#’ Build a list of mcstate::pmcmc_parameter() objects,
-#’ starting from the return_default_priors() template and then layering on any overrides.
-#’
-#’ @param param_inputs      Named list of initial values (so that we know which parameters actually exist).
-#’ @param proposal_matrix   Numeric matrix (rownames must match param names).
-#’ @param params_to_estimate Character vector of names we actually want to estimate.
-#’ @param override_priors   Optional named list of lists: each element must match the structure
-#’                          returned by return_default_priors(). If you supply an element “phi” here,
-#’                          it replaces the entire `phi` block in the default.
-#’ @return Named list of mcstate::pmcmc_parameter objects, one per parameter in `params_to_estimate`.
-#’ @export
+#' Build a list of mcstate::pmcmc_parameter() objects,
+#' starting from the return_default_priors() template and then layering on any overrides.
+#'
+#' @param param_inputs Named list of initial values (so that we know which parameters actually exist).
+#' @param proposal_matrix Numeric matrix (rownames must match parameter names).
+#' @param params_to_estimate Character vector of names we actually want to estimate.
+#' @param override_priors Optional named list of lists: each element must match the structure
+#'                        returned by return_default_priors(). If you supply an element "phi" here,
+#'                        it replaces the entire \code{phi} block in the default.
+#' @return Named list of \code{mcstate::pmcmc_parameter} objects, one per parameter in \code{params_to_estimate}.
+#' @export
 build_priors <- function(param_inputs,
                          proposal_matrix,
                          params_to_estimate,

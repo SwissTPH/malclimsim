@@ -10,6 +10,10 @@ vignette: >
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
+```{r}
+detach("package:malclimsim", unload = TRUE)
+devtools::install_github("https://github.com/SwissTPH/malclimsim")
+```
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
