@@ -103,23 +103,6 @@ qR1 <- qR2 + (1 - qR2) * c_qR
 ######################################################
 ## Defining Proportion Symptomatic and Asymptomatic  #
 ######################################################
-# Prop of patent infections that are symptomatic
-c_phi <- user()
-c_p_1 <- user() # <5
-c_p_2 <- c_phi * c_p_1 # <=5
-
-# Proportion of population of all malaria infections that are patent
-c_s <- user()
-prop_p_1 <- user() # <5
-prop_p_2 <- c_s * prop_p_1 # >=5
-
-# Proportion of population that is symptomatic
-phi_1 <- c_p_1 * prop_p_1 # <5
-phi_2 <- c_p_2 * prop_p_2 # >=5
-
-######################################################
-## Defining Proportion Symptomatic and Asymptomatic  #
-######################################################
 # s => symptomatic
 # p => patient
 # c => some constant
