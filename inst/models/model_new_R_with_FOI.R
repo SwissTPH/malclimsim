@@ -119,8 +119,8 @@ pi_p_1 <- user() # <5
 pi_p_2 <- c_p * pi_p_1 # >=5
 
 # Proportion of population that is symptomatic
-pi_s <- pi_sp_1 * pi_p_1 # <5
-pi_s <- pi_sp_2 * pi_p_2 # >=5
+pi_s_1 <- pi_sp_1 * pi_p_1 # <5
+pi_s_2 <- pi_sp_2 * pi_p_2 # >=5
 
 ##########################################
 ## Defining Demographic Rate Parameters  #
