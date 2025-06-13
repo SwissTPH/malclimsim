@@ -18,7 +18,7 @@ decay[] <- user()
 ## Defining Effect of SMC #
 ###########################
 eff_SMC <- user() # SMC effectiveness
-SMC_effect <- if (time > lag_SMC) decay[time] * eff_SMC * cov_SMC[time] else decay[time] * eff_SMC * cov_SMC[time]
+SMC_effect <- decay[time] * eff_SMC * cov_SMC[time]
 
 #######################
 ## Force of Infection #
@@ -34,16 +34,16 @@ p_MH_C <- user(0.50)
 # Children
 update(SC) <- SC -  mu_SE * SC + mu_RS * RC + mu_TS * TrC - (delta_d + delta_a) * SC + delta_b * P
 update(EC) <- EC - mu_EI * EC +  mu_SE * SC - (delta_d + delta_a) * EC
-update(IC) <- IC - mu_IR * IC + phi_1 * (1 - fT_C) * mu_EI * EC - (delta_d + delta_a) * IC
-update(TrC) <- TrC - mu_TS * TrC + phi_1 * fT_C * mu_EI * EC - (delta_d + delta_a) * TrC
-update(RC) <- RC - mu_RS * RC + mu_IR * IC + (1 - phi_1) * mu_EI * EC - (delta_d + delta_a) * RC
+update(IC) <- IC - mu_IR * IC + pi_s_1 * (1 - fT_C) * mu_EI * EC - (delta_d + delta_a) * IC
+update(TrC) <- TrC - mu_TS * TrC + pi_s_1 * fT_C * mu_EI * EC - (delta_d + delta_a) * TrC
+update(RC) <- RC - mu_RS * RC + mu_IR * IC + (1 - pi_s_1) * mu_EI * EC - (delta_d + delta_a) * RC
 
 # Adults
 update(SA) <- SA -  mu_SE * SA + mu_RS * RA + mu_TS * TrA - delta_d * SA + delta_a * SC
 update(EA) <- EA - mu_EI * EA +  mu_SE * SA - delta_d * EA + delta_a * EC
-update(IA) <- IA - mu_IR * IA + phi_2 * (1 - fT_A) * mu_EI * EA - delta_d * IA + delta_a * IC
-update(TrA) <- TrA - mu_TS * TrA + phi_2 * fT_A * mu_EI * EA - delta_d * TrA + delta_a * TrC
-update(RA) <- RA - mu_RS * RA + mu_IR * IA + (1 - phi_2) * mu_EI * EA - delta_d * RA + delta_a * RC
+update(IA) <- IA - mu_IR * IA + pi_s_2 * (1 - fT_A) * mu_EI * EA - delta_d * IA + delta_a * IC
+update(TrA) <- TrA - mu_TS * TrA + pi_s_2 * fT_A * mu_EI * EA - delta_d * TrA + delta_a * TrC
+update(RA) <- RA - mu_RS * RA + mu_IR * IA + (1 - pi_s_2) * mu_EI * EA - delta_d * RA + delta_a * RC
 
 #################################################
 ## Defining Incidence                           #
@@ -51,38 +51,38 @@ update(RA) <- RA - mu_RS * RA + mu_IR * IA + (1 - phi_2) * mu_EI * EA - delta_d 
 ## in the given time period - day, week, month  #
 #################################################
 initial(day_inc_C) <- 0
-update(day_inc_C) <- if ((step) %% steps_per_day == 0) mu_EI * EC * fT_C * phi_1 else day_inc_C + mu_EI * EC * fT_C * phi_1
+update(day_inc_C) <- if ((step) %% steps_per_day == 0) mu_EI * EC * fT_C * pi_s_1 else day_inc_C + mu_EI * EC * fT_C * pi_s_1
 
 initial(wk_inc_C) <- 0
-update(wk_inc_C) <- if ((step) %% steps_per_week == 0) mu_EI * EC * fT_C * phi_1 else wk_inc_C + mu_EI * EC * fT_C * phi_1
+update(wk_inc_C) <- if ((step) %% steps_per_week == 0) mu_EI * EC * fT_C * pi_s_1 else wk_inc_C + mu_EI * EC * fT_C * pi_s_1
 
 initial(day_inc_A) <- 0
-update(day_inc_A) <- if ((step) %% steps_per_day == 0) mu_EI * EA * fT_A * phi_2 else day_inc_A + mu_EI * EA * fT_A * phi_2
+update(day_inc_A) <- if ((step) %% steps_per_day == 0) mu_EI * EA * fT_A * pi_s_2 else day_inc_A + mu_EI * EA * fT_A * pi_s_2
 
 initial(wk_inc_A) <- 0
-update(wk_inc_A) <- if ((step) %% steps_per_week == 0) mu_EI * EA * fT_A * phi_2 else wk_inc_A + mu_EI * EA * fT_A * phi_2
+update(wk_inc_A) <- if ((step) %% steps_per_week == 0) mu_EI * EA * fT_A * pi_s_2 else wk_inc_A + mu_EI * EA * fT_A * pi_s_2
 
 initial(day_inc_total) <- 0
-update(day_inc_total) <- if ((step) %% steps_per_day == 0) mu_EI * (EC * fT_C * phi_1 + EA * fT_A * phi_2) else day_inc_total + mu_EI * (EC * fT_C * phi_1 + EA * fT_A * phi_2)
+update(day_inc_total) <- if ((step) %% steps_per_day == 0) mu_EI * (EC * fT_C * pi_s_1 + EA * fT_A * pi_s_2) else day_inc_total + mu_EI * (EC * fT_C * pi_s_1 + EA * fT_A * pi_s_2)
 
 initial(wk_inc_total) <- 0
-update(wk_inc_total) <-  if ((step) %% steps_per_week == 0) mu_EI * (EC * fT_C * phi_1 + EA * fT_A * phi_2) else wk_inc_total + mu_EI * (EC * fT_C * phi_1 + EA * fT_A * phi_2)
+update(wk_inc_total) <-  if ((step) %% steps_per_week == 0) mu_EI * (EC * fT_C * pi_s_1 + EA * fT_A * pi_s_2) else wk_inc_total + mu_EI * (EC * fT_C * pi_s_1 + EA * fT_A * pi_s_2)
 
 initial(month_inc_C) <- 0
-update(month_inc_C) <- if ((step) %% steps_per_month == 0) mu_EI * EC * fT_C * phi_1 else month_inc_C + mu_EI * EC * fT_C * phi_1
+update(month_inc_C) <- if ((step) %% steps_per_month == 0) mu_EI * EC * fT_C * pi_s_1 else month_inc_C + mu_EI * EC * fT_C * pi_s_1
 
 initial(month_inc_A) <- 0
-update(month_inc_A) <- if ((step) %% steps_per_month == 0) mu_EI * EA * fT_A * phi_2 else month_inc_A + mu_EI * EA * fT_A * phi_2
+update(month_inc_A) <- if ((step) %% steps_per_month == 0) mu_EI * EA * fT_A * pi_s_2 else month_inc_A + mu_EI * EA * fT_A * pi_s_2
 
 initial(month_inc_total) <- 0
-update(month_inc_total) <- if ((step) %% steps_per_month == 0) mu_EI * (EC * fT_C * phi_1 + EA * fT_A * phi_2) else month_inc_total + mu_EI * (EC * fT_C * phi_1 + EA * fT_A * phi_2)
+update(month_inc_total) <- if ((step) %% steps_per_month == 0) mu_EI * (EC * fT_C * pi_s_1 + EA * fT_A * pi_s_2) else month_inc_total + mu_EI * (EC * fT_C * pi_s_1 + EA * fT_A * pi_s_2)
 
 ########################################
 ## Defining Transition Rate Parameters #
 ########################################
 mu_RS <- user()
 duration_infection <- user(200)
-mu_IR <- 1 / (duration_infection -  1 / mu_RS_C) # I to R is a maximum of 200 days
+mu_IR <- 1 / (duration_infection -  1 / mu_RS) # I to R is a maximum of 200 days
 mu_EI <- user()
 mu_TS <- user()
 
@@ -97,8 +97,6 @@ z <- user(1) # z < 1, reporting rate of adults vs. children
 ## Defining Different Infectivity by Compartment   #
 ####################################################
 qR <- user()
-qR2 <- user()
-qR1 <- qR2 + (1 - qR2) * c_qR
 
 ######################################################
 ## Defining Proportion Symptomatic and Asymptomatic  #
@@ -169,7 +167,7 @@ b <- user() # controls saturation rate of impact of population infectivity on EI
 ############################################
 ## Defining Infectivity of the Population  #
 ############################################
-X <- (IC + IA + qR * (s_1 * RC + s_2 * RA) + qR * ((1 - s_1) * RC + (1 - s_2) * RA)) / P
+X <- (IC + IA + qR * (RC + RA)) / P
 
 ########################################
 ## Dispersion Parameters               #
@@ -233,20 +231,10 @@ dim(cov_SMC) <- user()
 #################################
 ## Relevant outputs to look at  #
 #################################
-initial(X2) <- (IC + IA + qR1 * (s_1 * RC + s_2 * RA) + qR2 * ((1 - s_1) * RC + (1 - s_2) * RA)) / P  # Proportion of population infectious remains the same
-update(X2) <- (IC + IA + qR1 * (s_1 * RC + s_2 * RA) + qR2 * ((1 - s_1) * RC + (1 - s_2) * RA)) / P  # Proportion of population infectious remains the same
-initial(X_I) <- (IC + IA) / (IC + IA + qR1 * (s_1 * RC + s_2 * RA) + qR2 * ((1 - s_1) * RC + (1 - s_2) * RA))
-update(X_I) <- (IC + IA) / (IC + IA + qR1 * (s_1 * RC + s_2 * RA) + qR2 * ((1 - s_1) * RC + (1 - s_2) * RA))
-initial(X_AP) <- (qR1 * (s_1 * RC + s_2 * RA)) / (IC + IA + qR1 * (s_1 * RC + s_2 * RA) + qR2 * ((1 - s_1) * RC + (1 - s_2) * RA))
-update(X_AP) <- (qR1 * (s_1 * RC + s_2 * RA)) / (IC + IA + qR1 * (s_1 * RC + s_2 * RA) + qR2 * ((1 - s_1) * RC + (1 - s_2) * RA))
-initial(X_ASP) <- (qR2 * ((1 - s_1) * RC + (1 - s_2) * RA)) / (IC + IA + qR1 * (s_1 * RC + s_2 * RA) + qR2 * ((1 - s_1) * RC + (1 - s_2) * RA))
-update(X_ASP) <- (qR2 * ((1 - s_1) * RC + (1 - s_2) * RA)) / (IC + IA + qR1 * (s_1 * RC + s_2 * RA) + qR2 * ((1 - s_1) * RC + (1 - s_2) * RA))
 initial(SMC_effect_2) <- decay[time] * eff_SMC * cov_SMC[time]
 update(SMC_effect_2) <- decay[time] * eff_SMC * cov_SMC[time]
 initial(mu_SE_C_2) <-(1 - SMC_effect) * (1 - exp(-p_MH_C * EIR))
 update(mu_SE_C_2) <- (1 - SMC_effect) *(1 - exp(-p_MH_C * EIR))
-initial(mu_SE_A_2) <- (1 - SMC_effect_A) *(1 - exp(-rho * p_MH_C * EIR))
-update(mu_SE_A_2) <- (1 - SMC_effect_A) *(1 - exp(-rho * p_MH_C * EIR))
 initial(EIR2) <- alpha * (X / (b + X)) * temp_effect * rain_effect # Multiplicative effects
 update(EIR2) <- alpha * (X / (b + X)) * temp_effect * rain_effect # Multiplicative effects
 initial(temp_effect_2) <- if (temp_shift <= T_opt) exp(-((temp_shift - T_opt)^2) / (2 * sigma_LT^2)) else exp(-((temp_shift - T_opt)^2) / (2 * sigma_RT^2))
