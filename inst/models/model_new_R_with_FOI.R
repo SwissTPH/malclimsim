@@ -140,10 +140,15 @@ c_R_D[] <- user() # this will be informed by data
 ###########################
 lag_R <- user(0)  # Default lag = 0
 lag_T <- user(0)
-initial(c_R_D_shift) <- c_R_D[time]  # Start with the first rainfall value
-update(c_R_D_shift) <- if (time > lag_R) c_R_D[time - lag_R] else c_R_D[time]
-initial(temp_shift) <- temp[time]
-update(temp_shift) <- if (time > lag_T) temp[time - lag_T] else temp[time]
+clim_SMC_lag <- user()
+
+c_R_D_shift <- c_R_D[time + clim_SMC_lag - lag_R]
+temp_shift <- temp[time + clim_SMC_lag - lag_T]
+
+#initial(c_R_D_shift) <- c_R_D[time]  # Start with the first rainfall value
+#update(c_R_D_shift) <- if (time > lag_R) c_R_D[time - lag_R] else c_R_D[time]
+#initial(temp_shift) <- temp[time]
+#update(temp_shift) <- if (time > lag_T) temp[time - lag_T] else temp[time]
 
 ################################
 ## Defining SMC Vector Inputs  #
@@ -231,6 +236,7 @@ dim(temp) <- user()
 dim(SMC) <- user()
 dim(decay) <- user()
 dim(cov_SMC) <- user()
+dim(dates) <- user()
 
 #################################
 ## Relevant outputs to look at  #
