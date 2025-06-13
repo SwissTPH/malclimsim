@@ -1,8 +1,8 @@
 ---
-title: "Using malclimsim to Simulate from the Climate-driven Dynamical Transmission Model"
+title: "Using malclimsim to Infer Parameters of the Climate-driven Dynamical Transmission Model"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Using malclimsim to Simulate from the Climate-driven Dynamical Transmission Model}
+  %\VignetteIndexEntry{Using malclimsim to Infer Parameters of the Climate-driven Dynamical Transmission Model}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -17,109 +17,277 @@ knitr::opts_chunk$set(
 
 ## Overview
 
-The climate-driven dynamical transmission model used in this package is a slight adaptation from the one constructed by Ukawuba and Shaman in 2022 (<https://doi.org/10.1371/journal.pcbi.1010161>). The original paper calibrated the model using data at the provincial and district levels (district-level analysis found in the supplement). A few key characteristics of the model are that only humans are modeled explicitly but climate-mosquito dynamics are incorporated through the addition of several equations relating rainfall and temperature to mosquito development. It is a compartmental model with 10 total compartments across two age groups, splitting the population into those who are Susceptible to disease, those who have been Exposed and are infected by malaria parasites, those who are Infectious but untreated, those who have been Treated, and those who have Recovered. Currently, the model assumes a year is 360 days with twelve 30 day months. There are two age groups being modeled - those under 5 years old and those who are 5 years and older. Only one intervention is being considered here - seasonal malaria chemoprevention.
+The climate-driven dynamical transmission model used in this package is an adaptation from the one constructed by Ukawuba and Shaman in 2022 (<https://doi.org/10.1371/journal.pcbi.1010161>). The original paper calibrated the model using data at the provincial and district levels (district-level analysis found in the supplement). A few key characteristics of the model are that only humans are modeled explicitly but climate-mosquito dynamics are incorporated through the addition equations relating rainfall and temperature to the entomological innoculation rate. It is a compartmental model with 10 total compartments across two age groups, splitting the population into those who are Susceptible to disease, those who have been Exposed and are infected by malaria parasites, those who have Symptomatic Infection but untreated, those who have been Treated, and those who have Asymptomatic infection. Currently, the model assumes a year is 360 days with twelve 30 day months when using monthly data and assumes 365 day years with 7 day weeks when using weekly data. There are two age groups being modeled - those under 5 years old and those who are 5 years and older. Only one intervention is being considered here - seasonal malaria chemoprevention.
+
+This vignette will go through the process of defining the inputs for, and simulating from, a predefined model of malaria transmission. Afterwords, a number parameters of this model will be inferred using the mcstate package. Lastly, diagnostics will be examined and relevant quantities calculated.
 
 ```{r}
+detach("package:malclimsim", unload = TRUE)
+devtools::install_github("https://github.com/SwissTPH/malclimsim", ref = "development")
 library(malclimsim)
+load_all(path = "C:\\Users\\putnni\\Documents\\git-hub-repositories\\malclimsim\\")
 ```
+## Setting Up Model Inputs
 
-## Climate-data downloading and processing
+### Climate data downloading and processing
 
-The first step to simulating from the model is to specify the region (latitude and longitude) in which you want your model to simulate from. Additionally, the years used in the analysis must be specified.
+The first step to using the model is to specify the region (latitude and longitude) in which you want your model to simulate from. Additionally, the years used in the analysis must be specified.
 
 ```{r}
 # Years used for the analysis
-years <- 2014:2023
+years_clim <- 2017:2023
+start_date <- ymd("2018-01-01")  # Start date of the analysis
+end_date <- ymd("2023-12-31")  # End date of the analysis
+years_analysis <- year(start_date) : year(end_date)
+```
 
+
+```{r}
 # Latitude and longitude where climate data (rainfall and temperature) is to be saved
 # Rainfall data is from CHIRPS and temperature data is from ERA5
-lat <- -2.07
-lon <- 30.63
+lat <- 8.34
+lon <- 17.77
 ```
 
-Next, "save_climate_data" will download the raw data from the specified coordinates into the directory given by 'path_to_data', where the data can be loaded from for future uses. The temperature data comes from 'ERA5-Land' (<https://cds.climate.copernicus.eu/datasets/derived-era5-land-daily-statistics?tab=overview>) and the rainfall data comes from 'CHIRTSdaily' (<https://www.chc.ucsb.edu/data/chirtsdaily>).
+Next, "save_climate_data" will download the raw data from the specified coordinates into the directory given by 'path_to_data', where the data can be loaded from for future uses. The temperature data comes from 'ERA5-Land' (<https://cds.climate.copernicus.eu/datasets/derived-era5-land-daily-statistics?tab=overview>) and the rainfall data comes from 'CHIRTSdaily' (<https://www.chc.ucsb.edu/data/chirtsdaily>). To get access to the CHIRPS data (and run the below function), one must register with the European Centre for Medium-Range Weather Forecasts API - instructions found here - https://bluegreen-labs.github.io/ecmwfr/.
 
 ```{r, echo = FALSE}
-path_to_data <- "C:/Users/putnni/Documents/r-packages/data/"
+path_to_data <- "C:/Users/putnni/switchdrive/Chad/Data/"
+rain_file_name <- "chirps_moissala.rds"
+temp_file_name <- "era5_moissala.nc"
 
 # Saving the rainfall data locally based on specified path
-save_climate_data(lon, lat, years, path_to_data)
+save_climate_data(lon = lon, lat = lat, years = years_clim, 
+                  path_to_data = paste0(path_to_data, "climate-data/"),
+                  rain_file_name = rain_file_name, temp_file_name = temp_file_name)
 ```
 
-Now the data is processed using the 'process_climate_data' function. A few things are done here. First, as the temperature data is in the form of monthly averages and the model requires an input for each day, smoothing splines are used to fit a smooth function to the data. This function is then used to estimate daily temperatures. A few more things are done with the rainfall data. First, a rolling average over the previous D (here 30) days is taken. This is done to "deal" with the lag that is typically seen between rainfall and the increase in malaria transmission. Note that the "best" value of D can change for different climates and regions. After, this rolling mean is standardized (i.e. subtract the mean and divide by the standard deviation for each day). This is because this is the expected input into the model.
+Now the data is processed using the 'process_climate_data' function. A few things are done here. First, as the temperature data is in the form of monthly averages and the model requires an input for each day, smoothing splines are used to fit a smooth function to the data. This function is then used to estimate daily temperatures. A few more things are done with the rainfall data. First, the cumulative monthly rainfall was calculated. Then, a smoothing spine was fit to this monthly data. Afterwards, daily estimated were estimated from the fit. Lastly, the daily estimates were standardized to have a mean of 0 and a variance of 1. 
 
 For more details, look at the code found in "climate_processing_functions.R".
 
 ```{r, each = FALSE}
 # Reading in climate data saved by `save_climate_data`
-temp_path <- paste0(path_to_data, "era5_11051417.nc")
-rain_path <- paste0(path_to_data, "chirps_11051418.rds")
+temp_path <- paste0(path_to_data, "climate-data/", temp_file_name)
+rain_path <- paste0(path_to_data, "climate-data/", rain_file_name)
 
 # Processing climate data to be used in the model
-# `D1' and `D2' controls the number of previous days used for the rainfall rolling average and temperature rolling average
-# calculation and `months_30_days` determines if years are 360 or 365 days
-met_360 <- process_climate_data(lon, lat, years, D1 = 60, D2 = 1, temp_path = temp_path,
-                            rain_path = rain_path, path_to_data, months_30_days = TRUE)
+# `months_30_days` determines if years are 360 or 365 days - if using weekly data, 365
+# days must be used and if using monthly data, 360 days must be used
+met_365 <- process_climate_data(lon, lat, years = years_clim, temp_path = temp_path,
+                            rain_path = rain_path, months_30_days = FALSE)
 ```
 
+### Seasonal malaria chemoprevention data downloading and processing
+Next we will load the SMC data, which gives information about when each round of SMC was given and the coverage for that round. As of now, for the functions that process this SMC data, the format (column names) must be as shown below.
 
 ```{r}
-data("met_360", package = "malclimsim")
+path_to_SMC <- file.path(path_to_data,"data-raw/CPS/CPS_coverage_imput_2018_with_2023.xlsx")
 
-colnames(met_360)[1] <- "date"
+smc_data_raw <- readxl::read_excel(path_to_SMC)
+head(smc_data_raw, n = 1)
 
-# Extract rainfall and temperature data
-rain <- met_360$anom  # Standardized rolling mean of rainfall
-temp <- met_360$temp  # Temperature data
+
+smc_data <- load_clean_smc_data(data = smc_data)
+head(smc_data, n = 1)
 ```
 
-One now needs to define the inputs related to seasonal malaria chemoprevention (SMC). There are three vectors that are needed which should all the same length as the rainfall and temperature vectors. One vector consists of 1s and 0s that define the start of a round of SMC. The second vector is the coverage of SMC for that round. And the last vector is the result of a decay function applied to the coverage over time. The total effect of SMC at a given time point is defined as the product (component-wise multiplication) of these vectors at this time.
+One now needs to define the inputs related to seasonal malaria chemoprevention (SMC). There are three vectors that are needed which should all the same length as the rainfall and temperature vectors. One vector consists of 1s and 0s that define the start of a round of SMC. The second vector is the coverage of SMC for that round. And the last vector is the result of a decay function applied to the coverage over time. The total effect of SMC at a given time point is defined as the product (component-wise multiplication) of these vectors at this time. 
+
+To go from the clean dataset, where we have rounds given in monthly intervals, to daily intervals required by the model, we call the `smc_schedule_from_data' function.
 
 ```{r}
-# Defining the start and end date of the simulation
-start_date <- as.Date(paste0(as.character(years[1]), "-01-01"))
-end_date <- as.Date(paste0(as.character(years[length(years)]), "-12-31"))
+smc_schedule <- smc_schedule_from_data(
+  smc_cov = smc_data,
+  months_30_days = FALSE,
+  years = years_analysis
+)
 
-# Create a matrix indicating which months are active for SMC in each year.
-# Each row represents a year, and each column (1-12) represents a month (1 = active, 0 = inactive).
-months_active <- matrix(data = 0, nrow = length(years), ncol = 12)  # Initialize all months as inactive
-months_active[, c(7, 8, 9, 10)] <- 1  # Set July through October as active months for SMC deployment
-
-# Generate the SMC schedule using the defined start date, end date, active months, and coverage.
-# The argument 'months_30_days = TRUE' simulates a 360-day calendar (12 months with 30 days each).
-# Coverage is set to 75%.
-smc_schedule <- gen_smc_schedule(start_date, end_date, years, months_active = months_active, months_30_days = TRUE, coverage = 0.75)
-
-# Viewing the contents of the resulting data frame
-print(head(smc_schedule[240:300,]))
+head(smc_schedule, n = 1)
 ```
+
+
+### Ensuring alignment of model inputs
+
+As mentioned before, it is necessary that the climate and SMC inputs begin on the same date - otherwise a given day will not have the climate and SMC information actually corresponding to that day. To ensure that this is the case, we have a helper function that checks this condition and another that trims them accordingly. Furthermore, as we have a lag on climate, we need the climate vectors to have data before the date when SMC starts. The following code helps to ensure everything is aligned.
 
 ```{r}
-# Extract key SMC schedule information
-SMC <- smc_schedule$SMC  # Indicator for days when an SMC round started (1s and 0s)
-decay <- smc_schedule$decay  # Efficacy decay of SMC over time
-cov <- smc_schedule$cov  # SMC coverage over time
+met_365 <- impute_climate_to_end_date(met_365, max(smc_schedule$dates)) # climate data only available until December 2023
+
+# Specify lag
+clim_smc_lag <- 180
+
+# Validate continuity, span, and alignment
+validate_smc_climate_alignment(smc_schedule, met_365, clim_smc_lag)
+
+# Trim & align
+aligned <- lag_and_trim_smc_climate(smc_schedule, met_365, clim_smc_lag)
+smc_schedule    <- aligned$smc
+met_365 <- aligned$climate
+
+validate_smc_climate_alignment(smc_schedule, met_365, clim_smc_lag)
 ```
+
+
+## Simulating from the malaria model
+
+One last model input is the population size of the region being studied. In the case of Chad, there is must uncertainty about the true population size so we will also include in the model a population scaling factor. This means that the results are not so sensitivity to the chosen population size value.
+
+```{r}
+district_pops <- readxl::read_excel(paste0(path_to_data, "model-inputs/district_population_estimates.xlsx")) # 2023 population estimates for select districts of Mandoul
+N <- district_pops %>% filter(District == "Moissala") %>% dplyr::select(Population) %>% unlist() %>% as.numeric()
+```
+
 
 Now, the climate model is loaded using "load_model" which takes as an input the name of the model. Here it is called "model_det_1". In principle, one could adjust the model or add new models which could then be loaded and simulated from. The model itself is written in 'odin', a domain-specific language (DSL) created for facilitating the writing of efficient state-space models. More information can be found in the originally paper by FitzJohn et al (10.12688/wellcomeopenres.16466.2).
 
 ```{r}
-climate_model <- load_model("model_det_1")  # Load the deterministic climate model
+malaria_model <- load_model("model_new_R_with_FOI")  # Load the deterministic climate model
 ```
 
 One last object to define before running the model itself. This input is a named list where each name corresponds to a parameter within the model and the values can be specified based on prior knowledge or by fitting to some observed data. Many of the parameter values here come from the paper by Ukawuba and Shaman where the model was fit to district-level data in Rwanda. Found below is a table with information about each parameter (taken directly from Ukawuba), as well as the corresponding name in the paper by Ukawuba, as the naming convention differs slightly for some parameters.
 
 ```{r}
+# Extract rainfall and temperature data
+rain <- met_365$anom  # Standardized rolling mean of rainfall
+temp <- met_365$temp  # Temperature data
+
+# Extract key SMC schedule information
+SMC <- smc_schedule$SMC  # Indicator for days when an SMC round started (1s and 0s)
+decay <- smc_schedule$decay  # Efficacy decay of SMC over time
+cov <- smc_schedule$cov  # SMC coverage over time
+
 # Define parameter inputs for the malaria model simulation
 param_inputs <- list(
-  mu_TS = 1/30, mu_IR = 1/5, mu_RS_C = 1/130,
-  mu_EI = 1/8, delta_b = 1/(21*365), delta_d = 1/(21*365),
-  delta_a = 1/(5 * 365), p_HM = 0.125, p_MH_C = 0.5, 
-  fT_C = 0.27, qR = 0.17, a_R = 0.4, b_R = 3, N = 5e5, 
-  s = 0.9, p_surv = 0.934, percAdult = 0.81, 
-  eff_SMC = 0, decay = decay, SMC = SMC, cov_SMC = cov,
-  c_R_D = rain, temp = temp  # Inputs for rainfall and temperature
+  # Rate and Demographic parameters
+  mu_TS = 1/30, mu_IR = 1/5, mu_RS = 1/195,
+  mu_EI = 1/10, delta_b = 47/(1000*365), delta_d = 47/(1000*365),
+  delta_a = 1/(5 * 365), N = N, percAdult = 0.81,
+
+  # Immunity and Reporting Parameters
+  pi_p_1 = 0.921, c_p = 1, pi_sp_1 = 0.75 / 0.921, c_sp = 0.12,
+  qR = 0.03,
+
+  # Immunity and Reporting Parameters
+  fT_C = 0.3, 
+  
+  # Population Scaling factor
+  s = 9,
+
+  # Time-varying Inputs
+  decay = decay,
+  SMC = SMC,
+  cov_SMC = cov,
+  c_R_D = rain, temp = temp,
+
+  # Climate Parameters
+  b = -log(0.93), R_opt = 0,
+  alpha = 0.15,
+  T_opt = 27, sigma_LT = 5, sigma_RT = 4.5,
+  k1 = 1.8, lag_R = 30, lag_T = 20,
+
+  # Likelihood function parameters
+  size_1 = 15,
+
+  # SMC parameters
+  eff_SMC = 0.6,
+  
+  # Misc
+  clim_SMC_lag = clim_smc_lag
 )
+```
+
+Before doing inference, let's first take a look at what the model output looks like using the parameter values defined above.
+We first simulate weekly malaria cases using the `data_sim' function (this function is used a lot behind the scenes throughout the fitting and inference diagnostics process). Afterwards, we'll plot the weekly malaria cases given by the model from 2018 to the end of 2023. Note that the default parameter values above are "selected" - it is worth changing values and seeing how it changes the model outputs!
+
+```{r}
+# Run the climate-malaria model simulation
+results <- data_sim(
+  malaria_model, param_inputs = param_inputs, start_date, end_date,
+  month = FALSE, round = FALSE, save = FALSE, month_unequal_days = TRUE
+)
+
+```
+
+```{r}
+plot_time_series(results = results, plot_title = "Malaria in Moissala (2018 to 2023)",
+                 select_incidence = "<5", incidence_y_label = "Weekly Malaria Cases")
+```
+
+
+## Model Inference
+
+### Loading observed data
+```{r}
+obs_cases <- readRDS(file.path(path_to_data,"cases-data/MSF-data/opd_district_MOISSALA_2012_2023.rds"))
+obs_cases <- obs_cases %>% filter(date_ymd >= start_date)
+```
+
+The observed data needs to have columns named in the same way shown below. If the data is monthly, the `date_ymd' column should correspond to the first of the month in year, month, day format.
+
+```{r}
+head(obs_cases, n = 1)
+```
+
+### Weighting observed data
+In our example, SMC was deployed each year except for 2019. This means the inference procedure, which aims to maximize the posterior probability globally, naturally gives more weight to years when SMC was deployed (simply because there are more of them). The consequence is a tendency to have worse model predictions for the year that SMC was stopped. As we are ultimately interested in comparing scenarios where SMC was and was not given, comparable performance across SMC status is preferred to better global predictions. 
+
+Towards this goal, we take a simple approach and weight the non SMC observations by how many times more SMC observations there are (e.g. if across the dataset, SMC was given for 5 years and not given for 1 year, then the weight for each observation in the years SMC was given would be 1, and the weight would be 5 for the year SMC was not given).
+
+```{r}
+obs_cases$treatment <- ifelse(year(obs_cases$date_ymd) != 2019, 1, 0)
+control_weight <- mean(obs_cases$treatment) / (1 - mean(obs_cases$treatment))
+obs_cases$obs_weight <- ifelse(year(obs_cases$date_ymd) == 2019, control_weight, 1)
+```
+
+### Defining model parameters to estimate
+```{r}
+# Listing the model parameters to be estimated
+params_to_estimate <- c(lag_R = "lag_R", lag_T = "lag_T", alpha = "alpha",
+                        sigma_LT = "sigma_LT", sigma_RT = "sigma_RT",
+                        R_opt = "R_opt", k1 = "k1", size_1 = "size_1",
+                        eff_SMC = "eff_SMC", s = "s", qR = "qR")
+```
+
+
+### Defining parameters of the Random-walk Metropolis Algorithm
+
+Inference is done in the Bayesian context, meaning we are targeting the posterior distribution of the parameter set given the observed data, which is proportional to the likelihood and prior probabilities. We simulate from this posterior distribution using a popular Markov chain Monte Carlo algorithm called 'Random Walk Metropolis'. This is implemented in the 'mcstate' package - more information can be found in the original paper outlining the package (Fitz et al 2021). 
+
+Random-Walk Metropolis has different parameters that must be specified prior to running the algorithm. To start, we need to decide the number of steps to run the algorithm for. Additionally, we must decide how many chains to run. One also needs to select where these chains start. Furthermore, we have to define the covariance matrix of the proposal distribution (here the proposal distribution is a multivariate normal). This choice of a covariance matrix greatly impacts the efficiency of the algorithm, especially when the parameters being estimated have a complex dependency structure. Therefore, it's important to choose one carefully. Luckily, mcstate has build in functionality for an "adaptive" proposal which learns the optimal proposal distribution during the MCMC procedure (Spencer SEF 2021). More details can be found here - https://mrc-ide.github.io/mcstate/reference/adaptive_proposal_control.html. 
+
+In our case, we do inference in three stages. First, we start with a relatively uninformed proposal distribution with a high level of adaptation. Afterwards, we use this first stage to inform a second stage where we update the proposal distribution and the starting values of the chain. This second stage has less strong adaptation and the idea is to continue until some sort of "convergence" is reached. Lastly, the algorithm is run with no adaptation so that the algorithm represents valid draws from the posterior distribution.
+
+```{r}
+params_default <- create_mcmc_params(stage = "stage1")
+adaptive_params_1 <- params_default$adaptive_params
+control_params_1 <- params_default$control_params
+control_params_1$n_steps = 500
+
+# Defining starting values for chains
+start_values_1 <- create_start_values(params_to_estimate, control_params_1,
+                                      model = model_1, param_inputs = param_inputs,
+                                      random = TRUE, seed = NULL)
+# Proposal matrix
+proposal_matrix_1 <- create_proposal_matrix(params_to_estimate = params_to_estimate,
+                                            model = model_1, param_inputs = param_inputs)
+```
+
+### Defining aspects of the inference procedure not related to MCMC
+
+Here we choose if we are using monthly or weekly data, which age groups we are fitting to, whether or not 
+```{r}
+obs_config <- make_obs_config(
+  use_monthly = FALSE,
+  age_group = "u5",
+  include_prev = FALSE,
+  use_SMC_as_covariate = FALSE,
+  log_link = FALSE,
+  include_pop_growth = TRUE
+)
+```
+
+
 
 ```
 
