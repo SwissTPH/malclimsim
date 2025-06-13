@@ -534,7 +534,7 @@ date_to_weeks_360 <- function(start_year, n_days) {
 #'   - `CumulativeRainfall`, `anom`, `temp`: Numeric climate variables to impute.
 #' @param end_date A `Date` object indicating the final date that should be present.
 #'   The function will impute values from the last available date up to `end_date`.
-#'   Assumes `date` column ends before this value.
+#'   Assumes `dates` column ends before this value.
 #'
 #' @return A data frame with the original data and appended imputed values, sorted by date.
 #' @export
@@ -547,7 +547,7 @@ impute_climate_to_end_date <- function(data, end_date) {
   library(lubridate)
 
   # Ensure required columns are present
-  required_vars <- c("date", "CumulativeRainfall", "anom", "temp")
+  required_vars <- c("dates", "CumulativeRainfall", "anom", "temp")
   missing_vars <- setdiff(required_vars, colnames(data))
   if (length(missing_vars) > 0) {
     stop("Missing required columns: ", paste(missing_vars, collapse = ", "))
@@ -555,12 +555,12 @@ impute_climate_to_end_date <- function(data, end_date) {
 
   # Add date components
   data <- data %>%
-    mutate(month = month(date),
-           day   = day(date),
-           year  = year(date))
+    mutate(month = month(dates),
+           day   = day(dates),
+           year  = year(dates))
 
   # Find last available date
-  last_date <- max(data$date, na.rm = TRUE)
+  last_date <- max(data$dates, na.rm = TRUE)
 
   if (last_date >= end_date) {
     warning("No missing dates to impute; last date is already >= end_date.")
@@ -582,17 +582,17 @@ impute_climate_to_end_date <- function(data, end_date) {
     )
 
   # Create imputed data frame
-  imputed_data <- data.frame(date = missing_dates) %>%
-    mutate(month = month(date),
-           day   = day(date),
-           year  = year(date),
-           week  = isoweek(date)) %>%
+  imputed_data <- data.frame(dates = missing_dates) %>%
+    mutate(month = month(dates),
+           day   = day(dates),
+           year  = year(dates),
+           week  = isoweek(dates)) %>%
     left_join(clim_means, by = c("month", "day")) %>%
     select(date, CumulativeRainfall, anom, month, week, day, temp)
 
   # Bind and sort
   completed_data <- bind_rows(data, imputed_data) %>%
-    arrange(date)
+    arrange(dates)
 
   return(completed_data)
 }
