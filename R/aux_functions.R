@@ -527,25 +527,22 @@ date_to_weeks_360 <- function(start_year, n_days) {
 #' This function imputes missing dates in a climate time series using the average
 #' value for each (month, day) combination across all prior years in the dataset.
 #' It is useful for filling in short gaps at the end of a time series, such as
-#' imputing values for December 2023 using earlier years' averages.
+#' imputing values for December 2023 using earlier years’ averages.
 #'
 #' @param data A data frame with at least the following columns:
-#'   - `date` (Date): The observation date.
+#'   - `dates` (Date): The observation date.
 #'   - `CumulativeRainfall`, `anom`, `temp`: Numeric climate variables to impute.
 #' @param end_date A `Date` object indicating the final date that should be present.
 #'   The function will impute values from the last available date up to `end_date`.
-#'   Assumes `dates` column ends before this value.
+#' Assumes the `dates` column ends before this value.
 #'
-#' @return A data frame with the original data and appended imputed values, sorted by date.
+#' @return A data frame with the original data and appended imputed values, sorted by `dates`.
 #' @export
 #'
 #' @examples
 #' # Suppose your climate data ends at 2023-12-01
 #' # met_360_completed <- impute_climate_to_end_date(met_360, as.Date("2023-12-31"))
 impute_climate_to_end_date <- function(data, end_date) {
-  library(dplyr)
-  library(lubridate)
-
   # Ensure required columns are present
   required_vars <- c("dates", "CumulativeRainfall", "anom", "temp")
   missing_vars <- setdiff(required_vars, colnames(data))
@@ -555,13 +552,14 @@ impute_climate_to_end_date <- function(data, end_date) {
 
   # Add date components
   data <- data %>%
-    mutate(month = month(dates),
-           day   = day(dates),
-           year  = year(dates))
+    dplyr::mutate(
+      month = lubridate::month(dates),
+      day   = lubridate::day(dates),
+      year  = lubridate::year(dates)
+    )
 
   # Find last available date
   last_date <- max(data$dates, na.rm = TRUE)
-
   if (last_date >= end_date) {
     warning("No missing dates to impute; last date is already >= end_date.")
     return(data)
@@ -572,27 +570,163 @@ impute_climate_to_end_date <- function(data, end_date) {
 
   # Compute daily climatology (excluding the target year)
   clim_means <- data %>%
-    filter(year < year(end_date)) %>%
-    group_by(month, day) %>%
-    summarise(
+    dplyr::filter(year < lubridate::year(end_date)) %>%
+    dplyr::group_by(month, day) %>%
+    dplyr::summarise(
       CumulativeRainfall = mean(CumulativeRainfall, na.rm = TRUE),
       anom               = mean(anom, na.rm = TRUE),
       temp               = mean(temp, na.rm = TRUE),
-      .groups = "drop"
+      .groups            = "drop"
     )
 
   # Create imputed data frame
   imputed_data <- data.frame(dates = missing_dates) %>%
-    mutate(month = month(dates),
-           day   = day(dates),
-           year  = year(dates),
-           week  = isoweek(dates)) %>%
-    left_join(clim_means, by = c("month", "day")) %>%
-    select(date, CumulativeRainfall, anom, month, week, day, temp)
+    dplyr::mutate(
+      month = lubridate::month(dates),
+      day   = lubridate::day(dates),
+      year  = lubridate::year(dates),
+      week  = lubridate::isoweek(dates)
+    ) %>%
+    dplyr::left_join(clim_means, by = c("month", "day")) %>%
+    dplyr::select(
+      dates,
+      CumulativeRainfall,
+      anom,
+      month,
+      week,
+      day,
+      temp
+    )
 
   # Bind and sort
-  completed_data <- bind_rows(data, imputed_data) %>%
-    arrange(dates)
+  completed_data <- dplyr::bind_rows(data, imputed_data) %>%
+    dplyr::arrange(dates)
 
   return(completed_data)
+}
+
+
+#' Compute how many days Climate must lead SMC
+#'
+#' Given SMC and Climate data.frames (both with a Date column `dates`),
+#' returns the integer number of days by which the Climate series must
+#' start earlier than the SMC series start.
+#'
+#' @param smc_df Data.frame with a Date column `dates`.
+#' @param clim_df Data.frame with a Date column `dates`.
+#' @return Integer ≥ 0: days by which Climate must precede SMC.
+#' @export
+compute_climate_lead_days <- function(smc_df, clim_df) {
+  smc_start  <- as.Date(min(smc_df$dates))
+  clim_start <- as.Date(min(clim_df$dates))
+  lead_days  <- as.integer(difftime(smc_start, clim_start, units = "days"))
+  if (lead_days < 0) lead_days <- 0L
+  lead_days
+}
+
+#' Validate SMC and Climate for Lagged Alignment
+#'
+#' Ensures:
+#'   1. SMC `dates` are continuous daily with no gaps.
+#'   2. Climate `dates` start no earlier than (SMC_start − lag_days) and
+#'      cover through SMC_end with no gaps.
+#'   3. For the intended `lag_days`, every SMC_date − lag_days exists in climate.
+#'
+#' @param smc_df Data.frame with Date column `dates`.
+#' @param clim_df Data.frame with Date column `dates`.
+#' @param lag_days Integer ≥ 0: days Climate lags behind SMC.
+#' @return Invisibly TRUE if all checks pass; stops with an error otherwise.
+#' @export
+validate_smc_climate_alignment <- function(smc_df, clim_df, lag_days) {
+  smc_dates  <- sort(as.Date(smc_df$dates))
+  clim_dates <- sort(as.Date(clim_df$dates))
+
+  # 1) SMC continuity
+  smc_full <- seq(min(smc_dates), max(smc_dates), by = "day")
+  miss_smc <- setdiff(smc_full, smc_dates)
+  if (length(miss_smc)) {
+    stop(
+      "SMC schedule missing dates: ",
+      paste(format(as.Date(miss_smc), "%Y-%m-%d"), collapse = ", "),
+      if (length(miss_smc) > 1) " …" else ""
+    )
+  }
+
+  # 2) Climate window boundaries
+  window_start <- min(smc_dates) - lag_days
+  window_end   <- max(smc_dates)
+
+  # 2a) No climate before window_start
+  too_early <- clim_dates < window_start
+  if (any(too_early)) {
+    stop(
+      "Climate data contains dates before required window start (",
+      format(window_start, "%Y-%m-%d"), "): ",
+      paste(format(as.Date(clim_dates[too_early]), "%Y-%m-%d"), collapse = ", "),
+      if (sum(too_early) > 1) " …" else ""
+    )
+  }
+
+  # 2b) Coverage from window_start through window_end
+  clim_required <- seq(window_start, window_end, by = "day")
+  miss_clim <- setdiff(clim_required, clim_dates)
+  if (length(miss_clim)) {
+    stop(
+      "Climate must cover ",
+      format(as.Date(window_start), "%Y-%m-%d"), " → ", format(as.Date(window_end), "%Y-%m-%d"),
+      ". Missing: ",
+      paste(format(as.Date(miss_clim), "%Y-%m-%d"), collapse = ", "),
+      if (length(miss_clim) > 1) " …" else ""
+    )
+  }
+
+  # 3) Per-lag alignment (redundant after #2b but kept for clarity)
+  targets      <- smc_dates - lag_days
+  miss_targets <- setdiff(targets, clim_dates)
+  if (length(miss_targets)) {
+    stop(
+      "With lag_days = ", lag_days,
+      ", no climate for SMC_date−lag on: ",
+      paste(format(as.Date(miss_targets), "%Y-%m-%d"), collapse = ", "),
+      if (length(miss_targets) > 1) " …" else ""
+    )
+  }
+
+  invisible(TRUE)
+}
+
+
+#' Lag and Trim SMC and Climate Data.frames
+#'
+#' After validation, trims & reorders SMC and Climate so that each row
+#' _i_ corresponds to the same calendar date, with Climate lagged by `lag_days`.
+#'
+#' @param smc_df Data.frame with `dates` (Date) and SMC columns.
+#' @param clim_df Data.frame with `dates` (Date) and climate columns.
+#' @param lag_days Integer ≥ 0: days Climate lags behind SMC.
+#' @return List with:
+#'   * `smc` — ordered SMC data.frame,
+#'   * `climate` — climate aligned so row_i = SMC_date_i − lag_days.
+#' @export
+lag_and_trim_smc_climate <- function(smc_df, clim_df, lag_days) {
+  #validate_smc_climate_alignment(smc_df, clim_df, lag_days)
+
+  smc_dates    <- sort(as.Date(smc_df$dates))
+  min_date <- min(smc_dates) - lag_days
+  max_date <- max(smc_dates)
+  target_dates <- seq(min_date, max_date, by = "day")
+
+  idx_map      <- setNames(
+    seq_len(nrow(clim_df)),
+    format(as.Date(clim_df$dates), "%Y-%m-%d")
+  )
+  matched_idx  <- idx_map[format(as.Date(target_dates), "%Y-%m-%d")]
+
+  climate_aln  <- clim_df[matched_idx, , drop = FALSE]
+  smc_ordered  <- smc_df[order(smc_dates), , drop = FALSE]
+
+  list(
+    smc     = smc_ordered,
+    climate = climate_aln
+  )
 }
