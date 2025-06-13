@@ -229,7 +229,6 @@ dim(temp) <- user()
 dim(SMC) <- user()
 dim(decay) <- user()
 dim(cov_SMC) <- user()
-dim(dates) <- user()
 
 #################################
 ## Relevant outputs to look at  #
