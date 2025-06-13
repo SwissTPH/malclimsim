@@ -150,13 +150,6 @@ temp_shift <- temp[time + clim_SMC_lag - lag_T]
 #initial(temp_shift) <- temp[time]
 #update(temp_shift) <- if (time > lag_T) temp[time - lag_T] else temp[time]
 
-################################
-## Defining SMC Vector Inputs  #
-################################
-cov_SMC[] <- user() # SMC coverage
-SMC[] <- user()
-decay[] <- user()
-
 ##############################################
 ## Defining Entomological Inncoulation Rate  #
 ##############################################
