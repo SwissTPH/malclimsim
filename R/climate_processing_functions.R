@@ -516,7 +516,7 @@ save_climate_data <- function(lon, lat, years, path_to_data, rain = TRUE, temp =
 #' rain_path <- paste0(path_to_data, "chirps_11051418.rds")
 #' met <- process_climate_data(lon, lat, years, D1 = 30, D2 = 30, temp_path = temp_path,
 #' rain_path = rain_path, path_to_data
-process_climate_data <- function(lon, lat, years, temp_path, rain_path, path_to_data, months_30_days = TRUE, save = FALSE){
+process_climate_data <- function(lon, lat, years, temp_path, rain_path, months_30_days = TRUE, save = FALSE, path_to_data = NULL){
   temp_df <- extract_era5(lat = lat, lon = lon, path_to_file = temp_path)
   temp <- daily_smooth_temp(temp_df)
 
