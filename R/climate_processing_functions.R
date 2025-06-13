@@ -533,6 +533,8 @@ process_climate_data <- function(lon, lat, years, temp_path, rain_path, months_3
   if(months_30_days){
     met <- climate_to_30_day_months(met, start_year = years[1], end_year = years[length(years)])
   }
+
+  colnames(met)[1] <- "dates"
   # Save the processed Rwanda climate data (rainfall and temperature) to the specified directory
   # - The data is saved as an RDS file, which is an efficient format for storing R objects
   current_datetime <- Sys.time()
