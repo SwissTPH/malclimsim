@@ -24,7 +24,6 @@ SMC_effect <- decay[time] * eff_SMC * cov_SMC[time]
 ## Force of Infection #
 #######################
 mu_SE <- (1 - SMC_effect) *(1 - exp(-p_MH_C * EIR))
-rho <- user(1)
 p_MH_C <- user(0.50)
 
 ######################################
