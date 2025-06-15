@@ -1,18 +1,18 @@
 ---
-title: "viewing-and-modifying-priors"
+title: "Viewing and Modifying Priors}"
 output:
   rmarkdown::html_vignette:
     toc: true
     toc_depth: 2
     theme: united
 vignette: >
-  %\VignetteIndexEntry{viewing-and-modifying-priors}
+  %\VignetteIndexEntry{Viewing and Modifying Priors}}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 ```{r}
-detach("package:malclimsim", unload = TRUE)
-devtools::install_github("https://github.com/SwissTPH/malclimsim")
+#detach("package:malclimsim", unload = TRUE)
+#devtools::install_github("https://github.com/SwissTPH/malclimsim")
 ```
 
 ```{r setup, include=FALSE}
@@ -205,7 +205,7 @@ print(updated_plot)
 
 If you want to integrate directly into the main inference pipeline (`inf_run()`), you can pass `override_priors` as an argument there:
 
-```{r}
+```{r eval=FALSE}
 res <- inf_run(
   model              = my_model,
   param_inputs       = param_inputs,

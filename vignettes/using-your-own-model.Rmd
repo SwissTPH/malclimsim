@@ -2,7 +2,7 @@
 title: "How to import a model for use with malclimsim"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{using-your-own-model}
+  %\VignetteIndexEntry{How to import a model for use with malclimsim}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
