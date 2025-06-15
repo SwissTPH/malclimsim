@@ -386,63 +386,114 @@ post_plot_fig
 ```
 
 ## Assessing Model Fit
-We will now plot the values predicted by the model to the observed values to assess how well our model is recreating the data. To do this, we sample a certain number of parameter 
+
+### Sampling from the posterior distribution
+We will now plot the values predicted by the model to the observed values to assess how well our model is recreating the data (aka a posterior predictive check). To do this, we first sample a certain number of parameter sets from the posterior distribution.
 
 ```{r}
+# Sample posterior draws from MCMC
 n_samples <- 5
 param_samples <- sample_mcmc_steps(mcmc_stage_3$coda_pars, n_samples)
 ```
 
-
+### Defining population growth input
+As population growth was used as part of the inference procedure, we also need to include population growth when comparing the model to the observed data.
 ```{r}
+# Create covariate matrix (population growth)
 r_df <- get_population_scaling(
   n             = nrow(obs_cases),
   month         = FALSE,
   growth_rate_C = 1.000071,
   growth_rate_A = 1.000092
 )
-
 pop_growth_df <- data.frame(
   date_ymd = obs_cases$date_ymd,
-  r_C      = r_df$r_C
+  r_C = r_df$r_C
 )
 
-######################################################
-##  Transformation: Scale Incidence by Covariate    ##
-######################################################
+# Define transformation for SMC-adjusted incidence
 mu_transform_C <- function(inc_df, param_inputs) {
   inc_df$inc_C * inc_df$r_C
 }
+```
 
-################################################################
-##  Extract parameters that maximized posterior probability    #
-################################################################
+### Simulating cases using the best parameters
+
+We start by extracting which parameter sets maximized the posterior distribution and simulate the weekly number of cases using these values 
+```{r}
+# Extract MAP (max posterior) parameter set
 max_posterior_params <- extract_max_posterior_params(mcmc_stage_3)
 param_inputs_best <- update_param_list(param_inputs, max_posterior_params)
 
-simulations <- run_simulations_from_samples(
-  model = malaria_model,
-  param_inputs = param_inputs_best,
-  param_samples = param_samples,
-  start_date = start_date,
-  end_date = end_date,
-  prewarm_years = 2,
+
+# Simulate cases using the best parameter set (deterministic, no noise)
+sim_best <- data_sim(
+  model         = malaria_model,
+  param_inputs  = param_inputs_best,
+  start_date    = start_date,
+  end_date      = end_date,
+  noise         = FALSE,
   mu_transform_C = mu_transform_C,
   mu_transform_A = NULL,
   covariate_matrix = pop_growth_df,
   month = FALSE,
-  noise = F
+  save = FALSE
 )
 
-# Summarize + plot
-sim_data <- summarize_simulation_ci(simulations, variables = c("inc_C_transformed"))
-plot_df <- prepare_plot_data(sim_data, obs_cases, "inc_C_transformed", "inc_C")
-plot_ppc <- plot_ppc(plot_data = plot_df, ci_data = sim_data, plot_title = "Posterior Predictive Check",
-                     data_source = c("Simulated", "Observed"), ylim = NULL, 
-                     ylab = "Weekly Number of Cases", xlab = "") 
-
-print(plot_ppc)
+sim_best_long <- tidyr::pivot_longer(sim_best, -date_ymd, names_to = "variable", values_to = "value")
 ```
 
+### Constructing the uncertainty (prediction) interval
+Now, we simulate using the different parameter sets sampled from the posterior distribution. We also add observation noise coming from a negative binomial distribution. This provides an interval that gives the range of weekly malaria cases we'd be likely to observe. 
 
+```{r}
+# Simulate cases using different parameter sets coming from MCMC run
+simulations <- run_simulations_from_samples(
+  model         = malaria_model,
+  param_inputs  = param_inputs_best,
+  param_samples = param_samples,
+  start_date    = start_date,
+  end_date      = end_date,
+  prewarm_years = 2,
+  mu_transform_C = mu_transform_C,
+  mu_transform_A = NULL,
+  covariate_matrix = pop_growth_df,
+  noise         = TRUE,
+  month         = FALSE
+)
+```
+
+The simulations are then summarized and we plot the resulting posterior predictive check.
+```{r}
+# Summarize the simulations
+ci_data <- summarize_simulation_ci(simulations, variables = "inc_C_transformed", ci_level = 0.95)
+
+# Format the simulated and observed data for plotting
+ppc_data <- prepare_ppc_data(
+  ci_data = ci_data,
+  best_df = sim_best_long,
+  obs_df  = obs_cases,
+  sim_var = "inc_C_transformed",
+  obs_var = "inc_C"
+)
+
+# Plot the posterior predictive check
+ppc_plot <- plot_ppc(
+  ppc_data = ppc_data,
+  ci_data = ci_data,
+  title       = "Posterior Predictive Check",
+  xlab        = "",
+  ylab        = "Weekly Number of Cases",
+  show_obs    = TRUE,
+  show_best   = TRUE,
+  show_ribbon = TRUE
+)
+
+print(ppc_plot)
+```
+
+## Calculating Relevant Quantities
+```{r}
+
+```
 
