@@ -16,28 +16,24 @@ knitr::opts_chunk$set(
 
 ```{r setup}
 library(malclimsim)
-library(dplyr)
-library(tidyr)
-library(lubridate)
-library(readxl)
 ```
 
-```{r}
-path_to_chad <- "C:/Users/putnni/switchdrive/Chad/" # Replace this with location of chad switchdrive folder
-model_simp <- load_model("model_simpler_EIR")  # Load the deterministic climate model
-district_pops <- read_excel(paste0(path_to_chad, "Data/model-inputs/district_population_estimates.xlsx")) # 2023 population estimates for select districts of Mandoul
-# Years used for the analysis
-years_clim <- 2013:2023 # years to extract climate data
-years_analysis <- 2014:2023
+
+```{r eval=FALSE, include=FALSE}
+# Defining the start and end date of the simulation
+start_date <- as.Date(paste0(as.character(years[1]), "-01-01"))
+end_date <- as.Date(paste0(as.character(years[length(years)]), "-12-31"))
+
+# Create a matrix indicating which months are active for SMC in each year.
+# Each row represents a year, and each column (1-12) represents a month (1 = active, 0 = inactive).
+months_active <- matrix(data = 0, nrow = length(years), ncol = 12)  # Initialize all months as inactive
+months_active[, c(7, 8, 9, 10)] <- 1  # Set July through October as active months for SMC deployment
+
+# Generate the SMC schedule using the defined start date, end date, active months, and coverage.
+# The argument 'months_30_days = TRUE' simulates a 360-day calendar (12 months with 30 days each).
+# Coverage is set to 75%.
+smc_schedule <- gen_smc_schedule(start_date, end_date, years, months_active = months_active, months_30_days = TRUE, coverage = 0.75)
+
+# Viewing the contents of the resulting data frame
+print(head(smc_schedule[240:300,]))
 ```
-
-```{r}
-# Years used for the analysis
-years_clim <- 2013:2023 # years to extract climate data
-years_analysis <- 2014:2023
-```
-
-```{r}
-
-```
-

@@ -5,35 +5,37 @@
 \title{Plot Posterior Predictive Check (PPC)}
 \usage{
 plot_ppc(
-  plot_data,
+  ppc_data,
   ci_data = NULL,
-  plot_title = "Posterior Predictive Check",
-  data_source = c("Simulated", "Observed"),
-  ylim = NULL
-)
-
-plot_ppc(
-  plot_data,
-  ci_data = NULL,
-  plot_title = "Posterior Predictive Check",
-  data_source = c("Simulated", "Observed"),
-  ylim = NULL
+  title = "Posterior Predictive Check",
+  xlab = "Date",
+  ylab = "Value",
+  show_obs = TRUE,
+  show_best = TRUE,
+  show_ribbon = TRUE
 )
 }
 \arguments{
-\item{plot_data}{Long-format tibble with \code{date_ymd}, \code{value}, \code{variable}, and optionally \code{source}.}
+\item{ppc_data}{Data frame from \code{prepare_ppc_data()} with columns:
+\code{date_ymd}, \code{value}, \code{variable}, and \code{label}.}
 
-\item{ci_data}{Optional tibble with credible intervals: \code{date_ymd}, \code{lower}, \code{upper}, \code{variable}.}
+\item{ci_data}{Optional data frame with columns: \code{date_ymd}, \code{lower}, \code{upper}, \code{variable}.}
 
-\item{plot_title}{Title for the plot.}
+\item{title}{Plot title.}
+
+\item{xlab}{Label for x-axis.}
+
+\item{ylab}{Label for y-axis.}
+
+\item{show_obs}{Logical. Whether to show observed data.}
+
+\item{show_best}{Logical. Whether to show deterministic prediction.}
+
+\item{show_ribbon}{Logical. Whether to show posterior CI ribbon.}
 }
 \value{
-A ggplot object.
-
-A ggplot object.
+A \code{ggplot2} object.
 }
 \description{
-Generates a time series plot comparing observed vs simulated values with optional credible interval ribbons.
-
-Generates a time series plot comparing observed vs simulated values with optional credible interval ribbons.
+Plot Posterior Predictive Check (PPC)
 }

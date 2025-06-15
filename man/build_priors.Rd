@@ -20,11 +20,11 @@ build_priors(
 \item{params_to_estimate}{Character vector of names we actually want to estimate.}
 
 \item{override_priors}{Optional named list of lists: each element must match the structure
-returned by return_default_priors(). If you supply an element "phi" here,
-it replaces the entire \code{phi} block in the default.}
+returned by return_default_priors().}
 }
 \value{
-Named list of \code{mcstate::pmcmc_parameter} objects, one per parameter in \code{params_to_estimate}.
+Named list of \code{mcstate::pmcmc_parameter} objects for all parameters
+present in both \code{param_inputs} and \code{proposal_matrix}.
 }
 \description{
 Build a list of mcstate::pmcmc_parameter() objects,

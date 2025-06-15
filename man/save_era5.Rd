@@ -4,7 +4,7 @@
 \alias{save_era5}
 \title{Save ERA5 Reanalysis Data}
 \usage{
-save_era5(years, path)
+save_era5(years, path, file_name = NULL)
 }
 \arguments{
 \item{years}{A vector of years for which the data is to be downloaded (e.g., \code{c(2000, 2001)}).}

@@ -147,46 +147,34 @@ create_start_values <- function(params_to_estimate, control_params, min_max_star
   # Default min_max_start_values if NULL, providing predefined bounds for each parameter
   if (is.null(min_max_start_values)) {
     min_max_start_values <- list(
-      mu_EI = c(1/14, 1/8), qR = c(0.1, 0.45), qR2 = c(0.01, 0.9), a_R = c(0.4, 0.8), b_R = c(1, 3),
-      eff_SMC = c(0.2, 0.8), s = c(0.2, 0.8), phi = c(0.1, 0.4), k_par = c(0.6, 0.8),
-      delta_temp = c(-4, 0), mu_RS_C = c(1/160, 1/50), z = c(0.1, 0.7), z_A = c(0.2, 0.6),
-      z_C2 = c(0.2, 0.6), rho = c(0.3, 0.9), eta = c(0.1, 0.9), size = c(5,30), size_1 = c(5, 30), size_2 = c(5, 30),
-      phi_C2 = c(0.2, 0.6), phi_A = c(0.2, 0.6), tau = c(0.2, 0.6), p_surv = c(0.89, 0.92),
-      mu_IR = c(1/10, 1/2), shift1 = c(1, 30), shift2 = c(1, 30), kappa = c(0.2, 0.6),
-      fT_C = c(0.1, 0.7), kappa_C = c(70, 200), kappa_A = c(70, 200), w1 = c(0, 0.2), w2 = c(0, 1),
-      s_1 = c(0.3, 0.9), c_s = c(0.3, 0.9), phi_1 = c(0.3, 0.9), c_phi = c(0.3, 0.9),
-      qR1 = c(0.1, 0.9), qR2 = c(0.1, 0.9), c_qR = c(0.2, 0.9), eta = c(0.5, 0.9),
-      # Multiplicative constants (k parameters)
-      k1 = c(0.1, 0.8),      # Based on prior: mean = 1, sd = 0.1
-      k2 = c(0.5, 1.5),      # Based on prior: mean = 1, sd = 0.1
-      k3 = c(0.5, 1.5),      # Based on prior: mean = 1, sd = 0.1
-      k4 = c(0.5, 1.5),      # Based on prior: mean = 1, sd = 0.1
-      k5 = c(0.5, 1.5),      # Based on prior: mean = 1, sd = 0.1
-      k7 = c(0.0001, 0.0002),# Based on prior: mean = 0.000112, sd = 0.00001
-
-      # Additive constants (c parameters)
-      c1 = c(-0.5, 0.5),     # Based on prior: mean = 0, sd = 0.1
-      c3 = c(-0.5, 0.5),     # Based on prior: mean = 0, sd = 0.1
-      c4 = c(-0.5, 0.5),     # Based on prior: mean = 0, sd = 0.1
-      c5 = c(-0.5, 0.5),     # Based on prior: mean = 0, sd = 0.1
-      c6 = c(30, 45),      # Based on prior: mean = 1, sd = 0.05
-      c7 = c(15, 16),        # Based on prior: mean = 15.384, sd = 0.1
-      c8 = c(34, 36),        # Based on prior: mean = 35, sd = 0.5
-      c9 = c(0.005, 0.02),    # Based on prior: mean = 0.01, sd = 0.005
-
-      alpha = c(0.2, 0.8),         # Based on prior: Gamma distribution, most likely values < 5
-      T_opt = c(24, 27),       # Based on prior: Normal distribution centered at 28, sd = 3
-      R_opt = c(0.5, 0.9),        # Based on prior: Normal distribution centered at 0, sd = 5
-      k1 = c(0.1, 0.8),            # Based on prior: Normal distribution centered at 1, sd = 0.5
-      sigma_LT = c(5, 9),       # Based on prior: Gamma distribution, allows positive values up to 10
-      sigma_RT = c(4, 9),
-      b = c(22, 32),
+      ######################################
+      ## Parameter estimated in the paper ##
+      ######################################
       lag_R = c(15, 30),
       lag_T = c(15,30),
-      lag_SMC = c(5, 20),
+      alpha = c(0.2, 0.8),
+      sigma_LT = c(5, 9),
+      sigma_RT = c(4, 9),
+      R_opt = c(0.5, 0.9),
+      k1 = c(0.1, 0.8),
+      size_1 = c(5, 30),
+      eff_SMC = c(0.2, 0.8),
+      s = c(0.01, 10),
+      qR = c(0.001, 0.5),
+
+      #################################################
+      ## Parameter estimated that could be estimated ##
+      #################################################
+      size_2 = c(5, 30),
+      kappa_C = c(70, 200),
+      kappa_A = c(70, 200),
+      z = c(0.1, 0.7),
       beta_1 = c(-5, 5),
-      beta_2 = c(0, 1)
-    )
+      beta_2 = c(0, 1),
+      T_opt = c(24, 27),
+      b = c(22, 32),
+      fT_C = c(0.1, 0.7)
+      )
   }
 
   # Set up the number of chains and prepare a matrix for starting values
@@ -210,41 +198,6 @@ create_start_values <- function(params_to_estimate, control_params, min_max_star
 
   return(start_values)
 }
-
-# create_proposal_matrix <- function(params_to_estimate, proposal_variance = NULL, model, param_inputs) {
-#
-#   # Retrieve all parameter names from the model
-#   model_instance <- model$new(pars = param_inputs, time = 0, n_particles = 1)
-#   param_names <- intersect(names(param_inputs), names(model_instance$param()))
-#   param_names <- param_names[sapply(param_inputs[param_names], length) == 1]
-#
-#   # Filter params_to_estimate to include only model parameters
-#   params_to_estimate <- intersect(params_to_estimate, param_names)
-#
-#   # Default proposal_variance if NULL, providing predefined variances for each parameter
-#   if (is.null(proposal_variance)) {
-#     proposal_variance <- list(
-#       mu_EI = 0.1, qR = 0.1, qR2 = 0.1, a_R = 0.2, b_R = 0.2, eff_SMC = 0.1, s = 0.3,
-#       phi = 0.1, k_par = 0.1, delta_temp = 0.1, mu_RS_C = 0.1, z = 0.1,
-#       z_A = 0.1, z_C2 = 0.1, rho = 0.1, eta = 0.1, size = 0.1, size_1 = 0.1, size_2 = 0.1, phi_C2 = 0.1,
-#       phi_A = 0.1, tau = 0.1, p_surv = 0.1, mu_IR = 0.1, shift1 = 0.1,
-#       shift2 = 0.1, kappa = 0.1, fT_C = 0.1, lag_T = 80, lag_R = 80
-#     )
-#   }
-#
-#   # Initialize the proposal matrix with small default variance (0.01) for all parameters
-#   proposal_matrix <- diag(0.01, length(param_names))
-#   rownames(proposal_matrix) <- param_names
-#   colnames(proposal_matrix) <- param_names
-#
-#   # Update the diagonal elements with the specified proposal variances
-#   for (name in params_to_estimate) {
-#     proposal_matrix[name, name] <- proposal_variance[[name]] %||% 0.1  # Default to 0.1 if not specified
-#   }
-#
-#   return(proposal_matrix)
-# }
-
 
 
 #' Create a Proposal Matrix
@@ -272,13 +225,20 @@ create_proposal_matrix <- function(params_to_estimate, proposal_variance = NULL,
   # Default proposal variance if NULL, providing predefined variances for each parameter
   if (is.null(proposal_variance)) {
     proposal_variance <- list(
-      mu_EI = 0.1, qR = 0.1, qR2 = 0.1, a_R = 0.2, b_R = 0.2, eff_SMC = 0.1, s = 0.3,
-      phi = 0.1, k_par = 0.1, delta_temp = 0.1, mu_RS_C = 0.1, z = 0.1,
-      z_A = 0.1, z_C2 = 0.1, rho = 2, eta = 0.1, size = 5, size_1 = 5, size_2 = 5, phi_C2 = 0.1,
-      phi_A = 0.1, tau = 0.1, p_surv = 0.1, mu_IR = 0.1, shift1 = 0.1, T_opt = 5, sigma_LT = 3, sigma_RT = 3, alpha = 4,
-      shift2 = 0.1, kappa = 0.1, fT_C = 0.1, lag_T = 800, lag_R = 800, lag_SMC = 100, alpha = 1,
-      kappa_C = 50, kappa_A = 50, w1 = 0.5, w2 = 0.5, s_1 = 2, c_s = 2, c_phi = 2, qR1 = 2,
-      qR2 = 2, c_qR = 2, eta = 2, beta_1 = 2, beta_2 = 5
+      ######################################
+      ## Parameter estimated in the paper ##
+      ######################################
+      lag_T = 800, lag_R = 800, alpha = 4,
+      sigma_LT = 3, sigma_RT = 3, R_opt = 2,
+      k1 = 3, size_1 = 15, eff_SMC = 0.5, s = 0.3,
+      qR = 0.1,
+
+      #################################################
+      ## Parameter estimated that could be estimated ##
+      #################################################
+      z = 0.1, size_2 = 5, fT_C = 0.1, T_opt = 5,
+      kappa_C = 50, kappa_A = 50, beta_1 = 2,
+      beta_2 = 5
     )
   }
 

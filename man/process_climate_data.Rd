@@ -10,9 +10,9 @@ process_climate_data(
   years,
   temp_path,
   rain_path,
-  path_to_data,
   months_30_days = TRUE,
-  save = FALSE
+  save = FALSE,
+  path_to_data = NULL
 )
 }
 \arguments{

@@ -7,9 +7,9 @@
 make_obs_config(
   use_monthly = TRUE,
   age_group = "u5",
-  include_prev = TRUE,
+  include_prev = FALSE,
   use_SMC_as_covariate = FALSE,
-  log_link = TRUE,
+  log_link = FALSE,
   include_pop_growth = FALSE
 )
 }

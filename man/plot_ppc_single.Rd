@@ -16,19 +16,6 @@ plot_ppc_single(
   scale_severe = 1,
   scale_severe_by_year = NULL
 )
-
-plot_ppc_single(
-  plot_data,
-  ci_data = NULL,
-  obs_data = NULL,
-  obs_col = NULL,
-  plot_title = "Time Series Comparison",
-  xlim = NULL,
-  ylim = NULL,
-  severity = "Uncomplicated",
-  scale_severe = 1,
-  scale_severe_by_year = NULL
-)
 }
 \arguments{
 \item{plot_data}{Data frame with columns: date_ymd (Date), value (numeric), label}
@@ -52,13 +39,9 @@ plot_ppc_single(
 \item{scale_severe_by_year}{Named vector of multipliers by year (optional)}
 }
 \value{
-ggplot2 object
-
 ggplot2 plot object
 }
 \description{
-Ensures legend always shows all four series: Observed, With SMC, Without SMC, SMC in 2019.
-
 Displays time series with optional credible intervals, observed points, and
 consistent legend formatting across scenarios (e.g., With/Without SMC, June/July 2023, etc.)
 }

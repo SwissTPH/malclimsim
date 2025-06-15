@@ -14,17 +14,6 @@ plot_compartments(
   color_palette = "Set2",
   y_label = "Population Count"
 )
-
-plot_compartments(
-  compart_df,
-  plot_type = "line",
-  compartments = NULL,
-  plot_proportion = FALSE,
-  log_scale = FALSE,
-  title = "Epidemic Compartments Over Time",
-  color_palette = "Set2",
-  y_label = "Population Count"
-)
 }
 \arguments{
 \item{compart_df}{Data frame containing compartments simulation output.}
@@ -45,28 +34,13 @@ plot_compartments(
 }
 \value{
 A ggplot object visualizing the compartmental data.
-
-A ggplot object visualizing the compartmental data.
 }
 \description{
 This function visualizes the output of a compartmental model simulation with
 options for line plots, stacked area plots, and faceted visualizations. Users
 can also plot proportions relative to the total population.
-
-This function visualizes the output of a compartmental model simulation with
-options for line plots, stacked area plots, and faceted visualizations. Users
-can also plot proportions relative to the total population.
 }
 \examples{
-# Basic line plot
-plot_compartments(compart_df, plot_type = "line")
-
-# Stacked area plot with selected compartments
-plot_compartments(compart_df, plot_type = "stacked", compartments = c("SC", "IC", "RA"))
-
-# Faceted plot with proportions and log scale
-plot_compartments(compart_df, plot_type = "line", plot_proportion = TRUE, log_scale = TRUE, facet = TRUE)
-
 # Basic line plot
 plot_compartments(compart_df, plot_type = "line")
 

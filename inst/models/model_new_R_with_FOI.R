@@ -1,18 +1,13 @@
-## The model contained in the file 'age_model_equation_final' will be written
-## using odin and inference in mcstate. Here, this is done with the
-## simplification of not including the age structure or effect of SMC,
-## which will be added later.
-
-## rainfall in mL; temp in Celsius
-## it is timeed an identical array at every time step
-
-## definition of time step
+########################
+## Defining time steps #
+########################
 steps_per_day <- user(1)
 steps_per_week <- steps_per_day * 7
 steps_per_month <- steps_per_day * 30
 dt <- 1 / steps_per_day
 time <- step + 1
 
+<<<<<<< HEAD
 #SMC_effect <- decay[time] * eff_SMC * cov_SMC[time]
 lag_SMC <- user()
 SMC_effect <- if (time > lag_SMC) decay[time - lag_SMC] * eff_SMC * cov_SMC[time - lag_SMC] else decay[time] * eff_SMC * cov_SMC[time]
@@ -174,45 +169,182 @@ lag_T <- user(0)
 
 # defining SMC efficacy
 eff_SMC <- user() # SMC effectiveness
+=======
+################################
+## Defining SMC Vector Inputs  #
+################################
+>>>>>>> 9a23fe1245fe5653fc798aeae0618c41671015bf
 cov_SMC[] <- user() # SMC coverage
 SMC[] <- user()
 decay[] <- user()
+
+###########################
+## Defining Effect of SMC #
+###########################
+eff_SMC <- user() # SMC effectiveness
+SMC_effect <- decay[time] * eff_SMC * cov_SMC[time]
+
+#######################
+## Force of Infection #
+#######################
+mu_SE <- (1 - SMC_effect) *(1 - exp(-p_MH_C * EIR))
+p_MH_C <- user(0.50)
+
+######################################
+## State Equations                   #
+## - split into adults and children  #
+######################################
+# Children
+update(SC) <- SC -  mu_SE * SC + mu_RS * RC + mu_TS * TrC - (delta_d + delta_a) * SC + delta_b * P
+update(EC) <- EC - mu_EI * EC +  mu_SE * SC - (delta_d + delta_a) * EC
+update(IC) <- IC - mu_IR * IC + pi_s_1 * (1 - fT_C) * mu_EI * EC - (delta_d + delta_a) * IC
+update(TrC) <- TrC - mu_TS * TrC + pi_s_1 * fT_C * mu_EI * EC - (delta_d + delta_a) * TrC
+update(RC) <- RC - mu_RS * RC + mu_IR * IC + (1 - pi_s_1) * mu_EI * EC - (delta_d + delta_a) * RC
+
+# Adults
+update(SA) <- SA -  mu_SE * SA + mu_RS * RA + mu_TS * TrA - delta_d * SA + delta_a * SC
+update(EA) <- EA - mu_EI * EA +  mu_SE * SA - delta_d * EA + delta_a * EC
+update(IA) <- IA - mu_IR * IA + pi_s_2 * (1 - fT_A) * mu_EI * EA - delta_d * IA + delta_a * IC
+update(TrA) <- TrA - mu_TS * TrA + pi_s_2 * fT_A * mu_EI * EA - delta_d * TrA + delta_a * TrC
+update(RA) <- RA - mu_RS * RA + mu_IR * IA + (1 - pi_s_2) * mu_EI * EA - delta_d * RA + delta_a * RC
+
+#################################################
+## Defining Incidence                           #
+## - each variables represents number of cases  #
+## in the given time period - day, week, month  #
+#################################################
+initial(day_inc_C) <- 0
+update(day_inc_C) <- if ((step) %% steps_per_day == 0) mu_EI * EC * fT_C * pi_s_1 else day_inc_C + mu_EI * EC * fT_C * pi_s_1
+
+initial(wk_inc_C) <- 0
+update(wk_inc_C) <- if ((step) %% steps_per_week == 0) mu_EI * EC * fT_C * pi_s_1 else wk_inc_C + mu_EI * EC * fT_C * pi_s_1
+
+initial(day_inc_A) <- 0
+update(day_inc_A) <- if ((step) %% steps_per_day == 0) mu_EI * EA * fT_A * pi_s_2 else day_inc_A + mu_EI * EA * fT_A * pi_s_2
+
+initial(wk_inc_A) <- 0
+update(wk_inc_A) <- if ((step) %% steps_per_week == 0) mu_EI * EA * fT_A * pi_s_2 else wk_inc_A + mu_EI * EA * fT_A * pi_s_2
+
+initial(day_inc_total) <- 0
+update(day_inc_total) <- if ((step) %% steps_per_day == 0) mu_EI * (EC * fT_C * pi_s_1 + EA * fT_A * pi_s_2) else day_inc_total + mu_EI * (EC * fT_C * pi_s_1 + EA * fT_A * pi_s_2)
+
+initial(wk_inc_total) <- 0
+update(wk_inc_total) <-  if ((step) %% steps_per_week == 0) mu_EI * (EC * fT_C * pi_s_1 + EA * fT_A * pi_s_2) else wk_inc_total + mu_EI * (EC * fT_C * pi_s_1 + EA * fT_A * pi_s_2)
+
+initial(month_inc_C) <- 0
+update(month_inc_C) <- if ((step) %% steps_per_month == 0) mu_EI * EC * fT_C * pi_s_1 else month_inc_C + mu_EI * EC * fT_C * pi_s_1
+
+initial(month_inc_A) <- 0
+update(month_inc_A) <- if ((step) %% steps_per_month == 0) mu_EI * EA * fT_A * pi_s_2 else month_inc_A + mu_EI * EA * fT_A * pi_s_2
+
+initial(month_inc_total) <- 0
+update(month_inc_total) <- if ((step) %% steps_per_month == 0) mu_EI * (EC * fT_C * pi_s_1 + EA * fT_A * pi_s_2) else month_inc_total + mu_EI * (EC * fT_C * pi_s_1 + EA * fT_A * pi_s_2)
+
+########################################
+## Defining Transition Rate Parameters #
+########################################
+mu_RS <- user()
+duration_infection <- user(200)
+mu_IR <- 1 / (duration_infection -  1 / mu_RS) # I to R is a maximum of 200 days
+mu_EI <- user()
+mu_TS <- user()
+
+#################################
+## Defining Case Reporting Rate #
+#################################
+fT_C <- user()
+fT_A <- z * fT_C
+z <- user(1) # z < 1, reporting rate of adults vs. children
+
+####################################################
+## Defining Different Infectivity by Compartment   #
+####################################################
+qR <- user()
+
+######################################################
+## Defining Proportion Symptomatic and Asymptomatic  #
+######################################################
+# s => symptomatic
+# p => patient
+# c => some constant
+# pi => proportion
+
+# Prop of patent infections that are symptomatic
+c_sp <- user()
+pi_sp_1 <- user()
+pi_sp_2 <- c_sp * pi_sp_1
+
+# Proportion of population of all malaria infections that are patent
+c_p <- user()
+pi_p_1 <- user() # <5
+pi_p_2 <- c_p * pi_p_1 # >=5
+
+# Proportion of population that is symptomatic
+pi_s_1 <- pi_sp_1 * pi_p_1 # <5
+pi_s_2 <- pi_sp_2 * pi_p_2 # >=5
+
+##########################################
+## Defining Demographic Rate Parameters  #
+##########################################
+delta_b <- user()
+delta_d <- user()
+delta_a <- user()
+
+###################################
+## Defining Climate Vector Inputs #
+###################################
 temp[] <- user()
 c_R_D[] <- user() # this will be informed by data
 
-initial(c_R_D_shift) <- c_R_D[time]  # Start with the first rainfall value
-update(c_R_D_shift) <- if (time > lag_R) c_R_D[time - lag_R] else c_R_D[time]
-initial(temp_shift) <- temp[time]
-update(temp_shift) <- if (time > lag_T) temp[time - lag_T] else temp[time]
+###########################
+## Defining Climate Lags  #
+###########################
+lag_R <- user(0)  # Default lag = 0
+lag_T <- user(0)
+clim_SMC_lag <- user()
 
-# Defining EIR
+c_R_D_shift <- c_R_D[time + clim_SMC_lag - lag_R]
+temp_shift <- temp[time + clim_SMC_lag - lag_T]
+
+#initial(c_R_D_shift) <- c_R_D[time]  # Start with the first rainfall value
+#update(c_R_D_shift) <- if (time > lag_R) c_R_D[time - lag_R] else c_R_D[time]
+#initial(temp_shift) <- temp[time]
+#update(temp_shift) <- if (time > lag_T) temp[time - lag_T] else temp[time]
+
+##############################################
+## Defining Entomological Inncoulation Rate  #
+##############################################
 EIR <- alpha * (X / (b + X)) * temp_effect * rain_effect # Multiplicative effects
-initial(EIR2) <- alpha * (X / (b + X)) * temp_effect * rain_effect # Multiplicative effects
-update(EIR2) <- alpha * (X / (b + X)) * temp_effect * rain_effect # Multiplicative effects
-#temp_effect <- exp(-((temp_shift - T_opt)^2) / (2 * sigma_LT^2)) # Gaussian term for temperature
 temp_effect <- if (temp_shift <= T_opt) exp(-((temp_shift - T_opt)^2) / (2 * sigma_LT^2)) else exp(-((temp_shift - T_opt)^2) / (2 * sigma_RT^2))
 rain_effect <- 1 / (1 + exp(-k1 * (c_R_D_shift - R_opt))) # Logistic term for rainfall
 
-initial(temp_effect_2) <- if (temp_shift <= T_opt) exp(-((temp_shift - T_opt)^2) / (2 * sigma_LT^2)) else exp(-((temp_shift - T_opt)^2) / (2 * sigma_RT^2))
-update(temp_effect_2) <- if (temp_shift <= T_opt) exp(-((temp_shift - T_opt)^2) / (2 * sigma_LT^2)) else exp(-((temp_shift - T_opt)^2) / (2 * sigma_RT^2))
+# Others
+alpha <- user(1) # parameter to adjust magnitude of EIR
+T_opt <- user(28) # temperature at which EIR is maximized
+sigma_LT <- user(4) # standard deviation to left of T_opt
+sigma_RT <- user(4) # standard deviation to right of T_opt
+R_opt <- user(1) # rainfall at which EIR is maximized
+k1 <- user(0.2) # controls the "rate" that EIR changes with rainfall
+b <- user() # controls saturation rate of impact of population infectivity on EIR
 
-initial(rain_effect_2) <- 1 / (1 + exp(-k1 * (c_R_D_shift - R_opt))) # Logistic term for rainfall
-update(rain_effect_2) <-  1 / (1 + exp(-k1 * (c_R_D_shift - R_opt))) # Logistic term for rainfall
+############################################
+## Defining Infectivity of the Population  #
+############################################
+X <- (IC + IA + qR * (RC + RA)) / P
 
-X <- (IC + IA + qR1 * (s_1 * RC + s_2 * RA) + qR2 * ((1 - s_1) * RC + (1 - s_2) * RA)) / P # Proportion of population infectious remains the same
-# Egg-adult Development time due to temperature
+########################################
+## Dispersion Parameters               #
+## - these are necessary for inference #
+########################################
+size <- user(10)
+size_1 <- user(10)
+size_2 <- user(10)
 
-# Dimensions of arrays
-dim(c_R_D) <- user()
-dim(temp) <- user()
-dim(SMC) <- user()
-dim(decay) <- user()
-dim(cov_SMC) <- user()
-
-## Initial conditions - user defined, defaults in parenthesis
+###############################################
+## Initial conditions; Population parameters  #
+###############################################
 N <- user()
 s <- user()
-
 N_pop <- N * s
 percAdult <- user()
 percChild <- 1 - percAdult
@@ -241,20 +373,34 @@ initial(IA) <- IA0 * N_A
 initial(TrA) <- TA0 * N_A
 initial(RA) <- RA0 * N_A
 
-## Total population size
+# Total population size
 initial(P_C) <- SC + EC + IC + TrC + RC
 initial(P_A) <- SA + EA + IA + TrA + RA
 update(P_C) <- SC + EC + IC + TrC + RC
 update(P_A) <- SA + EA + IA + TrA + RA
 P = (SC + EC + IC + TrC + RC + SA + EA + IA + TrA + RA)
 
-## Relevant outputs to look at
-initial(X2) <- (IC + IA + qR1 * (s_1 * RC + s_2 * RA) + qR2 * ((1 - s_1) * RC + (1 - s_2) * RA)) / P  # Proportion of population infectious remains the same
-update(X2) <- (IC + IA + qR1 * (s_1 * RC + s_2 * RA) + qR2 * ((1 - s_1) * RC + (1 - s_2) * RA)) / P  # Proportion of population infectious remains the same
-initial(X_I) <- (IC + IA) / (IC + IA + qR1 * (s_1 * RC + s_2 * RA) + qR2 * ((1 - s_1) * RC + (1 - s_2) * RA))
-update(X_I) <- (IC + IA) / (IC + IA + qR1 * (s_1 * RC + s_2 * RA) + qR2 * ((1 - s_1) * RC + (1 - s_2) * RA))
-initial(X_AP) <- (qR1 * (s_1 * RC + s_2 * RA)) / (IC + IA + qR1 * (s_1 * RC + s_2 * RA) + qR2 * ((1 - s_1) * RC + (1 - s_2) * RA))
-update(X_AP) <- (qR1 * (s_1 * RC + s_2 * RA)) / (IC + IA + qR1 * (s_1 * RC + s_2 * RA) + qR2 * ((1 - s_1) * RC + (1 - s_2) * RA))
-initial(X_ASP) <- (qR2 * ((1 - s_1) * RC + (1 - s_2) * RA)) / (IC + IA + qR1 * (s_1 * RC + s_2 * RA) + qR2 * ((1 - s_1) * RC + (1 - s_2) * RA))
-update(X_ASP) <- (qR2 * ((1 - s_1) * RC + (1 - s_2) * RA)) / (IC + IA + qR1 * (s_1 * RC + s_2 * RA) + qR2 * ((1 - s_1) * RC + (1 - s_2) * RA))
+##################################################################
+## Defining Vector Input Dimensions                              #
+## - these need to be defined for technical reasons              #
+## - they should "know" the correct dimensions from the inputs   #
+##################################################################
+dim(c_R_D) <- user()
+dim(temp) <- user()
+dim(SMC) <- user()
+dim(decay) <- user()
+dim(cov_SMC) <- user()
 
+#################################
+## Relevant outputs to look at  #
+#################################
+initial(SMC_effect_2) <- decay[time] * eff_SMC * cov_SMC[time]
+update(SMC_effect_2) <- decay[time] * eff_SMC * cov_SMC[time]
+initial(mu_SE_C_2) <-(1 - SMC_effect) * (1 - exp(-p_MH_C * EIR))
+update(mu_SE_C_2) <- (1 - SMC_effect) *(1 - exp(-p_MH_C * EIR))
+initial(EIR2) <- alpha * (X / (b + X)) * temp_effect * rain_effect # Multiplicative effects
+update(EIR2) <- alpha * (X / (b + X)) * temp_effect * rain_effect # Multiplicative effects
+initial(temp_effect_2) <- if (temp_shift <= T_opt) exp(-((temp_shift - T_opt)^2) / (2 * sigma_LT^2)) else exp(-((temp_shift - T_opt)^2) / (2 * sigma_RT^2))
+update(temp_effect_2) <- if (temp_shift <= T_opt) exp(-((temp_shift - T_opt)^2) / (2 * sigma_LT^2)) else exp(-((temp_shift - T_opt)^2) / (2 * sigma_RT^2))
+initial(rain_effect_2) <- 1 / (1 + exp(-k1 * (c_R_D_shift - R_opt))) # Logistic term for rainfall
+update(rain_effect_2) <-  1 / (1 + exp(-k1 * (c_R_D_shift - R_opt))) # Logistic term for rainfall

@@ -9,22 +9,22 @@ impute_climate_to_end_date(data, end_date)
 \arguments{
 \item{data}{A data frame with at least the following columns:
 \itemize{
-\item \code{date} (Date): The observation date.
+\item \code{dates} (Date): The observation date.
 \item \code{CumulativeRainfall}, \code{anom}, \code{temp}: Numeric climate variables to impute.
 }}
 
 \item{end_date}{A \code{Date} object indicating the final date that should be present.
 The function will impute values from the last available date up to \code{end_date}.
-Assumes \code{date} column ends before this value.}
+Assumes the \code{dates} column ends before this value.}
 }
 \value{
-A data frame with the original data and appended imputed values, sorted by date.
+A data frame with the original data and appended imputed values, sorted by \code{dates}.
 }
 \description{
 This function imputes missing dates in a climate time series using the average
 value for each (month, day) combination across all prior years in the dataset.
 It is useful for filling in short gaps at the end of a time series, such as
-imputing values for December 2023 using earlier years' averages.
+imputing values for December 2023 using earlier years’ averages.
 }
 \examples{
 # Suppose your climate data ends at 2023-12-01

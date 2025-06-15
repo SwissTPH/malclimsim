@@ -4,7 +4,16 @@
 \alias{save_climate_data}
 \title{Saving Climate Data From ERA5 and CHIRTSdaily}
 \usage{
-save_climate_data(lon, lat, years, path_to_data, rain = TRUE, temp = TRUE)
+save_climate_data(
+  lon,
+  lat,
+  years,
+  path_to_data,
+  rain = TRUE,
+  temp = TRUE,
+  temp_file_name = NULL,
+  rain_file_name = NULL
+)
 }
 \arguments{
 \item{lon}{\itemize{
@@ -29,6 +38,14 @@ save_climate_data(lon, lat, years, path_to_data, rain = TRUE, temp = TRUE)
 
 \item{temp}{\itemize{
 \item boolean for if ERA5 data should be downloaded and saved
+}}
+
+\item{temp_file_name}{\itemize{
+\item character file name for stored temperature data (ERA5)
+}}
+
+\item{rain_file_name}{\itemize{
+\item character file name for stored rainfall data (CHIRPS)
 }}
 }
 \value{

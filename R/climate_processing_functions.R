@@ -19,7 +19,7 @@ date_bounds_from_years <- function(years){
   return(c(first_date, last_date))
 }
 
-save_CHIRPS <- function(lon, lat, years, save = TRUE, path_to_data = NULL) {
+save_CHIRPS <- function(lon, lat, years, save = TRUE, path_to_data = NULL, file_name = NULL) {
   # Create a data frame for the single coordinate
   coordinates <- data.frame(longitude = lon, latitude = lat)
 
@@ -34,11 +34,14 @@ save_CHIRPS <- function(lon, lat, years, save = TRUE, path_to_data = NULL) {
   # Calculate the average rainfall across the sampled locations
   avg_rain <- avg_across_loc(dat)
 
+  if(is.null(file_name)){
+    file_name <- paste0("chirps_", formatted_datetime, ".rds")
+  }
   # Optionally save the average rainfall data
   if (save) {
     current_datetime <- Sys.time()
     formatted_datetime <- format(current_datetime, "%m%d%H%M")
-    file_name <- paste0("chirps_", formatted_datetime, ".rds")
+    file_name <- file_name
     saveRDS(avg_rain, paste0(path_to_data, file_name))
   }
 
@@ -140,10 +143,12 @@ standardize_rainfall <- function(cum_rain, save = TRUE, file = "") {
 #' \dontrun{
 #' save_era5(years = c(2000, 2001), path = "./data")
 #' }
-save_era5 <- function(years, path){
-  current_datetime <- Sys.time()
-  formatted_datetime <- format(current_datetime, "%m%d%H%M")
-  target <- paste0("era5_", formatted_datetime, ".nc")
+save_era5 <- function(years, path, file_name = NULL){
+  if(is.null(file_name)){
+    current_datetime <- Sys.time()
+    formatted_datetime <- format(current_datetime, "%m%d%H%M")
+    file_name <- paste0("era5_", formatted_datetime, ".nc")
+  }
 
   request <- list(
     dataset_short_name = "reanalysis-era5-land-monthly-means",
@@ -158,7 +163,7 @@ save_era5 <- function(years, path){
     data_format = "netcdf",
     download_format = "unarchived",
     area = c(37, -20, -35, 52),  # Updated bounds: (North, West, South, East)
-    target = target
+    target = file_name
   )
 
   file <- wf_request(
@@ -428,6 +433,8 @@ daily_smooth_rain <- function(cum_rain) {
 #' @param path_to_data - folder where data is to be saved
 #' @param rain - boolean for if CHIRPS data should be downloaded and saved
 #' @param temp - boolean for if ERA5 data should be downloaded and saved
+#' @param temp_file_name - character file name for stored temperature data (ERA5)
+#' @param rain_file_name - character file name for stored rainfall data (CHIRPS)
 #'
 #' @return - nothing
 #' @export
@@ -438,12 +445,13 @@ daily_smooth_rain <- function(cum_rain) {
 #' lat <- 8.3
 #' path_to_data <- "C:/Users/putnni/Documents/r-packages/data/"
 #' save_climate_data(lon, lat, years, path_to_data)
-save_climate_data <- function(lon, lat, years, path_to_data, rain = TRUE, temp = TRUE){
+save_climate_data <- function(lon, lat, years, path_to_data, rain = TRUE, temp = TRUE,
+                              temp_file_name = NULL, rain_file_name = NULL){
   if(temp){
-    save_era5(years, path = path_to_data)
+    save_era5(years, path = path_to_data, file_name = temp_file_name)
   }
   if(rain){
-    save_CHIRPS(lon, lat, years, save = TRUE, path_to_data = path_to_data)
+    save_CHIRPS(lon, lat, years, save = TRUE, path_to_data = path_to_data, file_name = rain_file_name)
   }
 }
 
@@ -508,7 +516,7 @@ save_climate_data <- function(lon, lat, years, path_to_data, rain = TRUE, temp =
 #' rain_path <- paste0(path_to_data, "chirps_11051418.rds")
 #' met <- process_climate_data(lon, lat, years, D1 = 30, D2 = 30, temp_path = temp_path,
 #' rain_path = rain_path, path_to_data
-process_climate_data <- function(lon, lat, years, temp_path, rain_path, path_to_data, months_30_days = TRUE, save = FALSE){
+process_climate_data <- function(lon, lat, years, temp_path, rain_path, months_30_days = TRUE, save = FALSE, path_to_data = NULL){
   temp_df <- extract_era5(lat = lat, lon = lon, path_to_file = temp_path)
   temp <- daily_smooth_temp(temp_df)
 
@@ -525,6 +533,8 @@ process_climate_data <- function(lon, lat, years, temp_path, rain_path, path_to_
   if(months_30_days){
     met <- climate_to_30_day_months(met, start_year = years[1], end_year = years[length(years)])
   }
+
+  colnames(met)[1] <- "dates"
   # Save the processed Rwanda climate data (rainfall and temperature) to the specified directory
   # - The data is saved as an RDS file, which is an efficient format for storing R objects
   current_datetime <- Sys.time()
