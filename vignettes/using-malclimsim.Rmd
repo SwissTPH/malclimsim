@@ -1,8 +1,8 @@
 ---
-title: "Using malclimsim to Infer Parameters of the Climate-driven Dynamical Transmission Model"
+title: "Using malclimsim to Infer Parameters of a Climate-driven Dynamical Transmission Model"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Using malclimsim to Infer Parameters of the Climate-driven Dynamical Transmission Model}
+  %\VignetteIndexEntry{Using malclimsim to Infer Parameters of a Climate-driven Dynamical Transmission Model}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -373,6 +373,11 @@ mcmc_trace <- MCMC_diag(mcmc_stage_3, params = "trace")
 MCMC_diag(mcmc_stage_3, params = "gelman")
 ```
 
+### Correlation between parameters
+```{r message=FALSE, warning=FALSE, fig.height=6, fig.width=9}
+plot_corr(mcmc_stage_3)
+```
+
 ### Marginal posterior distributions
 ```{r message=FALSE, warning=FALSE, fig.width = 8, fig.height = 8}
 # Posterior plot
@@ -489,11 +494,5 @@ ppc_plot <- plot_ppc(
   show_ribbon = TRUE
 )
 
-print(ppc_plot)
+# print(ppc_plot)
 ```
-
-## Calculating Relevant Quantities
-```{r}
-
-```
-
