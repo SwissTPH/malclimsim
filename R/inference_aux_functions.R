@@ -164,3 +164,96 @@ filter_data <- function(incidence_observed, month = FALSE, initial_time_obs = 0,
 #'   return(filt_data)
 #' }
 
+
+#' Update proposal matrix, start values, and MCMC settings for next stage
+#'
+#' @param results_obj    Result object returned by inf_run (with MCMC traces)
+#' @param proposal_matrix Current proposal variance matrix
+#' @param param_names    Character vector of parameter names (rownames of proposal_matrix)
+#' @param S_prev         Integer: number of samples to use for variance-covariance extraction
+#' @param draw_n         Integer: number of random draws for new start values per chain
+#' @param shrink         Numeric: shrinkage factor for bounds (e.g. 0.8 retains 80% of interval)
+#' @param stage          Character: which stage to pull from create_mcmc_params()
+#' @param n_steps        Integer or NULL: if not NULL, overrides control_params$n_steps
+#' @return A list with elements:
+#'   * proposal_matrix : updated proposal variance matrix
+#'   * start_values    : matrix of new start values (chains x parameters)
+#'   * adaptive_params : list of adaptive settings for this stage
+#'   * control_params  : list of control settings for this stage (with n_steps possibly overridden)
+#' @export
+update_inf_stage <- function(results_obj,
+                             proposal_matrix,
+                             param_names,
+                             S_prev    = 3000,
+                             draw_n     = 4,
+                             shrink     = 0.8,
+                             stage,
+                             n_steps   = NULL) {
+  # 1. Extract the posterior draws and new proposal‐matrix
+  vcv_res <- extract_vcv(
+    results_obj,
+    S_prev      = S_prev,
+    save        = FALSE,
+    param_names = param_names
+  )
+  param_samples    <- vcv_res[[1]]   # matrix: n_params × S_prev
+  proposal_matrix2 <- vcv_res[[2]]   # updated proposal variances
+
+  # 2. Compute shrunken [min, max] for each parameter
+  start_param_names <- rownames(param_samples)
+  n_par             <- nrow(param_samples)
+  param_min <- numeric(n_par)
+  param_max <- numeric(n_par)
+
+  for (j in seq_len(n_par)) {
+    vals <- param_samples[j, ]
+    mn   <- min(vals); mx <- max(vals)
+    # shrink the _range_ around zero, preserving sign
+    param_min[j] <- if (mn < 0) mn * shrink else mn * (1/shrink)
+    param_max[j] <- if (mx > 0) mx * shrink else mx * (1/shrink)
+    # ensure ordering
+    if (param_min[j] > param_max[j]) {
+      temp         <- param_min[j]
+      param_min[j] <- param_max[j]
+      param_max[j] <- temp
+    }
+  }
+  names(param_min) <- names(param_max) <- start_param_names
+
+  # 3. Draw new starting values
+  start_values <- matrix(
+    nrow   = draw_n,
+    ncol   = n_par,
+    dimnames = list(NULL, start_param_names)
+  )
+  for (j in seq_len(n_par)) {
+    start_values[, j] <- runif(
+      n   = draw_n,
+      min = param_min[j],
+      max = param_max[j]
+    )
+  }
+
+  start_values <- t(start_values)
+
+  # 4. Pull in adaptive/control settings for this stage
+  mcmc_params     <- create_mcmc_params(stage = stage)
+  adaptive_params <- mcmc_params$adaptive_params
+  control_params  <- mcmc_params$control_params
+
+  # 5. Optionally override n_steps
+  if (!is.null(n_steps)) {
+    control_params$n_steps <- n_steps
+  }
+
+  # 6. Return everything needed for the next run_stage() call
+  list(
+    proposal_matrix = proposal_matrix2,
+    start_values    = start_values,
+    adaptive_params = adaptive_params,
+    control_params  = control_params
+  )
+}
+
+
+
