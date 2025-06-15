@@ -364,7 +364,7 @@ inf_run <- function(model, param_inputs, control_params, params_to_estimate, pro
     params_to_estimate,
     transform_fn,
     param_priors   = param_priors,
-    override_priors = override_priors   # <— FORWARD THE OVERRIDES
+    override_priors = override_priors
   )
 
   mcmc_pars <- priors_and_proposals$mcmc_pars
@@ -393,14 +393,6 @@ inf_run <- function(model, param_inputs, control_params, params_to_estimate, pro
     incidence_observed$month_no <- simulated_result$month_no
   }else{incidence_observed$week_no <- simulated_result$week_no}
 
-
-  #if(month){
-  #  incidence_observed$month_no <- 0:(nrow(incidence_observed) - 1)
-  #}else{incidence_observed$week_no <- 0:(nrow(incidence_observed) - 1)}
-
-  #if(month){
-  #  incidence_observed$month_no <- simulated_result$month_no
-  # }else{incidence_observed$week_no <- simulated_result$week_no}
 
   initial_time_obs <- initialize_observation_time(simulated_result, incidence_df)
   filt_data <- filter_data_setup(incidence_observed, (obs_config$time == "month"), initial_time_obs)
