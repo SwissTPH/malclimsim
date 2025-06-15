@@ -59,9 +59,9 @@ return_default_priors <- function(){
     # Relative infectivity of symptomatic and asymptomatic individuals
     qR = list(initial = 0.01, min = 1e-7, max = 1, prior = function(p) dnorm(p, mean = 0.001, sd = 0.02, log = TRUE)),
 
-    #################################################
-    ## Parameter estimated that could be estimated ##
-    #################################################
+    ########################################
+    ## Parameters that could be estimated ##
+    ########################################
     size_2 = list(initial = 5.5, min = 0.01, max = 200, prior = function(p) dunif(p, min = 0.01, max = 300, log = TRUE)),
     kappa_C = list(initial = 40, min = 0.01, max = 2000, prior = function(p) dunif(p, min = 0.01, max = 2000, log = TRUE)),
     kappa_A = list(initial = 40, min = 0.01, max = 2000, prior = function(p) dunif(p, min = 0.01, max = 2000, log = TRUE)),
@@ -70,7 +70,26 @@ return_default_priors <- function(){
     beta_2 = list(initial = 0, min = 0, max = 1, prior = function(p) dunif(p, min = 0, max = 1, log = TRUE)),
     T_opt = list(initial = 26.12, min = 0, max = 40, prior = function(p) dnorm(p, mean = 26.12, sd = 3, log = TRUE)),
     b = list(initial = 1, min = 0.001, max = 50, prior = function(p) dunif(p, min = 0.001, max = 50, log = TRUE)),
-    fT_C = list(initial = 0.27, min = 0.001, max = 1, prior = function(p) dunif(p, min = 0.001, max = 1, log = TRUE))
+    fT_C = list(initial = 0.27, min = 0.001, max = 1, prior = function(p) dunif(p, min = 0.001, max = 1, log = TRUE)),
+
+    ###############################################################
+    ## All parameters to be fixed must also have a prior defined ##
+    ###############################################################
+    mu_TS = list(initial = 5.5, min = 0.01, max = 200, prior = function(p) dunif(p, min = 0.01, max = 300, log = TRUE)),
+    mu_IR = list(initial = 5.5, min = 0.01, max = 200, prior = function(p) dunif(p, min = 0.01, max = 300, log = TRUE)),
+    mu_RS = list(initial = 5.5, min = 0.01, max = 200, prior = function(p) dunif(p, min = 0.01, max = 300, log = TRUE)),
+    mu_EI = list(initial = 5.5, min = 0.01, max = 200, prior = function(p) dunif(p, min = 0.01, max = 300, log = TRUE)),
+    delta_b = list(initial = 5.5, min = 0.01, max = 200, prior = function(p) dunif(p, min = 0.01, max = 300, log = TRUE)),
+    delta_d = list(initial = 5.5, min = 0.01, max = 200, prior = function(p) dunif(p, min = 0.01, max = 300, log = TRUE)),
+    delta_a = list(initial = 5.5, min = 0.01, max = 200, prior = function(p) dunif(p, min = 0.01, max = 300, log = TRUE)),
+    N = list(initial = 5.5, min = 0.01, max = 200, prior = function(p) dunif(p, min = 0.01, max = 300, log = TRUE)),
+    percAdult = list(initial = 5.5, min = 0.01, max = 200, prior = function(p) dunif(p, min = 0.01, max = 300, log = TRUE)),
+    pi_p_1 = list(initial = 5.5, min = 0.01, max = 200, prior = function(p) dunif(p, min = 0.01, max = 300, log = TRUE)),
+    c_p = list(initial = 5.5, min = 0.01, max = 200, prior = function(p) dunif(p, min = 0.01, max = 300, log = TRUE)),
+    pi_sp_1 = list(initial = 5.5, min = 0.01, max = 200, prior = function(p) dunif(p, min = 0.01, max = 300, log = TRUE)),
+    c_sp = list(initial = 5.5, min = 0.01, max = 200, prior = function(p) dunif(p, min = 0.01, max = 300, log = TRUE)),
+    clim_SMC_lag = list(initial = 5.5, min = 0.01, max = 200, prior = function(p) dunif(p, min = 0.01, max = 300, log = TRUE))
+
   )
   return(default_priors)
 }
@@ -82,33 +101,54 @@ return_default_priors <- function(){
 #' @param proposal_matrix Numeric matrix (rownames must match parameter names).
 #' @param params_to_estimate Character vector of names we actually want to estimate.
 #' @param override_priors Optional named list of lists: each element must match the structure
-#'                        returned by return_default_priors(). If you supply an element "phi" here,
-#'                        it replaces the entire \code{phi} block in the default.
-#' @return Named list of \code{mcstate::pmcmc_parameter} objects, one per parameter in \code{params_to_estimate}.
+#'                        returned by return_default_priors().
+#' @return Named list of \code{mcstate::pmcmc_parameter} objects for all parameters
+#'          present in both \code{param_inputs} and \code{proposal_matrix}.
 #' @export
 build_priors <- function(param_inputs,
                          proposal_matrix,
                          params_to_estimate,
                          override_priors = NULL) {
-  # 1. Grab the “package defaults”:
+  # 0. Basic argument checks
+  if (is.null(param_inputs) || is.null(proposal_matrix) || is.null(params_to_estimate)) {
+    stop("param_inputs, proposal_matrix, and params_to_estimate must all be provided.")
+  }
+
+  # 1. Load default priors
   base_priors <- return_default_priors()
 
-  # 2. If the user supplied overrides, overlay them:
+  # 2. Overlay any user-supplied overrides
   if (!is.null(override_priors)) {
-    # modifyList() merges named elements, replacing any named components.
     base_priors <- modifyList(base_priors, override_priors)
   }
 
-  # 3. Only keep those parameters that are actually in param_inputs ∩ params_to_estimate ∩ proposal_matrix
-  all_names   <- intersect(names(param_inputs), rownames(proposal_matrix))
-  valid_names <- intersect(all_names, params_to_estimate)
+  # 3. Find parameters defined in both inputs and proposal matrix
+  common_params <- intersect(names(param_inputs), rownames(proposal_matrix))
+  if (length(common_params) == 0) {
+    stop("No parameters are common between param_inputs and proposal_matrix.")
+  }
 
-  # 4. Build pmcmc_parameter() for each valid parameter:
-  priors_list <- list()
+  # 4. Ensure all params_to_estimate exist in the common set
+  missing_est <- setdiff(params_to_estimate, common_params)
+  if (length(missing_est) > 0) {
+    stop(sprintf(
+      "The following params_to_estimate are not found in both param_inputs and proposal_matrix: %s",
+      paste(missing_est, collapse = ", ")
+    ))
+  }
+
+  # 5. Final set of parameters to build priors for: all common params
+  valid_names <- common_params
+
+  # 6. Construct pmcmc_parameter() objects
+  priors_list <- vector("list", length(valid_names))
+  names(priors_list) <- valid_names
   for (nm in valid_names) {
-    if (! nm %in% names(base_priors)) {
-      # If someone forgot to specify a prior in the “defaults,” you could throw an error or fallback:
-      stop(paste0("No default prior found for parameter ‘", nm, "’."))
+    if (!nm %in% names(base_priors)) {
+      stop(sprintf(
+        "No default prior defined for parameter '%s'; please add to return_default_priors() or override_priors.",
+        nm
+      ))
     }
     info <- base_priors[[nm]]
     priors_list[[nm]] <- mcstate::pmcmc_parameter(
