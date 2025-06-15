@@ -1,5 +1,3 @@
-
-
 #' Loading an Odin Model
 #'
 #' @param name name of the model written in Odin DSL to be loaded. This is a path to an R file,
@@ -53,43 +51,6 @@ import_model <- function(model_path, model_name){
 #' @export
 decay_SMC <- function(x, const = -0.1806){
   return(0.90 / (1 + exp(const * (32.97 - x))))
-}
-
-
-calc_decay_arr <- function(SMC, decay_func = decay_SMC, const = -0.1806) {
-  # Initialize decay array with zeros, length same as the input SMC
-  decay_arr <- numeric(length(SMC))
-
-  # Iterate over each point where SMC is administered
-  i <- 1
-  while (i <= length(SMC)) {
-    if (SMC[i] > 0) {  # If SMC was administered
-      # Find the index of the next SMC administration
-      next_SMC <- which(SMC[(i + 1):length(SMC)] > 0)
-
-      if (length(next_SMC) == 0) {
-        # No subsequent SMC - apply decay until the end of the array
-        end <- length(SMC)
-      } else {
-        # There is a subsequent SMC - apply decay until just before next SMC
-        end <- i + next_SMC[1]
-      }
-
-      # Calculate decay values from index `i` to `end` (inclusive)
-      decay_values <- decay_func(seq(0, end - i), const = const)
-
-      # Ensure we do not exceed the boundaries of `decay_arr`
-      decay_arr[i:end] <- decay_values[1:(end - i + 1)]
-    }
-
-    # Move to the next index
-    i <- i + 1
-  }
-
-  # Return a decay array that has exactly the same length as `SMC`
-  decay_arr <- decay_arr[1:length(SMC)]
-
-  return(decay_arr)
 }
 
 #' Calculate Normalized SMC Decay Array Over Time
@@ -337,9 +298,6 @@ data_sim <- function(model, param_inputs, start_date, end_date,
 
   return(inc_df)
 }
-
-
-
 
 
 #' Simulate Data for Inference
