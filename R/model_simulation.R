@@ -1002,5 +1002,32 @@ summarize_simulation_ci <- function(simulations, variables, ci_level = 0.95) {
     pivot_wider(names_from = stat, values_from = value)
 }
 
-
+#' Run the model once at the maximum-posterior parameter set (deterministic)
+#'
+#' @param model        A dust or odin model object.
+#' @param param_inputs Named list of baseline inputs.
+#' @param best_params  Named vector or list of best-fit parameters.
+#' @param start_date   Date or string start of sim window.
+#' @param end_date     Date or string end of sim window.
+#' @param ...          Additional args passed to \code{data_sim()}.
+#' @return A data.frame in long form with \code{date_ymd}, \code{variable}, \code{value}.
+#' @export
+simulate_best <- function(model, param_inputs, best_params,
+                          start_date, end_date, ...) {
+  inputs <- update_param_list(param_inputs, best_params)
+  df_wide <- data_sim(
+    model        = model,
+    param_inputs = inputs,
+    start_date   = start_date,
+    end_date     = end_date,
+    noise        = FALSE,
+    ...
+  )
+  tidyr::pivot_longer(
+    df_wide,
+    cols      = -date_ymd,
+    names_to  = "variable",
+    values_to = "value"
+  )
+}
 
