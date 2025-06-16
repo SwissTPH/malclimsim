@@ -101,23 +101,13 @@ qR <- user()
 ## Defining Proportion Symptomatic and Asymptomatic  #
 ######################################################
 # s => symptomatic
-# p => patient
 # c => some constant
 # pi => proportion
 
-# Prop of patent infections that are symptomatic
-c_sp <- user()
-pi_sp_1 <- user()
-pi_sp_2 <- c_sp * pi_sp_1
-
-# Proportion of population of all malaria infections that are patent
-c_p <- user()
-pi_p_1 <- user() # <5
-pi_p_2 <- c_p * pi_p_1 # >=5
-
 # Proportion of population that is symptomatic
-pi_s_1 <- pi_sp_1 * pi_p_1 # <5
-pi_s_2 <- pi_sp_2 * pi_p_2 # >=5
+c_s <- user()
+pi_s_1 <- user()
+pi_s_2 <- c_s * pi_p_1 # >=5
 
 ##########################################
 ## Defining Demographic Rate Parameters  #
