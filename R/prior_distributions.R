@@ -88,7 +88,9 @@ return_default_priors <- function(){
     pi_p_1 = list(initial = 5.5, min = 0.01, max = 200, prior = function(p) dunif(p, min = 0.01, max = 300, log = TRUE)),
     c_p = list(initial = 5.5, min = 0.01, max = 200, prior = function(p) dunif(p, min = 0.01, max = 300, log = TRUE)),
     pi_sp_1 = list(initial = 5.5, min = 0.01, max = 200, prior = function(p) dunif(p, min = 0.01, max = 300, log = TRUE)),
+    pi_s_1 = list(initial = 5.5, min = 0.01, max = 200, prior = function(p) dunif(p, min = 0.01, max = 300, log = TRUE)),
     c_sp = list(initial = 5.5, min = 0.01, max = 200, prior = function(p) dunif(p, min = 0.01, max = 300, log = TRUE)),
+    c_s = list(initial = 5.5, min = 0.01, max = 200, prior = function(p) dunif(p, min = 0.01, max = 300, log = TRUE)),
     clim_SMC_lag = list(initial = 5.5, min = 0.01, max = 200, prior = function(p) dunif(p, min = 0.01, max = 300, log = TRUE))
 
   )
