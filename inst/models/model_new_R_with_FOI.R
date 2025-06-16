@@ -107,7 +107,7 @@ qR <- user()
 # Proportion of population that is symptomatic
 c_s <- user()
 pi_s_1 <- user()
-pi_s_2 <- c_s * pi_p_1 # >=5
+pi_s_2 <- c_s * pi_s_1 # >=5
 
 ##########################################
 ## Defining Demographic Rate Parameters  #
