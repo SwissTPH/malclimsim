@@ -38,8 +38,8 @@ return_default_priors <- function(){
     alpha = list(initial = 0.5, min = 0, max = 1, prior = function(p) dunif(p, min = 0, max = 1, log = TRUE)),
 
     # Left and right of normal distribution descripting temp-EIR relationship
-    sigma_LT = list(initial = 5, min = 3.5, max = 7, prior = function(p) dnorm(p, mean = 5, sd = 0.5, log = TRUE)), # Gamma distribution to ensure positivity
-    sigma_RT = list(initial = 3, min = 2, max = 7, prior = function(p) dnorm(p, mean = 3, sd = 2, log = TRUE)), # Gamma distribution to ensure positivity
+    sigma_LT = list(initial = 5, min = 3.5, max = 7, prior = function(p) dnorm(p, mean = 5, sd = 1.5, log = TRUE)), # Gamma distribution to ensure positivity
+    sigma_RT = list(initial = 3, min = 2, max = 7, prior = function(p) dnorm(p, mean = 3, sd = 1.5, log = TRUE)), # Gamma distribution to ensure positivity
 
     # "Optimum" for rainfall-EIR relationship
     R_opt = list(initial = 0, min = -10, max = 10, prior = function(p) dnorm(p, mean = 0, sd = 1, log = TRUE)), # Normal distribution symmetric around 0
@@ -57,7 +57,8 @@ return_default_priors <- function(){
     s = list(initial = 0.8, min = 0.01, max = 20, prior = function(p) dunif(p, min = 0.01, max = 20, log = TRUE)),
 
     # Relative infectivity of symptomatic and asymptomatic individuals
-    qR = list(initial = 0.01, min = 1e-7, max = 1, prior = function(p) dnorm(p, mean = 0.001, sd = 0.02, log = TRUE)),
+    #qR = list(initial = 0.01, min = 1e-7, max = 1, prior = function(p) dnorm(p, mean = 0.001, sd = 0.02, log = TRUE)),
+    qR = list(initial = 0.01, min = 1e-7, max = 1, prior = function(p) dnorm(p, mean = 0.24, sd = 1, log = TRUE)),
 
     ########################################
     ## Parameters that could be estimated ##

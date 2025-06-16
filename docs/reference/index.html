@@ -18,10 +18,10 @@
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/simulating-from-climate-model.html">simulating-from-climate-model</a></li>
-    <li><a class="dropdown-item" href="../articles/using-malclimsim.html">Using malclimsim to Simulate from the Climate-driven Dynamical Transmission Model</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/using-malclimsim.html">Using malclimsim to infer parameters of a climate-driven dynamical transmission model</a></li>
     <li><a class="dropdown-item" href="../articles/using-your-own-model.html">How to import a model for use with malclimsim</a></li>
-    <li><a class="dropdown-item" href="../articles/viewing-and-modifying-priors.html">Viewing and Modifying Priors}</a></li>
+    <li><a class="dropdown-item" href="../articles/viewing-and-modifying-observation-functions.html">Viewing and Modifying Observation Functions</a></li>
+    <li><a class="dropdown-item" href="../articles/viewing-and-modifying-priors.html">Viewing and modifying priors</a></li>
   </ul></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -174,6 +174,12 @@
 
         </dt>
         <dd>Simulate Compartments Over Time with Prewarm Period</dd>
+      </dl><dl><dt>
+
+          <code><a href="compute_climate_lead_days.html">compute_climate_lead_days()</a></code>
+
+        </dt>
+        <dd>Compute how many days Climate must lead SMC</dd>
       </dl><dl><dt>
 
           <code><a href="create_mcmc_params.html">create_mcmc_params()</a></code>
@@ -410,6 +416,12 @@
         <dd>Initialize Observation Time Index for Incidence Data</dd>
       </dl><dl><dt>
 
+          <code><a href="lag_and_trim_smc_climate.html">lag_and_trim_smc_climate()</a></code>
+
+        </dt>
+        <dd>Lag and Trim SMC and Climate Data.frames</dd>
+      </dl><dl><dt>
+
           <code><a href="load_clean_smc_data.html">load_clean_smc_data()</a></code>
 
         </dt>
@@ -476,22 +488,10 @@
         <dd>Plot Correlation of MCMC Samples</dd>
       </dl><dl><dt>
 
-          <code><a href="plot_counterfactual_time_series.html">plot_counterfactual_time_series()</a></code>
-
-        </dt>
-        <dd>Plot Counterfactual Time Series Across Multiple Scenarios</dd>
-      </dl><dl><dt>
-
           <code><a href="plot_estimate_distribution.html">plot_estimate_distribution()</a></code>
 
         </dt>
         <dd>Plot Histogram of Estimated Effects with Confidence Interval and Trimmed X-Axis</dd>
-      </dl><dl><dt>
-
-          <code><a href="plot_observed_vs_simulated.html">plot_observed_vs_simulated()</a></code>
-
-        </dt>
-        <dd>Plot Observed vs Simulated Data with Quantiles Ribbon and Optional Climate Data Facet</dd>
       </dl><dl><dt>
 
           <code><a href="plot_ppc.html">plot_ppc()</a></code>
@@ -506,12 +506,6 @@
         <dd>Plot Single Time Series Comparison (Uncomplicated or Severe Cases)</dd>
       </dl><dl><dt>
 
-          <code><a href="plot_prevalence_over_time.html">plot_prevalence_over_time()</a></code>
-
-        </dt>
-        <dd>Plot Estimated and True Prevalence Over Time</dd>
-      </dl><dl><dt>
-
           <code><a href="plot_priors.html">plot_priors()</a></code>
 
         </dt>
@@ -524,28 +518,10 @@
         <dd>Plot Residuals of Observed vs Simulated Data</dd>
       </dl><dl><dt>
 
-          <code><a href="plot_scenario_time_series.html">plot_scenario_time_series()</a></code>
-
-        </dt>
-        <dd>Plot Time Series of Multiple SMC Scenarios</dd>
-      </dl><dl><dt>
-
-          <code><a href="plot_simulation_confidence_intervals.html">plot_simulation_confidence_intervals()</a></code>
-
-        </dt>
-        <dd>Plot Confidence Intervals for Simulated Compartments</dd>
-      </dl><dl><dt>
-
-          <code><a href="plot_smc_scenarios.html">plot_smc_scenarios()</a></code>
-
-        </dt>
-        <dd>Plot SMC Coverage Scenarios</dd>
-      </dl><dl><dt>
-
           <code><a href="plot_time_series.html">plot_time_series()</a></code>
 
         </dt>
-        <dd>#' Plot Time Series Data of Malaria Incidence and Climate Variables #' #' This function creates time series plots for malaria incidence and climate data, #' with options to customize which incidence types (under 5 years, 5 years and older, #' or total) and climate variables (temperature or rolling mean) are displayed. #' The user can also choose to facet the plots or overlay them for better visualization. #' #' @param results A data frame containing malaria incidence data with columns for #' date (<code>date_ymd</code>), and incidence counts for different age groups (e.g., #' <code>inc_A</code>, <code>inc_C</code>, <code>inc</code> for <code>&lt;5</code>, <code>&gt;=5</code>, and <code>total</code> respectively). #' @param met A data frame containing climate data with columns for date (<code>date</code>), #' rainfall, temperature, and other relevant climate variables. #' The date column in this data must match the date format used in <code>results</code>. #' @param plot_title A string for the title of the plot. Default is "Time Series Data". #' @param incidence_y_label A string for the y-axis label of the incidence plot. #' Default is "Monthly Malaria Cases". #' @param climate_y_label A string for the y-axis label of the climate data plot. #' Default is "Temperature (°C)". #' @param climate_facet A boolean value indicating whether to facet the plots #' (separate plots for incidence and climate data) or not. #' Default is <code>FALSE</code> (plots will be overlaid). #' @param select_incidence A vector of incidence types to include in the plot. #' Options are <code>"&gt;=5"</code>, <code>"&lt;5"</code>, and <code>"total"</code>. Default is all three. #' @param select_climate A vector of climate variables to include in the plot. #' Options are <code>"temp"</code> (temperature) and <code>"rollrain"</code> (rolling mean). #' Default is both <code>"temp"</code> and <code>"rollrain"</code>. #' @param incidence_colors A named vector of colors for the selected incidence types. #' Default is <code>"&gt;=5" = "blue"</code>, <code>"&lt;5" = "red"</code>, <code>"total" = "green"</code>. #' @param climate_colors A named vector of colors for the selected climate variables. #' Default is <code>"temp" = "orange"</code>, <code>"rollrain" = "purple"</code>. #' @param climate_alpha A numeric value controlling the transparency of the climate data #' lines. Default is 0.7 (semi-transparent). #' @param base_size A numeric value controlling the base font size of the plot. #' Default is 15. #' #' @return A ggplot object containing the time series plot(s) of malaria incidence and climate data. #' @export #' #' @examples #' # Example 1: Plotting only the total incidence of malaria #' plot_time_series(results = results, plot_title = "Total Malaria Incidence", select_incidence = "total") #' #' # Example 2: Plotting malaria incidence and climate data (temperature only) #' plot_time_series(results = results, met = met, plot_title = "Malaria and Temperature", #' select_incidence = c("&gt;=5", "&lt;5"), select_climate = "temp") #' #' # Example 3: Plotting both incidence and climate data with faceting #' plot_time_series(results = results, met = met, plot_title = "Malaria and Climate Data", #' select_incidence = "total", select_climate = c("temp", "rollrain"), #' climate_facet = TRUE)</dd>
+        <dd>Plot Time Series of Malaria Incidence (Raw and Transformed)</dd>
       </dl><dl><dt>
 
           <code><a href="post_plot.html">post_plot()</a></code>
@@ -554,10 +530,10 @@
         <dd>Plot Posterior Distributions of Estimated Parameters</dd>
       </dl><dl><dt>
 
-          <code><a href="prepare_plot_data.html">prepare_plot_data()</a></code>
+          <code><a href="prepare_ppc_data.html">prepare_ppc_data()</a></code>
 
         </dt>
-        <dd>Prepare Observed and Simulated Data for Plotting</dd>
+        <dd>Combine Posterior Simulations, Deterministic Prediction, and Observed Data for PPC Plotting</dd>
       </dl><dl><dt>
 
           <code><a href="print_observation_structure.html">print_observation_structure()</a></code>
@@ -656,6 +632,12 @@
         <dd>Set SMC Coverage Level</dd>
       </dl><dl><dt>
 
+          <code><a href="simulate_best.html">simulate_best()</a></code>
+
+        </dt>
+        <dd>Run the model once at the maximum-posterior parameter set (deterministic)</dd>
+      </dl><dl><dt>
+
           <code><a href="simulate_models.html">simulate_models()</a></code>
 
         </dt>
@@ -716,6 +698,12 @@
         <dd>Create Long Format Data for Simulated Posterior Median and CI</dd>
       </dl><dl><dt>
 
+          <code><a href="update_inf_stage.html">update_inf_stage</a></code>
+
+        </dt>
+        <dd>#' Relate Time Steps to Observed Data for mcstate #' #' This function formats observed data into a form usable by the <code>mcstate</code> particle filter, #' adjusting for time steps (weekly or monthly) and ensuring consistency for particle filtering. #' #' @param incidence_observed A data frame containing observed incidence data. #' @param month Logical; TRUE for monthly data, FALSE for weekly data. #' @param initial_time_obs Integer; initial time step (e.g., 0), used to align simulation and data. #' @param rate Integer; time step rate (7 for weekly, 30 for monthly, etc.). #' #' @return A data frame formatted for particle filtering, with aligned start/end time steps. #' @export filter_data &lt;- function(incidence_observed, month = FALSE, initial_time_obs = 0, rate = 7) if (!requireNamespace("mcstate", quietly = TRUE)) stop("The 'mcstate' package is required for this function.") update_inf_stage( results_obj, proposal_matrix, param_names, S_prev = 3000, draw_n = 4, shrink = 0.8, stage, n_steps = NULL ) results_objResult object returned by inf_run (with MCMC traces) proposal_matrixCurrent proposal variance matrix param_namesCharacter vector of parameter names (rownames of proposal_matrix) S_prevInteger: number of samples to use for variance-covariance extraction draw_nInteger: number of random draws for new start values per chain shrinkNumeric: shrinkage factor for bounds (e.g. 0.8 retains 80% of interval) stageCharacter: which stage to pull from create_mcmc_params() n_stepsInteger or NULL: if not NULL, overrides control_params$n_steps A list with elements: <ul><li><p>proposal_matrix : updated proposal variance matrix</p></li> <li><p>start_values : matrix of new start values (chains x parameters)</p></li> <li><p>adaptive_params : list of adaptive settings for this stage</p></li> <li><p>control_params : list of control settings for this stage (with n_steps possibly overridden)</p></li> </ul> time_col &lt;- if (month) "month_no" else "week_no" prefix &lt;- if (month) "month" else "week" Particle filter data filt_data &lt;- mcstate::particle_filter_data( data = incidence_observed, time = time_col, initial_time = initial_time_obs, rate = rate ) n_obs &lt;- nrow(incidence_observed) Add start and end columns with consistent naming filt_data[paste0(prefix, "_no_start")] &lt;- initial_time_obs:(initial_time_obs + n_obs - 1) filt_data[paste0(prefix, "_no_end")] &lt;- (initial_time_obs + 1):(initial_time_obs + n_obs) Drop the first row to align with intervals filt_data &lt;- filt_data-1, Drop last row if it exceeds time range (optional safety check)</dd>
+      </dl><dl><dt>
+
           <code><a href="update_param_list.html">update_param_list()</a></code>
 
         </dt>
@@ -726,6 +714,12 @@
 
         </dt>
         <dd>Update Default Priors</dd>
+      </dl><dl><dt>
+
+          <code><a href="validate_smc_climate_alignment.html">validate_smc_climate_alignment()</a></code>
+
+        </dt>
+        <dd>Validate SMC and Climate for Lagged Alignment</dd>
       </dl><dl><dt>
 
           <code><a href="view_priors.html">view_priors()</a></code>

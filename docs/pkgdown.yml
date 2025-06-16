@@ -2,8 +2,11 @@ pandoc: '3.2'
 pkgdown: 2.1.2
 pkgdown_sha: ~
 articles:
-  simulating-from-climate-model: simulating-from-climate-model.html
   using-malclimsim: using-malclimsim.html
   using-your-own-model: using-your-own-model.html
+  viewing-and-modifying-observation-functions: viewing-and-modifying-observation-functions.html
   viewing-and-modifying-priors: viewing-and-modifying-priors.html
-last_built: 2025-06-05T16:21Z
+last_built: 2025-06-16T07:17Z
+urls:
+  reference: https://example.com/malclimsim/reference
+  article: https://example.com/malclimsim/articles
