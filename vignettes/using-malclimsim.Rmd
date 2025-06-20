@@ -26,12 +26,11 @@ Currently, the model assumes a year is 360 days with twelve 30 day months when u
 This vignette will go through the process of defining the inputs for, and simulating from, a predefined model of malaria transmission. Afterwords, a number parameters of this model will be inferred using the mcstate package. Lastly, diagnostics will be examined and relevant quantities calculated.
 
 ```{r message=FALSE, warning=FALSE}
+#library(devtools)
+#load_all(path = "C:\\Users\\putnni\\Documents\\git-hub-repositories\\malclimsim\\")
 #detach("package:malclimsim", unload = TRUE)
 #devtools::install_github("https://github.com/SwissTPH/malclimsim", ref = "master")
-#library(malclimsim)
-library(fs)
-library(devtools)
-load_all(path = "C:\\Users\\putnni\\Documents\\git-hub-repositories\\malclimsim\\")
+library(malclimsim)
 ```
 ## Setting Up Model Inputs
 
@@ -91,11 +90,8 @@ met_365 <- process_climate_data(lon, lat, years = years_clim, temp_path = temp_p
 Next we will load the SMC data, which gives information about when each round of SMC was given and the coverage for that round. As of now, for the functions that process this SMC data, the format (column names) must be as shown below.
 
 ```{r}
-path_to_SMC <- file.path(path_to_data, "simulated_smc_data_2014_2023.rds")
+data(smc_data_raw)
 
-data("smc_data_raw.rda")
-
-smc_data_raw <- readRDS(path_to_SMC)
 head(smc_data_raw, n = 5)
 
 smc_data <- load_clean_smc_data(data = smc_data_raw)
