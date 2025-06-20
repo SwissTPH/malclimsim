@@ -107,7 +107,7 @@ create_mcmc_params <- function(stage = "stage1",
       pre_diminish = 0
     )
 
-    control_params <- list(n_steps = 100000, n_burnin = 0, n_chains = 3, n_workers = 3, n_threads_total = 6)
+    control_params <- list(n_steps = 100000, n_burnin = 20000, n_chains = 3, n_workers = 3, n_threads_total = 6)
   }
 
   return(list(
@@ -231,7 +231,7 @@ create_proposal_matrix <- function(params_to_estimate, proposal_variance = NULL,
       lag_T = 800, lag_R = 800, alpha = 4,
       sigma_LT = 3, sigma_RT = 3, R_opt = 2,
       k1 = 3, size_1 = 15, eff_SMC = 0.5, s = 0.3,
-      qR = 0.1,
+      qR = 1,
 
       #################################################
       ## Parameter estimated that could be estimated ##
