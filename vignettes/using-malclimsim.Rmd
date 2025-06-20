@@ -1,8 +1,8 @@
 ---
-title: "Using malclimsim to Infer Parameters of a Climate-driven Dynamical Transmission Model"
+title: "Using malclimsim to infer parameters of a climate-driven dynamical transmission model"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Using malclimsim to Infer Parameters of a Climate-driven Dynamical Transmission Model}
+  %\VignetteIndexEntry{Using malclimsim to infer parameters of a climate-driven dynamical transmission model}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -17,14 +17,19 @@ knitr::opts_chunk$set(
 
 ## Overview
 
-The climate-driven dynamical transmission model used in this package is an adaptation from the one constructed by Ukawuba and Shaman in 2022 (<https://doi.org/10.1371/journal.pcbi.1010161>). The original paper calibrated the model using data at the provincial and district levels (district-level analysis found in the supplement). A few key characteristics of the model are that only humans are modeled explicitly but climate-mosquito dynamics are incorporated through the addition equations relating rainfall and temperature to the entomological innoculation rate. It is a compartmental model with 10 total compartments across two age groups, splitting the population into those who are Susceptible to disease, those who have been Exposed and are infected by malaria parasites, those who have Symptomatic Infection but untreated, those who have been Treated, and those who have Asymptomatic infection. Currently, the model assumes a year is 360 days with twelve 30 day months when using monthly data and assumes 365 day years with 7 day weeks when using weekly data. There are two age groups being modeled - those under 5 years old and those who are 5 years and older. Only one intervention is being considered here - seasonal malaria chemoprevention.
+The climate-driven dynamical transmission model used in this package is an adaptation from the one constructed by Ukawuba and Shaman in 2022 (<https://doi.org/10.1371/journal.pcbi.1010161>). The original paper calibrated the model using data at the provincial and district levels (district-level analysis found in the supplement). 
+
+A few key characteristics of the model are that only humans are modeled explicitly but climate-mosquito dynamics are incorporated through the addition equations relating rainfall and temperature to the entomological innoculation rate. It is a compartmental model with 10 total compartments across two age groups, splitting the population into those who are Susceptible to disease, those who have been Exposed and are infected by malaria parasites, those who have Symptomatic Infection but untreated, those who have been Treated, and those who have Asymptomatic infection. 
+
+Currently, the model assumes a year is 360 days with twelve 30 day months when using monthly data and assumes 365 day years with 7 day weeks when using weekly data. There are two age groups being modeled - those under 5 years old and those who are 5 years and older. Only one intervention is being considered here - seasonal malaria chemoprevention.
 
 This vignette will go through the process of defining the inputs for, and simulating from, a predefined model of malaria transmission. Afterwords, a number parameters of this model will be inferred using the mcstate package. Lastly, diagnostics will be examined and relevant quantities calculated.
 
 ```{r message=FALSE, warning=FALSE}
 #detach("package:malclimsim", unload = TRUE)
-#devtools::install_github("https://github.com/SwissTPH/malclimsim", ref = "development")
+#devtools::install_github("https://github.com/SwissTPH/malclimsim", ref = "master")
 #library(malclimsim)
+library(fs)
 library(devtools)
 load_all(path = "C:\\Users\\putnni\\Documents\\git-hub-repositories\\malclimsim\\")
 ```
@@ -53,14 +58,17 @@ lon <- 17.77
 Next, "save_climate_data" will download the raw data from the specified coordinates into the directory given by 'path_to_data', where the data can be loaded from for future uses. The temperature data comes from 'ERA5-Land' (<https://cds.climate.copernicus.eu/datasets/derived-era5-land-daily-statistics?tab=overview>) and the rainfall data comes from 'CHIRTSdaily' (<https://www.chc.ucsb.edu/data/chirtsdaily>). To get access to the CHIRPS data (and run the below function), one must register with the European Centre for Medium-Range Weather Forecasts API - instructions found here - https://bluegreen-labs.github.io/ecmwfr/.
 
 ```{r, echo = FALSE}
-path_to_data <- "C:/Users/putnni/switchdrive/Chad/Data/"
-rain_file_name <- "chirps_moissala.rds"
-temp_file_name <- "era5_moissala.nc"
+path_to_data <- "C:/Users/putnni/Documents/git-hub-repositories/vignette-storage/malclimsim/data/"
+rain_file_name <- "chirps_2017_2023.rds"
+temp_file_name <- "era5_2017_2023.nc"
+```
 
+
+```{r eval=FALSE}
 # Saving the rainfall data locally based on specified path
-#save_climate_data(lon = lon, lat = lat, years = years_clim, 
-#                  path_to_data = paste0(path_to_data, "climate-data/"),
-#                  rain_file_name = rain_file_name, temp_file_name = temp_file_name)
+save_climate_data(lon = lon, lat = lat, years = years_clim, 
+                  path_to_data = path_to_data,
+                  rain_file_name = rain_file_name, temp_file_name = temp_file_name)
 ```
 
 Now the data is processed using the 'process_climate_data' function. A few things are done here. First, as the temperature data is in the form of monthly averages and the model requires an input for each day, smoothing splines are used to fit a smooth function to the data. This function is then used to estimate daily temperatures. A few more things are done with the rainfall data. First, the cumulative monthly rainfall was calculated. Then, a smoothing spine was fit to this monthly data. Afterwards, daily estimated were estimated from the fit. Lastly, the daily estimates were standardized to have a mean of 0 and a variance of 1. 
@@ -69,8 +77,8 @@ For more details, look at the code found in "climate_processing_functions.R".
 
 ```{r, each = FALSE}
 # Reading in climate data saved by `save_climate_data`
-temp_path <- paste0(path_to_data, "climate-data/", temp_file_name)
-rain_path <- paste0(path_to_data, "climate-data/", rain_file_name)
+temp_path <- paste0(path_to_data, temp_file_name)
+rain_path <- paste0(path_to_data, rain_file_name)
 
 # Processing climate data to be used in the model
 # `months_30_days` determines if years are 360 or 365 days - if using weekly data, 365
@@ -83,13 +91,15 @@ met_365 <- process_climate_data(lon, lat, years = years_clim, temp_path = temp_p
 Next we will load the SMC data, which gives information about when each round of SMC was given and the coverage for that round. As of now, for the functions that process this SMC data, the format (column names) must be as shown below.
 
 ```{r}
-path_to_SMC <- file.path(path_to_data,"data-raw/CPS/CPS_coverage_imput_2018_with_2023.xlsx")
+path_to_SMC <- file.path(path_to_data, "simulated_smc_data_2014_2023.rds")
 
-smc_data_raw <- readxl::read_excel(path_to_SMC)
-head(smc_data_raw, n = 0)
+data("smc_data_raw.rda")
+
+smc_data_raw <- readRDS(path_to_SMC)
+head(smc_data_raw, n = 5)
 
 smc_data <- load_clean_smc_data(data = smc_data_raw)
-head(smc_data, n = 0)
+head(smc_data, n = 5)
 ```
 
 One now needs to define the inputs related to seasonal malaria chemoprevention (SMC). There are three vectors that are needed which should all the same length as the rainfall and temperature vectors. One vector consists of 1s and 0s that define the start of a round of SMC. The second vector is the coverage of SMC for that round. And the last vector is the result of a decay function applied to the coverage over time. The total effect of SMC at a given time point is defined as the product (component-wise multiplication) of these vectors at this time. 
@@ -103,7 +113,7 @@ smc_schedule <- smc_schedule_from_data(
   years = years_analysis
 )
 
-head(smc_schedule, n = 0)
+head(smc_schedule, n = 5)
 ```
 
 
@@ -118,7 +128,7 @@ met_365 <- impute_climate_to_end_date(met_365, max(smc_schedule$dates)) # climat
 clim_smc_lag <- 180
 
 # Validate continuity, span, and alignment
-validate_smc_climate_alignment(smc_schedule, met_365, clim_smc_lag)
+# validate_smc_climate_alignment(smc_schedule, met_365, clim_smc_lag)
 
 # Trim & align
 aligned <- lag_and_trim_smc_climate(smc_schedule, met_365, clim_smc_lag)
@@ -129,23 +139,24 @@ validate_smc_climate_alignment(smc_schedule, met_365, clim_smc_lag)
 ```
 
 
-## Simulating from the malaria model
+## Simulating from the Malaria Model
 
-One last model input is the population size of the region being studied. In the case of Chad, there is must uncertainty about the true population size so we will also include in the model a population scaling factor. This means that the results are not so sensitivity to the chosen population size value.
+One last model input is the population size of the region being studied. In the case of Chad, there is much uncertainty about the true population size so we will also include in the model a population scaling factor. This means that the results are not so sensitivity to the chosen population size value.
 
 ```{r}
-district_pops <- readxl::read_excel(paste0(path_to_data, "model-inputs/district_population_estimates.xlsx")) # 2023 population estimates for select districts of Mandoul
-N <- district_pops %>% filter(District == "Moissala") %>% dplyr::select(Population) %>% unlist() %>% as.numeric()
+N <- 150000
 ```
 
 
-Now, the climate model is loaded using "load_model" which takes as an input the name of the model. Here it is called "model_det_1". In principle, one could adjust the model or add new models which could then be loaded and simulated from. The model itself is written in 'odin', a domain-specific language (DSL) created for facilitating the writing of efficient state-space models. More information can be found in the originally paper by FitzJohn et al (10.12688/wellcomeopenres.16466.2).
+Now, the climate model is loaded using "load_model" which takes as an input the name of the model. Here it is called "model_new_R_with_FOI". In principle, one could adjust the model or add new models which could then be loaded and simulated from. The model itself is written in 'odin', a domain-specific language (DSL) created for facilitating the writing of efficient state-space models. More information can be found in the original paper by FitzJohn et al (10.12688/wellcomeopenres.16466.2).
 
 ```{r message=FALSE, warning=FALSE}
 malaria_model <- load_model("model_new_R_with_FOI")  # Load the deterministic climate model
 ```
 
-One last object to define before running the model itself. This input is a named list where each name corresponds to a parameter within the model and the values can be specified based on prior knowledge or by fitting to some observed data. Many of the parameter values here come from the paper by Ukawuba and Shaman where the model was fit to district-level data in Rwanda. Found below is a table with information about each parameter (taken directly from Ukawuba), as well as the corresponding name in the paper by Ukawuba, as the naming convention differs slightly for some parameters.
+One last object to define before running the model itself. This input is a named list where each name corresponds to a parameter within the model and the values can be specified based on prior knowledge or by fitting to some observed data. Many of the parameter values here come from the paper by Ukawuba and Shaman where the model was fit to district-level data in Rwanda. 
+
+Found below is a table with information about each parameter (taken directly from Ukawuba), as well as the corresponding name in the paper by Ukawuba, as the naming convention differs slightly for some parameters (still need to define).
 
 ```{r}
 # Extract rainfall and temperature data
@@ -165,11 +176,11 @@ param_inputs <- list(
   delta_a = 1/(5 * 365), N = N, percAdult = 0.81,
 
   # Immunity and Reporting Parameters
-  pi_p_1 = 0.921, c_p = 1, pi_sp_1 = 0.75 / 0.921, c_sp = 0.12,
+  pi_s_1 = 0.75, c_s = 0.12,
   qR = 0.025,
 
   # Immunity and Reporting Parameters
-  fT_C = 0.3, 
+  fT_C = 0.28, 
   
   # Population Scaling factor
   s = 9,
@@ -209,7 +220,7 @@ results <- data_sim(
 ```
 
 ```{r}
-plot_time_series(results = results, plot_title = "Malaria in Moissala (2018 to 2023)",
+plot_time_series(results = results, plot_title = "Simulated Weekly Malaria Cases (2018 to 2023)",
                  select_incidence = "<5", incidence_y_label = "Weekly Malaria Cases")
 ```
 
@@ -218,14 +229,14 @@ plot_time_series(results = results, plot_title = "Malaria in Moissala (2018 to 2
 
 ### Loading observed data
 ```{r}
-obs_cases <- readRDS(file.path(path_to_data,"cases-data/MSF-data/opd_district_MOISSALA_2012_2023.rds"))
+obs_cases <- readRDS(file.path(path_to_data, "simulated_malaria_cases_2018_2023.rds"))
 obs_cases <- obs_cases %>% filter(date_ymd >= start_date)
 ```
 
 The observed data needs to have columns named in the same way shown below. If the data is monthly, the `date_ymd' column should correspond to the first of the month in year, month, day format.
 
 ```{r}
-head(obs_cases, n = 0)
+head(obs_cases, n = 3)
 ```
 
 ### Weighting observed data
@@ -261,7 +272,7 @@ In our case, we do inference in three stages. First, we start with a relatively 
 params_default <- create_mcmc_params(stage = "stage1")
 adaptive_params_1 <- params_default$adaptive_params
 control_params_1 <- params_default$control_params
-control_params_1$n_steps = 5000
+control_params_1$n_steps = 15000
 
 # Defining starting values for chains
 start_values_1 <- create_start_values(params_to_estimate, control_params_1,
@@ -316,15 +327,16 @@ run_stage <- function(proposal_matrix, start_values, control_params,
 
 ### Running Inference
 ```{r}
-mcmc_results_out_dir = "C:/Users/putnni/Documents/git-hub-repositories/vignette-storage/malclimsim/"
+mcmc_results_out_dir = "C:/Users/putnni/Documents/git-hub-repositories/vignette-storage/malclimsim/mcmc-results/"
+```
 
+```{r}
 mcmc_stage_1 <- run_stage(proposal_matrix_1, start_values_1, 
           control_params = control_params_1, 
           adaptive_params = adaptive_params_1,
           out_dir = mcmc_results_out_dir,
           out_file = "mcmc_results_stage_1.rds")
 ```
-
 
 ```{r}
 mcmc_stage_1 <- readRDS(paste0(mcmc_results_out_dir, "mcmc_results_stage_1.rds"))
@@ -333,8 +345,10 @@ inf_params_stage_2 <- update_inf_stage(results_obj = mcmc_stage_1,
    proposal_matrix = proposal_matrix_1,
    param_names = rownames(proposal_matrix_1),
    S_prev = 3000, draw_n = ncol(start_values_1),
-   shrink = 0.8, stage = "stage2", n_steps = 5000)
+   shrink = 0.95, stage = "stage2", n_steps = 15000)
           
+rm(mcmc_stage_1)
+
 mcmc_stage_2 <- run_stage(proposal_matrix = inf_params_stage_2$proposal_matrix, 
                           start_values = inf_params_stage_2$start_values, 
                           control_params = inf_params_stage_2$control_params, 
@@ -350,14 +364,15 @@ inf_params_stage_3 <- update_inf_stage(results_obj = mcmc_stage_2,
    proposal_matrix = inf_params_stage_2$proposal_matrix,
    param_names = rownames(proposal_matrix_1),
    S_prev = 3000, draw_n = 3,
-   shrink = 0.8, stage = "noadapt", n_steps = 10000)
+   shrink = 0.8, stage = "noadapt", n_steps = 25000)
           
+rm(mcmc_stage_2)
 
 mcmc_stage_3 <- run_stage(proposal_matrix = inf_params_stage_3$proposal_matrix, 
                           start_values = inf_params_stage_3$start_values, 
                           control_params = inf_params_stage_3$control_params, 
                           adaptive_params = inf_params_stage_3$adaptive_params,
-                          out_dir = "C:/Users/putnni/Documents/git-hub-repositories/vignette-storage/malclimsim/",
+                          out_dir = mcmc_results_out_dir,
                           out_file = "mcmc_results_stage_3.rds")
 ```
 
@@ -384,7 +399,7 @@ plot_corr(mcmc_stage_3)
 post_plot_fig <- post_plot(
   list(mcmc_stage_3), params_to_estimate, dim_plot = c(4, 3),
   show_prior = TRUE, run_labels = "Moissala",
-  title = "Moissala Posteriors"
+  title = "Posteriors"
 )
 
 post_plot_fig
@@ -397,7 +412,7 @@ We will now plot the values predicted by the model to the observed values to ass
 
 ```{r}
 # Sample posterior draws from MCMC
-n_samples <- 5
+n_samples <- 400
 param_samples <- sample_mcmc_steps(mcmc_stage_3$coda_pars, n_samples)
 ```
 
@@ -493,6 +508,9 @@ ppc_plot <- plot_ppc(
   show_best   = TRUE,
   show_ribbon = TRUE
 )
+```
 
-# print(ppc_plot)
+
+```{r}
+print(ppc_plot)
 ```
