@@ -45,7 +45,7 @@ Depends:
     ggplot2,
     mcstate,
     coda,
-    R (>= 2.10)
+    R (>= 3.5)
 URL: https://github.com/nputney4/malclimsim, https://swisstph.github.io/malclimsim/
 BugReports: https://github.com/nputney4/malclimsim/issues
 Suggests: 
