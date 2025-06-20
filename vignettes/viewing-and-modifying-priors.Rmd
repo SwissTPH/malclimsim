@@ -1,12 +1,8 @@
 ---
-title: "Viewing and Modifying Priors}"
-output:
-  rmarkdown::html_vignette:
-    toc: true
-    toc_depth: 2
-    theme: united
+title: "Viewing and modifying priors"
+output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Viewing and Modifying Priors}}
+  %\VignetteIndexEntry{Viewing and modifying priors}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -17,8 +13,10 @@ vignette: >
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment  = "#>"
+	eval = TRUE,
+	collapse = FALSE,
+	comment = "#>",
+	include = TRUE
 )
 library(malclimsim)    # your package
 library(mcstate)       # for pmcmc_parameter() and pmcmc_parameters$new()
@@ -73,7 +71,7 @@ proposal_matrix <- diag(length(all_param_names))
 rownames(proposal_matrix) <- colnames(proposal_matrix) <- all_param_names
 
 # 4. Pick a small subset of parameters to demonstrate:
-params_to_estimate <- c("phi", "a_R", "qR", "z", "eff_SMC", "size")
+params_to_estimate <- c("qR", "z", "eff_SMC", "size_1")
 
 # Show what we have in param_inputs and proposal_matrix:
 str(param_inputs[params_to_estimate], max.level = 1)
@@ -98,7 +96,7 @@ default_mcmc_priors <- build_priors(
 
 # Show the names and one example element:
 names(default_mcmc_priors)
-default_mcmc_priors$phi
+default_mcmc_priors$z
 ```
 
 # 3. Viewing Default Priors
@@ -126,13 +124,14 @@ priors_df
 
 Next, we visualize each prior over its support.
 
-```{r plot-default-priors, fig.width=7, fig.height=5}
+```{r plot-default-priors, fig.height = 5, fig.width = 7}
 prior_plot <- plot_priors(
   param_inputs       = param_inputs,
   proposal_matrix    = proposal_matrix,
   params_to_estimate = params_to_estimate,
   priors             = default_mcmc_priors
 )
+
 print(prior_plot)
 ```
 
@@ -141,7 +140,7 @@ print(prior_plot)
 
 Suppose we want to change the default for **two** parameters:
 
-1.  **phi**:
+1.  **z**:
     -   Originally: Uniform(0.01, 2).\
     -   We want to switch to Beta(40, 12) on [0.01, 1].
 2.  **qR**:
@@ -152,7 +151,7 @@ To do that, we build an `override_priors` list in the same structure as `return_
 
 ```{r override-priors}
 override_priors <- list(
-  phi = list(
+  z = list(
     initial = 0.5,
     min     = 0.01,
     max     = 1.0,
@@ -185,7 +184,7 @@ updated_priors_df
 
 Notice how:
 
--   **phi** now has `Initial = 0.5`, `Min = 0.01`, `Max = 1.0`, and a Beta(40,12).\
+-   **z** now has `Initial = 0.5`, `Min = 0.01`, `Max = 1.0`, and a Beta(40,12).\
 -   **qR** now has `Initial = 0.1`, `Min = 0.01`, `Max = 0.5`, and a Uniform(0.01,0.5).\
 -   All other four parameters remain unchanged from the original defaults.
 
@@ -193,7 +192,7 @@ Notice how:
 
 Finally, let’s re‐plot our six priors so you can see how **phi** and **qR** have changed shape:
 
-```{r plot-updated-priors, fig.width=7, fig.height=5}
+```{r plot-updated-priors, fig.height = 5, fig.width = 7}
 updated_plot <- plot_priors(
   param_inputs       = param_inputs,
   proposal_matrix    = proposal_matrix,

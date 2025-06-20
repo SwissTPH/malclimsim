@@ -1,8 +1,8 @@
 ---
-title: "Viewing and Modifying Observation Functions"
+title: "Viewing and modifying observation functions"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Viewing and Modifying Observation Functions}
+  %\VignetteIndexEntry{Viewing and modifying observation functions}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
