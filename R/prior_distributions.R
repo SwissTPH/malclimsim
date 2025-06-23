@@ -35,7 +35,7 @@ return_default_priors <- function(){
     lag_T = list(initial = 0, min = 0, max = 60, integer = TRUE, prior = function(p) dunif(p, min = 0, max = 60, log = TRUE)),
 
     # EIR scaling parameter
-    alpha = list(initial = 0.5, min = 0, max = 1, prior = function(p) dunif(p, min = 0, max = 1, log = TRUE)),
+    alpha = list(initial = 2, min = 0, max = 10, prior = function(p) dunif(p, min = 0, max = 10, log = TRUE)),
 
     # Left and right of normal distribution descripting temp-EIR relationship
     sigma_LT = list(initial = 5, min = 2, max = 7, prior = function(p) dnorm(p, mean = 3.2, sd = 1, log = TRUE)), # Gamma distribution to ensure positivity
