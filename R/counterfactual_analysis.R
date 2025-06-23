@@ -347,28 +347,6 @@ evaluate_multiple_scenarios <- function(patterns,
   estimates <- list()
   cases_df1 <- list()
   cases_df2 <- list()
-  # for (label in names(patterns)) {
-  #   #month_pattern <- patterns[[label]]
-  #   #n_years <- (lubridate::year(end_date) + 1) - lubridate::year(start_date)
-  #   #months_active <- matrix(rep(month_pattern, n_years + 1), nrow = n_years + 1, byrow = TRUE)
-  #
-  #   month_pattern <- patterns[[label]]
-  #
-  #   # NEW: Detect whether the pattern is a named list (per-year) or a single vector
-  #   if (is.list(month_pattern)) {
-  #     # Confirm named by year and length 12 per year
-  #     if (!all(names(month_pattern) %in% as.character(years))) {
-  #       stop("Named pattern list does not match specified 'years'.")
-  #     }
-  #     if (!all(vapply(month_pattern, length, integer(1)) == 12)) {
-  #       stop("Each entry in a named list pattern must be a vector of length 12.")
-  #     }
-  #     months_active <- month_pattern  # pass directly to gen_smc_schedule
-  #   } else {
-  #     # Legacy behavior: repeat same pattern across all years
-  #     n_years <- length(years)
-  #     months_active <- matrix(rep(month_pattern, n_years), nrow = n_years, byrow = TRUE)
-  #   }
 
   for (label in names(patterns)) {
     month_pattern <- patterns[[label]]
@@ -461,8 +439,14 @@ evaluate_multiple_scenarios <- function(patterns,
       save_plot_dynamic(plot, paste0("hist_", gsub(" ", "_", label)), out_dir)
     }
 
-    sim_summary <- summarize_simulation_ci(sims, variables = "inc_C_transformed") %>%
-      dplyr::mutate(scenario = label)
+    if(!is.null(mu_transform_C)){
+      sim_summary <- summarize_simulation_ci(sims, variables = "inc_C_transformed") %>%
+        dplyr::mutate(scenario = label)
+    }else{
+      sim_summary <- summarize_simulation_ci(sims, variables = "inc_C") %>%
+        dplyr::mutate(scenario = label)
+    }
+
 
     outputs[[label]] <- list(
       estimate = est,
