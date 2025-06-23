@@ -140,18 +140,19 @@ temp_shift <- temp[time + clim_SMC_lag - lag_T]
 ##############################################
 ## Defining Entomological Inncoulation Rate  #
 ##############################################
-EIR <- alpha * (X / (b + X)) * temp_effect * rain_effect # Multiplicative effects
+EIR <- alpha * (X / (b_X + c_X * X)) * temp_effect * rain_effect # Multiplicative effects
 temp_effect <- if (temp_shift <= T_opt) exp(-((temp_shift - T_opt)^2) / (2 * sigma_LT^2)) else exp(-((temp_shift - T_opt)^2) / (2 * sigma_RT^2))
 rain_effect <- 1 / (1 + exp(-k1 * (c_R_D_shift - R_opt))) # Logistic term for rainfall
 
 # Others
 alpha <- user(1) # parameter to adjust magnitude of EIR
-T_opt <- user(28) # temperature at which EIR is maximized
+T_opt <- user(27.82) # temperature at which EIR is maximized
 sigma_LT <- user(4) # standard deviation to left of T_opt
 sigma_RT <- user(4) # standard deviation to right of T_opt
 R_opt <- user(1) # rainfall at which EIR is maximized
 k1 <- user(0.2) # controls the "rate" that EIR changes with rainfall
-b <- user() # controls saturation rate of impact of population infectivity on EIR
+b_X <- user(0.65) # controls saturation rate of impact of population infectivity on EIR
+c_X <- user(0.35) # controls saturation rate of impact of population infectivity on EIR
 
 ############################################
 ## Defining Infectivity of the Population  #
@@ -224,8 +225,8 @@ initial(SMC_effect_2) <- decay[time] * eff_SMC * cov_SMC[time]
 update(SMC_effect_2) <- decay[time] * eff_SMC * cov_SMC[time]
 initial(mu_SE_C_2) <-(1 - SMC_effect) * (1 - exp(-p_MH_C * EIR))
 update(mu_SE_C_2) <- (1 - SMC_effect) *(1 - exp(-p_MH_C * EIR))
-initial(EIR2) <- alpha * (X / (b + X)) * temp_effect * rain_effect # Multiplicative effects
-update(EIR2) <- alpha * (X / (b + X)) * temp_effect * rain_effect # Multiplicative effects
+#initial(EIR2) <- alpha * (X / (b + X)) * temp_effect * rain_effect # Multiplicative effects
+#update(EIR2) <- alpha * (X / (b + X)) * temp_effect * rain_effect # Multiplicative effects
 initial(temp_effect_2) <- if (temp_shift <= T_opt) exp(-((temp_shift - T_opt)^2) / (2 * sigma_LT^2)) else exp(-((temp_shift - T_opt)^2) / (2 * sigma_RT^2))
 update(temp_effect_2) <- if (temp_shift <= T_opt) exp(-((temp_shift - T_opt)^2) / (2 * sigma_LT^2)) else exp(-((temp_shift - T_opt)^2) / (2 * sigma_RT^2))
 initial(rain_effect_2) <- 1 / (1 + exp(-k1 * (c_R_D_shift - R_opt))) # Logistic term for rainfall
