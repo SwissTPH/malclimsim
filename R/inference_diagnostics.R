@@ -87,94 +87,6 @@ plot_corr <- function(results, title = NULL) {
 }
 
 
-#' MCMC Diagnostics
-#'
-#' Provides diagnostic information for MCMC results, including trace plots,
-#' chain convergence statistics, correlation structure, effective sample size,
-#' autocorrelation function, posterior quantiles, and acceptance rates.
-#' Designed for users to assess MCMC chain convergence and parameter mixing.
-#'
-#' @param results A list containing the MCMC output, typically with at least
-#' `results[[1]]` for chain data and `results[[2]]` for trace plot data.
-#' Should include an element `n_chains` for the number of chains.
-#' @param params A character vector specifying which diagnostics to display.
-#' Options include: "trace", "gelman", "corr", "ess", "acf", "quantiles", "acceptance".
-#' @param thin An integer specifying thinning interval for the chains.
-#' Thinning reduces the number of samples by keeping every `thin`th sample.
-#'
-#' @return Diagnostic outputs based on the selected `params` are printed or plotted.
-#'
-#' @export
-#'
-#' @examples
-#' # Assuming 'results' is a valid MCMC result list with required structure:
-#' MCMC_diag(results, params = c("trace", "ess"))
-MCMC_diag <- function(results, params = c("trace", "gelman", "corr", "ess", "acf", "quantiles", "acceptance"), thin = 1) {
-  suppressWarnings(suppressMessages({
-    # Extract parameter samples and split into chains
-    pars <- results[[1]]$pars
-    n_chains <- results$n_chains
-    n_samples <- nrow(pars) / n_chains
-
-    # Split parameters into individual chains
-    chain_list <- split(pars, rep(1:n_chains, each = n_samples))
-    chains <- lapply(chain_list, function(x) {
-      as.mcmc(matrix(x, nrow = n_samples, ncol = ncol(pars), dimnames = list(NULL, colnames(pars))))
-    })
-    mcmc_chains <- as.mcmc.list(chains)
-
-    # Apply thinning if requested
-    if (thin > 1) {
-      mcmc_chains <- lapply(mcmc_chains, function(chain) window(chain, thin = thin))
-      mcmc_chains <- as.mcmc.list(mcmc_chains)
-    }
-
-    # Trace plot
-    if ("trace" %in% params) {
-      cat("\n TRACE PLOT \n")
-      plot(mcmc_chains)  # Trace plot for convergence assessment
-    }
-
-    # Gelman-Rubin statistic
-    if ("gelman" %in% params && n_chains > 1) {
-      cat("\n GELMAN-RUBIN STATISTIC \n")
-      print(gelman.diag(mcmc_chains))  # Numerical convergence assessment
-    }
-
-    # Correlation plot
-    if ("corr" %in% params) {
-      cat("\n CORRELATION PLOT \n")
-      print(plot_corr(results))  # Retain the previous large and clear plot
-    }
-
-    # Effective Sample Size
-    if ("ess" %in% params) {
-      cat("\n EFFECTIVE SAMPLE SIZE \n")
-      print(effectiveSize(mcmc_chains))
-    }
-
-    # Autocorrelation Function (ACF)
-    if ("acf" %in% params) {
-      cat("\n AUTOCORRELATION FUNCTION \n")
-      acf(as.matrix(do.call(rbind, mcmc_chains)), main = "Autocorrelation")
-    }
-
-    # Posterior Quantiles
-    if ("quantiles" %in% params) {
-      cat("\n POSTERIOR QUANTILES \n")
-      quantiles <- apply(as.matrix(do.call(rbind, mcmc_chains)), 2, quantile, probs = c(0.025, 0.5, 0.975))
-      print(quantiles)
-    }
-
-    # Acceptance Rate
-    if ("acceptance" %in% params) {
-      cat("\n ACCEPTANCE RATE \n")
-      acceptance_rates <- 1 - rejectionRate(mcmc_chains)
-      print(acceptance_rates)
-    }
-  }))
-}
-
 #' MCMC Diagnostic and Summary Plots
 #'
 #' Computes and optionally plots a suite of MCMC diagnostics including trace plots, Gelman-Rubin statistics,
@@ -288,6 +200,149 @@ MCMC_diag <- function(results, params = c("trace", "gelman", "corr", "ess", "acf
       acceptance_rates <- 1 - rejectionRate(mcmc_chains)
       print(acceptance_rates)
       results_list$acceptance <- acceptance_rates
+    }
+
+    return(results_list)
+  }))
+}
+
+
+#' MCMC Diagnostic and Summary Plots with Save Options
+#'
+#' Same functionality as before, now with file saving capabilities for diagnostics.
+#'
+#' @param results MCMC result object.
+#' @param params Diagnostics to compute.
+#' @param thin Thinning interval.
+#' @param save Logical; whether to save output (default: FALSE).
+#' @param output_dir Directory to save outputs (default: "mcmc_diagnostics").
+#' @param file_prefix Optional prefix for filenames.
+#' @param plot_width Width of plots in inches (default: 7).
+#' @param plot_height Height of plots in inches (default: 5).
+#'
+#' @return Named list of diagnostics.
+#'
+#' @importFrom xtable xtable
+#' @export
+MCMC_diag <- function(results,
+                      params = c("trace", "gelman", "corr", "ess", "acf", "quantiles", "acceptance"),
+                      thin = 1,
+                      save = FALSE,
+                      output_dir = "mcmc_diagnostics",
+                      file_prefix = "mcmc",
+                      plot_width = 7,
+                      plot_height = 5) {
+
+  suppressWarnings(suppressMessages({
+    if (save && !dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE)
+
+    pars <- results[[1]]$pars
+    n_chains <- results$n_chains
+    n_samples <- nrow(pars) / n_chains
+
+    chain_list <- split(pars, rep(1:n_chains, each = n_samples))
+    chains <- lapply(chain_list, function(x) {
+      as.mcmc(matrix(x, nrow = n_samples, ncol = ncol(pars), dimnames = list(NULL, colnames(pars))))
+    })
+    mcmc_chains <- as.mcmc.list(chains)
+
+    if (thin > 1) {
+      mcmc_chains <- lapply(mcmc_chains, function(chain) window(chain, thin = thin))
+      mcmc_chains <- as.mcmc.list(mcmc_chains)
+    }
+
+    results_list <- list()
+
+    # Trace plot
+    if ("trace" %in% params) {
+      cat("\n TRACE PLOT \n")
+      if (save) {
+        pdf(file.path(output_dir, paste0(file_prefix, "_trace.pdf")),
+            width = plot_width, height = plot_height)
+        plot(mcmc_chains)
+        dev.off()
+      } else {
+        plot(mcmc_chains)
+      }
+      results_list$trace <- mcmc_chains
+    }
+
+    # Gelman-Rubin
+    if ("gelman" %in% params && n_chains > 1) {
+      cat("\n GELMAN-RUBIN STATISTIC \n")
+      gelman_result <- gelman.diag(mcmc_chains)
+      print(gelman_result)
+      results_list$gelman <- gelman_result
+      if (save) {
+        tex <- xtable::xtable(gelman_result$psrf, caption = "Gelman-Rubin Diagnostic")
+        print(tex, file = file.path(output_dir, paste0(file_prefix, "_gelman.tex")))
+      }
+    }
+
+    # Correlation plot
+    if ("corr" %in% params) {
+      cat("\n CORRELATION PLOT \n")
+      results_list$corr <- "Correlation plot generated"
+      if (save) {
+        pdf(file.path(output_dir, paste0(file_prefix, "_corr.pdf")),
+            width = plot_width, height = plot_height)
+        plot_corr(results)
+        dev.off()
+      } else {
+        plot_corr(results)
+      }
+    }
+
+    # Effective Sample Size
+    if ("ess" %in% params) {
+      cat("\n EFFECTIVE SAMPLE SIZE \n")
+      ess_result <- effectiveSize(mcmc_chains)
+      print(ess_result)
+      results_list$ess <- ess_result
+      if (save) {
+        tex <- xtable::xtable(as.matrix(ess_result), caption = "Effective Sample Sizes")
+        print(tex, file = file.path(output_dir, paste0(file_prefix, "_ess.tex")))
+      }
+    }
+
+    # Autocorrelation
+    if ("acf" %in% params) {
+      cat("\n AUTOCORRELATION FUNCTION \n")
+      acf_matrix <- as.matrix(do.call(rbind, mcmc_chains))
+      if (save) {
+        pdf(file.path(output_dir, paste0(file_prefix, "_acf.pdf")),
+            width = plot_width, height = plot_height)
+        acf(acf_matrix, main = "Autocorrelation")
+        dev.off()
+      } else {
+        acf(acf_matrix, main = "Autocorrelation")
+      }
+      results_list$acf <- "ACF plotted"
+    }
+
+    # Posterior Quantiles
+    if ("quantiles" %in% params) {
+      cat("\n POSTERIOR QUANTILES \n")
+      quantiles <- apply(as.matrix(do.call(rbind, mcmc_chains)), 2, quantile,
+                         probs = c(0.025, 0.5, 0.975))
+      print(quantiles)
+      results_list$quantiles <- quantiles
+      if (save) {
+        tex <- xtable::xtable(quantiles, caption = "Posterior Quantiles")
+        print(tex, file = file.path(output_dir, paste0(file_prefix, "_quantiles.tex")))
+      }
+    }
+
+    # Acceptance Rate
+    if ("acceptance" %in% params) {
+      cat("\n ACCEPTANCE RATE \n")
+      acceptance_rates <- 1 - rejectionRate(mcmc_chains)
+      print(acceptance_rates)
+      results_list$acceptance <- acceptance_rates
+      if (save) {
+        tex <- xtable::xtable(as.matrix(acceptance_rates), caption = "Acceptance Rates")
+        print(tex, file = file.path(output_dir, paste0(file_prefix, "_acceptance.tex")))
+      }
     }
 
     return(results_list)

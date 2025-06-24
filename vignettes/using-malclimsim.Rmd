@@ -26,10 +26,10 @@ Currently, the model assumes a year is 360 days with twelve 30 day months when u
 This vignette will go through the process of defining the inputs for, and simulating from, a predefined model of malaria transmission. Afterwords, a number parameters of this model will be inferred using the mcstate package. Lastly, diagnostics will be examined and relevant quantities calculated.
 
 ```{r message=FALSE, warning=FALSE}
-#library(devtools)
-#load_all(path = "C:\\Users\\putnni\\Documents\\git-hub-repositories\\malclimsim\\")
 #detach("package:malclimsim", unload = TRUE)
 #devtools::install_github("https://github.com/SwissTPH/malclimsim", ref = "master")
+#install.packages("odin.dust", repos = c("https://mrc-ide.r-universe.dev", "https://cloud.r-project.org"))
+#install.packages("mcstate", repos = c("https://mrc-ide.r-universe.dev", "https://cloud.r-project.org"))
 library(malclimsim)
 ```
 ## Setting Up Model Inputs
@@ -225,7 +225,7 @@ plot_time_series(results = results, plot_title = "Simulated Weekly Malaria Cases
 
 ### Loading observed data
 ```{r}
-obs_cases <- readRDS(file.path(path_to_data, "simulated_malaria_cases_2018_2023.rds"))
+data(obs_cases)
 obs_cases <- obs_cases %>% filter(date_ymd >= start_date)
 ```
 

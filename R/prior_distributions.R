@@ -35,10 +35,10 @@ return_default_priors <- function(){
     lag_T = list(initial = 0, min = 0, max = 60, integer = TRUE, prior = function(p) dunif(p, min = 0, max = 60, log = TRUE)),
 
     # EIR scaling parameter
-    alpha = list(initial = 0.5, min = 0, max = 1, prior = function(p) dunif(p, min = 0, max = 1, log = TRUE)),
+    alpha = list(initial = 2, min = 0, max = 5, prior = function(p) dunif(p, min = 0, max = 10, log = TRUE)),
 
     # Left and right of normal distribution descripting temp-EIR relationship
-    sigma_LT = list(initial = 5, min = 3.5, max = 7, prior = function(p) dnorm(p, mean = 3.2, sd = 1, log = TRUE)), # Gamma distribution to ensure positivity
+    sigma_LT = list(initial = 5, min = 2, max = 7, prior = function(p) dnorm(p, mean = 3.2, sd = 1, log = TRUE)), # Gamma distribution to ensure positivity
     sigma_RT = list(initial = 3, min = 2, max = 7, prior = function(p) dnorm(p, mean = 2.0, sd = 1, log = TRUE)), # Gamma distribution to ensure positivity
 
     # "Optimum" for rainfall-EIR relationship
@@ -58,8 +58,9 @@ return_default_priors <- function(){
 
     # Relative infectivity of symptomatic and asymptomatic individuals
     #qR = list(initial = 0.01, min = 1e-7, max = 1, prior = function(p) dnorm(p, mean = 0.001, sd = 0.02, log = TRUE)),
-    qR = list(initial = 0.01, min = 1e-7, max = 1, prior = function(p) dnorm(p, mean = 0.02, sd = 0.1, log = TRUE)),
+    #qR = list(initial = 0.01, min = 1e-7, max = 1, prior = function(p) dnorm(p, mean = 0.05, sd = 0.1, log = TRUE)),
 
+    qR = list(initial = 0.01, min = 1e-7, max = 1, prior = function(p) dnorm(p, mean = 0.24, sd = 0.5, log = TRUE)),
     ########################################
     ## Parameters that could be estimated ##
     ########################################
@@ -70,7 +71,7 @@ return_default_priors <- function(){
     beta_1 = list(initial = 0, min = -100, max = 100, prior = function(p) dunif(p, min = -100, max = 100, log = TRUE)),
     beta_2 = list(initial = 0, min = 0, max = 1, prior = function(p) dunif(p, min = 0, max = 1, log = TRUE)),
     T_opt = list(initial = 26.12, min = 0, max = 40, prior = function(p) dnorm(p, mean = 26.12, sd = 3, log = TRUE)),
-    b_X = list(initial = 1, min = 0.001, max = 50, prior = function(p) dunif(p, min = 0.001, max = 50, log = TRUE)),
+    b = list(initial = 1, min = 0.001, max = 50, prior = function(p) dunif(p, min = 0.001, max = 50, log = TRUE)),
     c_X = list(initial = 1, min = 0.001, max = 50, prior = function(p) dunif(p, min = 0.001, max = 50, log = TRUE)),
     fT_C = list(initial = 0.27, min = 0.001, max = 1, prior = function(p) dunif(p, min = 0.001, max = 1, log = TRUE)),
 
