@@ -36,80 +36,6 @@ gen_smc_schedule <- function(start_date, end_date, years, months_active,
   )
 
   ## -------- 2. Helper: resolve month-specific coverage --------------------
-  # Convert single numeric → 12-length vector
-  if (length(coverage) == 1) coverage <- rep(coverage, 12)
-
-  # If vector is *named*, match against month number / abbrev
-  if (!is.null(names(coverage)) && any(names(coverage) != "")) {
-    # Re-index so that coverage_vec[1] = Jan, …, [12] = Dec
-    cov_vec <- numeric(12)
-    month_names <- c(month.abb, month.name)
-    for (m in 1:12) {
-      # accepted names: "1", "Jan", "January"
-      name_hits <- c(
-        as.character(m),
-        month.abb[m],
-        month.name[m]
-      )
-      hit <- intersect(name_hits, names(coverage))
-      cov_vec[m] <- if (length(hit)) coverage[hit[1]] else NA_real_
-    }
-    if (anyNA(cov_vec))
-      stop("Coverage missing for some months; supply all 12 values.")
-    coverage <- cov_vec
-  } else if (length(coverage) != 12) {
-    stop("When coverage is a vector it must have length 12 or names for all months.")
-  }
-
-  ## -------- 3. Mark round days -------------------------------------------
-  for (i in seq_along(years)) {
-    active <- which(months_active[i, ] == 1)
-    for (m in active) {
-      y <- years[i]
-      first_day_m <- as.Date(sprintf("%04d-%02d-01", y, m))
-      n_days_m    <- as.integer(format(first_day_m + months(1) - 1, "%d"))
-      round_day   <- as.Date(sprintf("%04d-%02d-%02d",
-                                     y, m, min(smc_day_of_month, n_days_m)))
-      idx <- match(round_day, smc_df$dates, nomatch = 0L)
-      if (idx) smc_df$SMC[idx] <- 1
-    }
-  }
-
-  ## -------- 4. Apply (month-specific) coverage in a 120-day window --------
-  round_idx <- which(smc_df$SMC == 1)
-  for (idx in round_idx) {
-    this_month <- lubridate::month(smc_df$dates[idx])
-    cov_value  <- coverage[this_month]
-    window_end <- min(idx + 120, nrow(smc_df))
-    smc_df$cov[idx:window_end] <- cov_value
-  }
-
-  ## -------- 5. Compute decay ---------------------------------------------
-  smc_df$decay <- calc_decay_arr(smc_df$SMC, const = -0.1806)
-
-  smc_df
-}
-
-
-gen_smc_schedule <- function(start_date, end_date, years, months_active,
-                             months_30_days = FALSE,
-                             coverage = 0.90,
-                             smc_day_of_month = 1) {
-
-  ## -------- 1. Build date skeleton ----------------------------------------
-  dates <- if (months_30_days) {
-    generate_360_day_dates(years[1], tail(years, 1))
-  } else {
-    seq(as.Date(start_date), as.Date(end_date), by = "day")
-  }
-
-  smc_df <- tibble::tibble(
-    dates = dates,
-    SMC   = 0,
-    cov   = 0
-  )
-
-  ## -------- 2. Helper: resolve month-specific coverage --------------------
   if (length(coverage) == 1) coverage <- rep(coverage, 12)
 
   if (!is.null(names(coverage)) && any(names(coverage) != "")) {
@@ -175,6 +101,120 @@ gen_smc_schedule <- function(start_date, end_date, years, months_active,
   smc_df
 }
 
+
+gen_smc_schedule <- function(start_date, end_date, years, months_active,
+                             months_30_days = FALSE,
+                             coverage = 0.90,
+                             smc_day_of_month = 1) {
+
+  ## -------- 1. Build date skeleton ----------------------------------------
+  dates <- if (months_30_days) {
+    generate_360_day_dates(years[1], tail(years, 1))
+  } else {
+    seq(as.Date(start_date), as.Date(end_date), by = "day")
+  }
+  smc_df <- tibble::tibble(
+    dates = dates,
+    SMC   = 0,
+    cov   = 0
+  )
+
+  ## -------- 2. Resolve coverage per month --------------------------------
+  if (length(coverage) == 1) coverage <- rep(coverage, 12)
+  if (!is.null(names(coverage)) && any(names(coverage) != "")) {
+    # named vector case
+    cov_vec <- numeric(12)
+    for (m in 1:12) {
+      hits <- intersect(c(as.character(m), month.abb[m], month.name[m]),
+                        names(coverage))
+      cov_vec[m] <- if (length(hits)) coverage[hits[1]] else NA_real_
+    }
+    if (anyNA(cov_vec))
+      stop("Coverage missing for some months; supply all 12 values.")
+    coverage <- cov_vec
+  } else if (length(coverage) != 12) {
+    stop("When coverage is a vector it must have length 12 or have names for all months.")
+  }
+
+  ## -------- 3a. Helper: resolve months_active per year  -----------------
+  get_months_row <- function(y) {
+    if (is.matrix(months_active)) {
+      if (nrow(months_active) != length(years))
+        stop("Rows of 'months_active' must match length(years).")
+      return(months_active[which(years == y), ])
+    }
+    if (is.list(months_active)) {
+      y_str <- as.character(y)
+      if (!y_str %in% names(months_active))
+        stop("Year ", y, " not found in months_active list.")
+      row <- months_active[[y_str]]
+      if (length(row) != 12)
+        stop("Each element of 'months_active' list must have length 12.")
+      return(row)
+    }
+    stop("'months_active' must be either a matrix or a named list.")
+  }
+
+  ## -------- 3b. Helper: resolve smc_day_of_month per year/month ----------
+  get_smc_day <- function(y, m) {
+    # scalar
+    if (length(smc_day_of_month) == 1) return(as.integer(smc_day_of_month))
+    # length-12 vector
+    if (is.numeric(smc_day_of_month) && length(smc_day_of_month) == 12) {
+      return(as.integer(smc_day_of_month[m]))
+    }
+    # matrix of shape years × 12
+    if (is.matrix(smc_day_of_month)) {
+      if (nrow(smc_day_of_month) != length(years) ||
+          ncol(smc_day_of_month) != 12) {
+        stop("If matrix, 'smc_day_of_month' must be dim(years)×12.")
+      }
+      return(as.integer(smc_day_of_month[which(years == y), m]))
+    }
+    # named list per year
+    if (is.list(smc_day_of_month)) {
+      y_str <- as.character(y)
+      if (!y_str %in% names(smc_day_of_month))
+        stop("Year ", y, " not found in smc_day_of_month list.")
+      vec <- smc_day_of_month[[y_str]]
+      if (length(vec) != 12)
+        stop("Each element of 'smc_day_of_month' list must have length 12.")
+      return(as.integer(vec[m]))
+    }
+    stop("'smc_day_of_month' must be a single value, length-12 vector, matrix, or named list.")
+  }
+
+  ## -------- 4. Mark SMC rounds --------------------------------------------
+  for (y in years) {
+    active_months <- which(get_months_row(y) == 1)
+    for (m in active_months) {
+      # first day of that month
+      first_of_m <- as.Date(sprintf("%04d-%02d-01", y, m))
+      # last day of that month
+      last_of_m  <- as.Date(first_of_m + months(1) - days(1))
+      # choose day within [1, n_days]
+      desired_day <- get_smc_day(y, m)
+      day_in_m    <- pmin(desired_day, as.integer(format(last_of_m, "%d")))
+      round_day   <- as.Date(sprintf("%04d-%02d-%02d", y, m, day_in_m))
+      idx <- match(round_day, smc_df$dates, nomatch = 0L)
+      if (idx > 0L) smc_df$SMC[idx] <- 1
+    }
+  }
+
+  ## -------- 5. Spread coverage over 120-day window -----------------------
+  round_idx <- which(smc_df$SMC == 1)
+  for (i in round_idx) {
+    m <- lubridate::month(smc_df$dates[i])
+    cov_val  <- coverage[m]
+    window_end <- min(i + 120, nrow(smc_df))
+    smc_df$cov[i:window_end] <- cov_val
+  }
+
+  ## -------- 6. Compute decay ----------------------------------------------
+  smc_df$decay <- calc_decay_arr(smc_df$SMC, const = -0.1806)
+
+  return(smc_df)
+}
 
 
 #' Generate a schedule of coverage values for a given period with decay
