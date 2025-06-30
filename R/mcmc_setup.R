@@ -103,6 +103,24 @@ create_mcmc_params <- function(stage = "stage1",
       acceptance_target = 0.234,
       forget_rate = 0.4,
       forget_end = Inf,
+      adapt_end = 0,
+      pre_diminish = 0
+    )
+
+    control_params <- list(n_steps = 20000, n_burnin = 0, n_chains = 3, n_workers = 3, n_threads_total = 6)
+  }
+
+  if(stage == "noadapt2"){
+    adaptive_param <- adaptive_proposal_control(
+      initial_vcv_weight = 500,
+      initial_scaling = 1,
+      initial_scaling_weight = NULL,
+      min_scaling = 0,
+      scaling_increment = NULL,
+      log_scaling_update = TRUE,
+      acceptance_target = 0.234,
+      forget_rate = 0.0,
+      forget_end = Inf,
       adapt_end = 20000,
       pre_diminish = 0
     )
