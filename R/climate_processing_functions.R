@@ -89,26 +89,6 @@ rolling_average_temp_D_days <- function(avg_temp, D, save = TRUE, file = "") {
 }
 
 
-
-standardize_rainfall <- function(avg_rain, save = TRUE, file = "") {
-
-  # Calculate z-scores for rainfall anomalies
-  avg_rain$anom <- (avg_rain$rollrain - mean(avg_rain$rollrain, na.rm = TRUE)) /
-    sd(avg_rain$rollrain, na.rm = TRUE)
-
-  # Extract date components (month, week, day) for further analysis
-  avg_rain$month <- month(avg_rain$date)
-  avg_rain$week <- week(avg_rain$date)
-  avg_rain$day <- day(avg_rain$date)
-
-  # Optionally save the updated data
-  if (save) {
-    saveRDS(avg_rain, file = paste(dir, file, sep = ""))
-  }
-
-  return(avg_rain)  # Return the updated data frame
-}
-
 standardize_rainfall <- function(cum_rain, save = TRUE, file = "") {
 
   # Calculate z-scores for rainfall anomalies
@@ -406,44 +386,6 @@ save_climate_data <- function(lon, lat, years, path_to_data, rain = TRUE, temp =
 }
 
 
-# process_climate_data <- function(lon, lat, years, D1, D2, temp_path, rain_path, path_to_data, months_30_days = TRUE){
-#   temp_df <- extract_era5(lat = lat, lon = lon, path_to_file = temp_path)
-#   temp <- daily_smooth_temp(temp_df)
-#
-#   # Rainfall
-#   avg_rain <- readRDS(rain_path)
-#
-#   temp <- temp[which(temp$Date %in% as.Date(intersect(as.character(temp$Date), as.character(avg_rain$date)))),]
-#
-#   # - `rolling_average_D_days` calculates a rolling average of rainfall with a window size of `D1` days (30 days here)
-#   # - `rolling_avg_rwa$rollmean` contains the calculated rolling averages
-#   rolling_rain <- rolling_average_D_days(avg_rain, D1, save = FALSE)
-#   rolling_temp <- rolling_average_temp_D_days(temp, D2, save = FALSE)
-#   # Fill missing values in the rolling averages by extending the last available value forward
-#   # - `na.fill(..., c("extend"))` fills any NA values by extending the last non-NA value forward
-#   rolling_rain$rollrain <- zoo::na.fill(rolling_rain$rollrain, c("extend"))
-#   rolling_temp$rolltemp <- zoo::na.fill(rolling_temp$rolltemp, c("extend"))
-#
-#   # Standardize the rainfall data using z-scores (anomalies from the mean)
-#   # - `standardize_rainfall` calculates the anomaly (z-score) for rainfall to identify deviations from the norm
-#   met <- standardize_rainfall(rolling_rain, save = FALSE)
-#   # Combine rainfall and temperature
-#   # Overwrite the `rwa_met` object with average temperature data from `temp_rwa`
-#   # - `temp_rwa$tavg` contains the average daily temperature extracted earlier
-#   met$temp <- temp$Temperature
-#   met$rolltemp <- rolling_temp$rolltemp
-#   if(months_30_days){
-#     met <- climate_to_30_day_months(met, start_year = years[1], end_year = years[length(years)])
-#   }
-#   # Save the processed Rwanda climate data (rainfall and temperature) to the specified directory
-#   # - The data is saved as an RDS file, which is an efficient format for storing R objects
-#   current_datetime <- Sys.time()
-#   formatted_datetime <- format(current_datetime, "%m%d%H%M")
-#   saveRDS(met, paste0(path_to_data, "met_", D1, "_", formatted_datetime, ".rds"))
-#
-#   return(met)
-# }
-
 #' Title
 #'
 #' @param lon - longitude coordinate
@@ -476,13 +418,17 @@ process_climate_data <- function(lon, lat, years, temp_path, rain_path, months_3
   cum_rain <- calculate_cumulative_rainfall(rain_path, time_period = "monthly") %>% daily_smooth_rain() %>% filter_by_year("Date", years[1]:years[length(years)])
   colnames(cum_rain)[[1]] <- "date"
   temp <- temp[which(temp$Date %in% as.Date(intersect(as.character(temp$Date), as.character(cum_rain$date)))),]
-
   met <- standardize_rainfall(cum_rain, save = FALSE)
   met$temp <- temp$Temperature
+
+  avg_rain <- avg_rain %>% filter(date %in% as.Date(met$date[1] : met$date[nrow(met)]))
+  met$rainfall <- avg_rain$rainfall
+
 
   if(months_30_days){
     met <- climate_to_30_day_months(met, start_year = years[1], end_year = years[length(years)])
   }
+
 
   colnames(met)[1] <- "dates"
   # Save the processed Rwanda climate data (rainfall and temperature) to the specified directory
