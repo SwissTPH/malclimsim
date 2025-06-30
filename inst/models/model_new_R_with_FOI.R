@@ -116,6 +116,18 @@ delta_b <- user()
 delta_d <- user()
 delta_a <- user()
 
+################################
+## Defining Daily Growth Rates #
+################################
+r_C_0 <- user(1.000079)
+r_A_0 <- user(1.000108)
+
+initial(r_C) <- r_C_0
+update(r_C) <- r_C * r_C_0
+
+initial(r_A) <- r_A_0
+update(r_A) <- r_A * r_A_0
+
 ###################################
 ## Defining Climate Vector Inputs #
 ###################################
