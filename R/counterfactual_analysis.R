@@ -384,8 +384,6 @@ evaluate_multiple_scenarios <- function(patterns,
         smc_summary <- calculate_weekly_metrics(smc_schedule, exclude_years = exclude_years)
       }
 
-
-
       covariate_matrix <- data.frame(
         date_ymd = as.Date(smc_summary$date_ymd),
         cov_SMC = smc_summary$cov

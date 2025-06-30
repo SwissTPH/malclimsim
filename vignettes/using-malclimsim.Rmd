@@ -27,7 +27,7 @@ This vignette will go through the process of defining the inputs for, and simula
 
 ```{r message=FALSE, warning=FALSE}
 #detach("package:malclimsim", unload = TRUE)
-#devtools::install_github("https://github.com/SwissTPH/malclimsim", ref = "development")
+#devtools::install_github("https://github.com/SwissTPH/malclimsim", ref = "master")
 #install.packages("odin.dust", repos = c("https://mrc-ide.r-universe.dev", "https://cloud.r-project.org"))
 #install.packages("mcstate", repos = c("https://mrc-ide.r-universe.dev", "https://cloud.r-project.org"))
 library(malclimsim)
