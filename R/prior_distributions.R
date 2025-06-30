@@ -35,11 +35,11 @@ return_default_priors <- function(){
     lag_T = list(initial = 0, min = 0, max = 60, integer = TRUE, prior = function(p) dunif(p, min = 0, max = 60, log = TRUE)),
 
     # EIR scaling parameter
-    alpha = list(initial = 2, min = 0, max = 5, prior = function(p) dunif(p, min = 0, max = 10, log = TRUE)),
+    alpha = list(initial = 2, min = 0, max = 20, prior = function(p) dunif(p, min = 0, max = 20, log = TRUE)),
 
     # Left and right of normal distribution descripting temp-EIR relationship
-    sigma_LT = list(initial = 5, min = 2, max = 7, prior = function(p) dnorm(p, mean = 3.2, sd = 1, log = TRUE)), # Gamma distribution to ensure positivity
-    sigma_RT = list(initial = 3, min = 2, max = 7, prior = function(p) dnorm(p, mean = 2.0, sd = 1, log = TRUE)), # Gamma distribution to ensure positivity
+    sigma_LT = list(initial = 5, min = 2, max = 8, prior = function(p) dnorm(p, mean = 3.2, sd = 1, log = TRUE)), # Gamma distribution to ensure positivity
+    sigma_RT = list(initial = 3, min = 2, max = 8, prior = function(p) dnorm(p, mean = 2.0, sd = 1, log = TRUE)), # Gamma distribution to ensure positivity
 
     # "Optimum" for rainfall-EIR relationship
     R_opt = list(initial = 0, min = -10, max = 10, prior = function(p) dnorm(p, mean = 0, sd = 1, log = TRUE)), # Normal distribution symmetric around 0
@@ -48,13 +48,15 @@ return_default_priors <- function(){
     k1 = list(initial = 1, min = 0.000001, max = 10, prior = function(p) dunif(p, min = 0.000001, max = 10, log = TRUE)),
 
     # Dispersion parameter of negative binomial observation model
-    size_1 = list(initial = 5.5, min = 0.01, max = 200, prior = function(p) dunif(p, min = 0.01, max = 300, log = TRUE)),
+    size_1 = list(initial = 5.5, min = 0.0001, max = 200, prior = function(p) dunif(p, min = 0.0001, max = 300, log = TRUE)),
 
     # Seasonal malaria chemoprevention effectiveness
     eff_SMC = list(initial = 0.5, min = 0.00, max = 1, prior = function(p) dunif(p, min = 0, max = 1, log = TRUE)),
 
     # Population scaling factor
-    s = list(initial = 0.8, min = 0.01, max = 20, prior = function(p) dunif(p, min = 0.01, max = 20, log = TRUE)),
+    s = list(initial = 0.8, min = 0.0001, max = 20, prior = function(p) dunif(p, min = 0.0001, max = 20, log = TRUE)),
+
+    b = list(initial = 1, min = 0.001, max = 200, prior = function(p) dunif(p, min = 0.001, max = 200, log = TRUE)),
 
     # Relative infectivity of symptomatic and asymptomatic individuals
     #qR = list(initial = 0.01, min = 1e-7, max = 1, prior = function(p) dnorm(p, mean = 0.001, sd = 0.02, log = TRUE)),
@@ -71,7 +73,6 @@ return_default_priors <- function(){
     beta_1 = list(initial = 0, min = -100, max = 100, prior = function(p) dunif(p, min = -100, max = 100, log = TRUE)),
     beta_2 = list(initial = 0, min = 0, max = 1, prior = function(p) dunif(p, min = 0, max = 1, log = TRUE)),
     T_opt = list(initial = 26.12, min = 0, max = 40, prior = function(p) dnorm(p, mean = 26.12, sd = 3, log = TRUE)),
-    b = list(initial = 1, min = 0.001, max = 50, prior = function(p) dunif(p, min = 0.001, max = 50, log = TRUE)),
     c_X = list(initial = 1, min = 0.001, max = 50, prior = function(p) dunif(p, min = 0.001, max = 50, log = TRUE)),
     fT_C = list(initial = 0.27, min = 0.001, max = 1, prior = function(p) dunif(p, min = 0.001, max = 1, log = TRUE)),
 
@@ -89,7 +90,9 @@ return_default_priors <- function(){
     percAdult = list(initial = 5.5, min = 0.01, max = 200, prior = function(p) dunif(p, min = 0.01, max = 300, log = TRUE)),
     pi_s_1 = list(initial = 5.5, min = 0.01, max = 200, prior = function(p) dunif(p, min = 0.01, max = 300, log = TRUE)),
     c_s = list(initial = 5.5, min = 0.01, max = 200, prior = function(p) dunif(p, min = 0.01, max = 300, log = TRUE)),
-    clim_SMC_lag = list(initial = 5.5, min = 0.01, max = 200, prior = function(p) dunif(p, min = 0.01, max = 300, log = TRUE))
+    clim_SMC_lag = list(initial = 5.5, min = 0.01, max = 200, prior = function(p) dunif(p, min = 0.01, max = 300, log = TRUE)),
+    r_C_0 = list(initial = 5.5, min = 0.01, max = 200, prior = function(p) dunif(p, min = 0.01, max = 300, log = TRUE)),
+    r_A_0 = list(initial = 5.5, min = 0.01, max = 200, prior = function(p) dunif(p, min = 0.01, max = 300, log = TRUE))
 
   )
   return(default_priors)

@@ -27,7 +27,7 @@ This vignette will go through the process of defining the inputs for, and simula
 
 ```{r message=FALSE, warning=FALSE}
 #detach("package:malclimsim", unload = TRUE)
-#devtools::install_github("https://github.com/SwissTPH/malclimsim", ref = "master")
+#devtools::install_github("https://github.com/SwissTPH/malclimsim", ref = "development")
 #install.packages("odin.dust", repos = c("https://mrc-ide.r-universe.dev", "https://cloud.r-project.org"))
 #install.packages("mcstate", repos = c("https://mrc-ide.r-universe.dev", "https://cloud.r-project.org"))
 library(malclimsim)
@@ -173,13 +173,17 @@ param_inputs <- list(
 
   # Immunity and Reporting Parameters
   pi_s_1 = 0.75, c_s = 0.12,
-  qR = 0.025,
+  qR = 0.24,
 
   # Immunity and Reporting Parameters
-  fT_C = 0.28, 
-  
+  fT_C = 0.28,
+
   # Population Scaling factor
   s = 9,
+
+  # Growth rates
+  r_C_0 = 1.000079,
+  r_A_0 = 1.000108,
 
   # Time-varying Inputs
   decay = decay,
@@ -188,9 +192,10 @@ param_inputs <- list(
   c_R_D = rain, temp = temp,
 
   # Climate Parameters
-  b = -log(0.93), R_opt = 0,
-  alpha = 0.15,
-  T_opt = 27, sigma_LT = 4, sigma_RT = 4,
+  b = 3,
+  R_opt = 0,
+  alpha = 1,
+  sigma_LT = 4, sigma_RT = 4,
   k1 = 1.5, lag_R = 30, lag_T = 15,
 
   # Likelihood function parameters
@@ -198,7 +203,7 @@ param_inputs <- list(
 
   # SMC parameters
   eff_SMC = 0.8,
-  
+
   # Misc
   clim_SMC_lag = clim_smc_lag
 )
@@ -249,10 +254,11 @@ obs_cases$obs_weight <- ifelse(year(obs_cases$date_ymd) == 2019, control_weight,
 ### Defining model parameters to estimate
 ```{r}
 # Listing the model parameters to be estimated
-params_to_estimate <- c(lag_R = "lag_R", lag_T = "lag_T", alpha = "alpha",
+params_to_estimate <- c(lag_R = "lag_R", lag_T = "lag_T",
                         sigma_LT = "sigma_LT", sigma_RT = "sigma_RT",
-                        R_opt = "R_opt", k1 = "k1", size_1 = "size_1",
-                        eff_SMC = "eff_SMC", s = "s", qR = "qR")
+                        k1 = "k1", size_1 = "size_1",
+                        eff_SMC = "eff_SMC", s = "s",
+                        b = "b")
 ```
 
 
@@ -268,7 +274,7 @@ In our case, we do inference in three stages. First, we start with a relatively 
 params_default <- create_mcmc_params(stage = "stage1")
 adaptive_params_1 <- params_default$adaptive_params
 control_params_1 <- params_default$control_params
-control_params_1$n_steps = 15000
+control_params_1$n_steps = 5000
 
 # Defining starting values for chains
 start_values_1 <- create_start_values(params_to_estimate, control_params_1,
@@ -341,7 +347,7 @@ inf_params_stage_2 <- update_inf_stage(results_obj = mcmc_stage_1,
    proposal_matrix = proposal_matrix_1,
    param_names = rownames(proposal_matrix_1),
    S_prev = 3000, draw_n = ncol(start_values_1),
-   shrink = 0.95, stage = "stage2", n_steps = 15000)
+   shrink = 0.95, stage = "stage2", n_steps = 10000)
           
 rm(mcmc_stage_1)
 
@@ -360,7 +366,7 @@ inf_params_stage_3 <- update_inf_stage(results_obj = mcmc_stage_2,
    proposal_matrix = inf_params_stage_2$proposal_matrix,
    param_names = rownames(proposal_matrix_1),
    S_prev = 3000, draw_n = 3,
-   shrink = 0.8, stage = "noadapt", n_steps = 25000)
+   shrink = 0.8, stage = "noadapt", n_steps = 20000)
           
 rm(mcmc_stage_2)
 
@@ -373,6 +379,11 @@ mcmc_stage_3 <- run_stage(proposal_matrix = inf_params_stage_3$proposal_matrix,
 ```
 
 ## Inference Diagnostics
+```{r}
+mcmc_stage_3 <- readRDS(paste0(mcmc_results_out_dir, "mcmc_results_stage_3.rds")) 
+```
+
+
 
 ### Examining trace plots
 ```{r}
@@ -419,8 +430,8 @@ As population growth was used as part of the inference procedure, we also need t
 r_df <- get_population_scaling(
   n             = nrow(obs_cases),
   month         = FALSE,
-  growth_rate_C = 1.000071,
-  growth_rate_A = 1.000092
+  growth_rate_C = param_inputs$r_C_0,
+  growth_rate_A = param_inputs$r_A_0
 )
 pop_growth_df <- data.frame(
   date_ymd = obs_cases$date_ymd,

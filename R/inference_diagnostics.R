@@ -86,127 +86,6 @@ plot_corr <- function(results, title = NULL) {
   return(p)
 }
 
-
-#' MCMC Diagnostic and Summary Plots
-#'
-#' Computes and optionally plots a suite of MCMC diagnostics including trace plots, Gelman-Rubin statistics,
-#' autocorrelation, effective sample size, and posterior quantiles.
-#'
-#' @param results A fitted MCMC result object (e.g., from `mcstate::pmcmc()`). Must contain a `pars` matrix and `n_chains` value.
-#' @param params A character vector specifying which diagnostics to compute/plot. Options include:
-#'   \itemize{
-#'     \item `"trace"`: Trace plots of each parameter.
-#'     \item `"gelman"`: Gelman-Rubin convergence diagnostics (requires \code{n_chains > 1}).
-#'     \item `"corr"`: Pairwise correlation plots (calls `plot_corr()`).
-#'     \item `"ess"`: Effective sample size.
-#'     \item `"acf"`: Autocorrelation plots.
-#'     \item `"quantiles"`: Posterior quantile summaries.
-#'     \item `"acceptance"`: Acceptance rate (based on rejection rate).
-#'   }
-#' @param thin Integer; optional thinning interval. If greater than 1, chains are thinned accordingly. Default is 1 (no thinning).
-#'
-#' @return A list containing the selected diagnostics. Output elements are named according to `params`, and may include:
-#'   \itemize{
-#'     \item \code{$trace}: The `mcmc.list` object used for plotting.
-#'     \item \code{$gelman}: Output from `gelman.diag()`.
-#'     \item \code{$corr}: Placeholder message indicating correlation plot was created.
-#'     \item \code{$ess}: Effective sample sizes from `effectiveSize()`.
-#'     \item \code{$acf}: Placeholder message indicating ACF was plotted.
-#'     \item \code{$quantiles}: Matrix of posterior quantiles (2.5%, 50%, 97.5%).
-#'     \item \code{$acceptance}: Acceptance rates per chain.
-#'   }
-#'
-#' @details
-#' This function wraps common diagnostics from the `coda` package and custom correlation plotting into a single call.
-#' Useful for quickly assessing convergence and chain quality after MCMC sampling.
-#'
-#' @examples
-#' \dontrun{
-#' diagnostics <- MCMC_diag(results, params = c("trace", "gelman", "ess", "quantiles"))
-#' }
-#'
-#' @importFrom coda as.mcmc effectiveSize gelman.diag mcmc.list rejectionRate
-#' @export
-MCMC_diag <- function(results, params = c("trace", "gelman", "corr", "ess", "acf", "quantiles", "acceptance"), thin = 1) {
-  suppressWarnings(suppressMessages({
-    # Extract parameter samples and split into chains
-    pars <- results[[1]]$pars
-    n_chains <- results$n_chains
-    n_samples <- nrow(pars) / n_chains
-
-    # Split parameters into individual chains
-    chain_list <- split(pars, rep(1:n_chains, each = n_samples))
-    chains <- lapply(chain_list, function(x) {
-      as.mcmc(matrix(x, nrow = n_samples, ncol = ncol(pars), dimnames = list(NULL, colnames(pars))))
-    })
-    mcmc_chains <- as.mcmc.list(chains)
-
-    # Apply thinning if requested
-    if (thin > 1) {
-      mcmc_chains <- lapply(mcmc_chains, function(chain) window(chain, thin = thin))
-      mcmc_chains <- as.mcmc.list(mcmc_chains)
-    }
-
-    # Initialize a list to store results
-    results_list <- list()
-
-    # Trace plot
-    if ("trace" %in% params) {
-      cat("\n TRACE PLOT \n")
-      plot(mcmc_chains)
-      results_list$trace <- mcmc_chains
-    }
-
-    # Gelman-Rubin statistic
-    if ("gelman" %in% params && n_chains > 1) {
-      cat("\n GELMAN-RUBIN STATISTIC \n")
-      gelman_result <- gelman.diag(mcmc_chains)
-      print(gelman_result)
-      results_list$gelman <- gelman_result
-    }
-
-    # Correlation plot
-    if ("corr" %in% params) {
-      cat("\n CORRELATION PLOT \n")
-      plot_corr(results)
-      results_list$corr <- "Correlation plot generated"
-    }
-
-    # Effective Sample Size
-    if ("ess" %in% params) {
-      cat("\n EFFECTIVE SAMPLE SIZE \n")
-      ess_result <- effectiveSize(mcmc_chains)
-      print(ess_result)
-      results_list$ess <- ess_result
-    }
-
-    # Autocorrelation Function (ACF)
-    if ("acf" %in% params) {
-      cat("\n AUTOCORRELATION FUNCTION \n")
-      acf(as.matrix(do.call(rbind, mcmc_chains)), main = "Autocorrelation")
-      results_list$acf <- "Autocorrelation function plotted"
-    }
-
-    # Posterior Quantiles
-    if ("quantiles" %in% params) {
-      cat("\n POSTERIOR QUANTILES \n")
-      quantiles <- apply(as.matrix(do.call(rbind, mcmc_chains)), 2, quantile, probs = c(0.025, 0.5, 0.975))
-      results_list$quantiles <- quantiles
-    }
-
-    # Acceptance Rate
-    if ("acceptance" %in% params) {
-      cat("\n ACCEPTANCE RATE \n")
-      acceptance_rates <- 1 - rejectionRate(mcmc_chains)
-      print(acceptance_rates)
-      results_list$acceptance <- acceptance_rates
-    }
-
-    return(results_list)
-  }))
-}
-
-
 #' MCMC Diagnostic and Summary Plots with Save Options
 #'
 #' Same functionality as before, now with file saving capabilities for diagnostics.
@@ -348,6 +227,188 @@ MCMC_diag <- function(results,
     return(results_list)
   }))
 }
+
+# MCMC_diag <- function(results,
+#                       params = c("trace", "gelman", "corr", "ess", "acf", "quantiles", "acceptance"),
+#                       thin = 1,
+#                       save = FALSE,
+#                       output_dir = "mcmc_diagnostics",
+#                       file_prefix = "mcmc",
+#                       plot_width = 7,
+#                       plot_height = 5,
+#                       base_size = 12,
+#                       plot_density = TRUE,
+#                       trace_colors = NULL,
+#                       density_fill_alpha = 0.5,
+#                       facet_trace = FALSE,
+#                       show_legend = FALSE,
+#                       acf_lags = 40,
+#                       corr_method = "pearson",
+#                       save_format = "pdf",
+#                       param_exclude = NULL,
+#                       ggtheme = ggplot2::theme_minimal(base_size = 12)) {
+#   suppressWarnings(suppressMessages({
+#     if (save && !dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE)
+#
+#     if ("coda_pars" %in% names(results)) {
+#       mcmc_chains <- results$coda_pars
+#       if (inherits(mcmc_chains, "mcmc")) {
+#         mcmc_chains <- coda::as.mcmc.list(list(mcmc_chains))
+#       }
+#     } else if (!is.null(results[[1]]$pars)) {
+#       pars <- results[[1]]$pars
+#       n_chains <- results$n_chains
+#       n_samples <- nrow(pars) / n_chains
+#       param_names <- colnames(as.matrix(mcmc_chains[[1]]))
+#
+#       # Optional: remove log-quantities or internal parameters
+#       if (!is.null(param_exclude)) {
+#         param_names <- setdiff(param_names, param_exclude)
+#       }
+#
+#       chain_list <- split(pars, rep(1:n_chains, each = n_samples))
+#       chains <- lapply(chain_list, function(x) {
+#         coda::as.mcmc(matrix(x, nrow = n_samples, ncol = ncol(pars),
+#                              dimnames = list(NULL, param_names)))
+#       })
+#       mcmc_chains <- coda::as.mcmc.list(chains)
+#     } else {
+#       stop("Could not identify MCMC chains in results object.")
+#     }
+#
+#     results_list <- list()
+#
+#     # Trace plots with optional density
+#     if ("trace" %in% params) {
+#       for (p in param_names) {
+#         df <- do.call(rbind, lapply(seq_along(mcmc_chains), function(i) {
+#           data.frame(
+#             iteration = 1:n_samples,
+#             value = mcmc_chains[[i]][, p],
+#             chain = factor(i)
+#           )
+#         }))
+#         trace_plot <- ggplot2::ggplot(df, ggplot2::aes(x = iteration, y = value, color = chain)) +
+#           ggplot2::geom_line(size = 0.4, alpha = 0.8) +
+#           ggplot2::labs(title = paste("Trace Plot for", p), y = p, x = "Iteration") +
+#           ggtheme +
+#           ggplot2::theme(legend.position = if (show_legend) "right" else "none")
+#
+#         if (!is.null(trace_colors)) {
+#           trace_plot <- trace_plot + ggplot2::scale_color_manual(values = trace_colors)
+#         }
+#
+#         if (plot_density) {
+#           density_plot <- ggplot2::ggplot(df, ggplot2::aes(x = value, fill = chain)) +
+#             ggplot2::geom_density(alpha = density_fill_alpha) +
+#             ggplot2::labs(title = paste("Posterior Density for", p), x = p) +
+#             ggtheme +
+#             ggplot2::theme(legend.position = if (show_legend) "right" else "none")
+#           combined <- gridExtra::grid.arrange(trace_plot, density_plot, ncol = 2)
+#         } else {
+#           combined <- trace_plot
+#         }
+#
+#         if (save) {
+#           ggsave_fn <- paste0(file_prefix, "_trace_", p, ".", save_format)
+#           ggplot2::ggsave(filename = file.path(output_dir, ggsave_fn),
+#                           plot = combined,
+#                           width = if (plot_density) plot_width * 2 else plot_width,
+#                           height = plot_height)
+#         } else {
+#           print(combined)
+#         }
+#       }
+#       results_list$trace <- mcmc_chains
+#     }
+#
+#     # Gelman-Rubin
+#     if ("gelman" %in% params && n_chains > 1) {
+#       gelman_result <- coda::gelman.diag(mcmc_chains)
+#       print(gelman_result)
+#       results_list$gelman <- gelman_result
+#       if (save) {
+#         tex <- xtable::xtable(gelman_result$psrf, caption = "Gelman-Rubin Diagnostic")
+#         print(tex, file = file.path(output_dir, paste0(file_prefix, "_gelman.tex")))
+#       }
+#     }
+#
+#     # Correlation plot
+#     if ("corr" %in% params) {
+#       full_matrix <- do.call(rbind, mcmc_chains)
+#       corr_matrix <- stats::cor(full_matrix, method = corr_method)
+#       results_list$corr <- corr_matrix
+#
+#       if (requireNamespace("ggcorrplot", quietly = TRUE)) {
+#         p_corr <- ggcorrplot::ggcorrplot(corr_matrix, lab = TRUE) + ggtheme
+#       } else {
+#         warning("Package 'ggcorrplot' is not available.")
+#         p_corr <- ggplot2::ggplot(data.frame(x = 1, y = 1, label = "Install ggcorrplot")) +
+#           ggplot2::geom_text(ggplot2::aes(x = x, y = y, label = label)) +
+#           ggplot2::theme_void()
+#       }
+#
+#       if (save) {
+#         ggsave_fn <- paste0(file_prefix, "_corr.", save_format)
+#         ggplot2::ggsave(filename = file.path(output_dir, ggsave_fn),
+#                         plot = p_corr, width = plot_width, height = plot_height)
+#       } else {
+#         print(p_corr)
+#       }
+#     }
+#
+#     # Effective Sample Size
+#     if ("ess" %in% params) {
+#       ess_result <- coda::effectiveSize(mcmc_chains)
+#       print(ess_result)
+#       results_list$ess <- ess_result
+#       if (save) {
+#         tex <- xtable::xtable(as.matrix(ess_result), caption = "Effective Sample Sizes")
+#         print(tex, file = file.path(output_dir, paste0(file_prefix, "_ess.tex")))
+#       }
+#     }
+#
+#     # ACF
+#     if ("acf" %in% params) {
+#       full_matrix <- as.matrix(do.call(rbind, mcmc_chains))
+#       for (p in param_names) {
+#         if (save) {
+#           grDevices::pdf(file.path(output_dir, paste0(file_prefix, "_acf_", p, ".pdf")),
+#                          width = plot_width, height = plot_height)
+#         }
+#         stats::acf(full_matrix[, p], lag.max = acf_lags, main = paste("ACF for", p))
+#         if (save) grDevices::dev.off()
+#       }
+#       results_list$acf <- "ACF plotted"
+#     }
+#
+#     # Posterior Quantiles
+#     if ("quantiles" %in% params) {
+#       quantiles <- apply(as.matrix(do.call(rbind, mcmc_chains)), 2, stats::quantile,
+#                          probs = c(0.025, 0.5, 0.975))
+#       print(quantiles)
+#       results_list$quantiles <- quantiles
+#       if (save) {
+#         tex <- xtable::xtable(quantiles, caption = "Posterior Quantiles")
+#         print(tex, file = file.path(output_dir, paste0(file_prefix, "_quantiles.tex")))
+#       }
+#     }
+#
+#     # Acceptance Rate
+#     if ("acceptance" %in% params) {
+#       acceptance_rates <- 1 - coda::rejectionRate(mcmc_chains)
+#       print(acceptance_rates)
+#       results_list$acceptance <- acceptance_rates
+#       if (save) {
+#         tex <- xtable::xtable(as.matrix(acceptance_rates), caption = "Acceptance Rates")
+#         print(tex, file = file.path(output_dir, paste0(file_prefix, "_acceptance.tex")))
+#       }
+#     }
+#
+#     return(results_list)
+#   }))
+# }
+
 
 
 #' Plot Posterior Distributions of Estimated Parameters

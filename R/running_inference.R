@@ -404,7 +404,7 @@ inf_run <- function(model, param_inputs, control_params, params_to_estimate, pro
     incidence_df = incidence_observed,
     include_prev = obs_config$include_prev,
     use_SMC_as_covariate = obs_config$use_SMC_as_covariate,
-    include_pop_growth = obs_config$include_pop_growth
+    include_pop_growth = obs_config$include_pop_growth,
   )
 
   # --- Initialize particle filter ---
@@ -415,7 +415,7 @@ inf_run <- function(model, param_inputs, control_params, params_to_estimate, pro
     compare = comparison_fn
   )
 
-  filter$run(c(param_inputs))
+  # filter$run(c(param_inputs))
 
   # --- MCMC control ---
   control_settings <- define_mcmc_control(
@@ -445,6 +445,7 @@ inf_run <- function(model, param_inputs, control_params, params_to_estimate, pro
 
   return(results)
 }
+
 
 #' Extend Time-Varying Inputs Backwards in Time
 #'
