@@ -77,7 +77,7 @@ calc_decay_arr <- function(SMC, decay_func = decay_SMC, const = -0.1806) {
       next_SMC <- which(SMC[(i + 1):length(SMC)] > 0)
       end <- if (length(next_SMC) == 0) length(SMC) else i + next_SMC[1]
       decay_values <- decay_func(seq(0, end - i), const = const)
-      decay_values <- decay_values / max(decay_values, na.rm = TRUE)  # Normalize so max is 1
+      #decay_values <- decay_values / max(decay_values, na.rm = TRUE)  # Normalize so max is 1
       decay_arr[i:end] <- decay_values[1:(end - i + 1)]
     }
     i <- i + 1

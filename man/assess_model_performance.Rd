@@ -22,5 +22,15 @@ A list containing a data frame of error metrics and a ggplot object of residual 
 This function assesses the performance of a model by calculating error metrics and plotting residuals.
 }
 \examples{
-performance_results <- assess_model_performance(obs_cases, simulated_df, date_column = "date_ymd", groups = c("inc_A", "inc_C", "inc"))
+# Example using minimal mock data
+obs_cases <- data.frame(
+  date_ymd = as.Date("2022-01-01") + 0:6,
+  inc_A = rpois(7, lambda = 10),
+  inc_C = rpois(7, lambda = 12),
+  inc = rpois(7, lambda = 15)
+)
+
+simulated_df <- obs_cases
+
+assess_model_performance(obs_cases, simulated_df, date_column = "date_ymd", groups = c("inc_A", "inc_C", "inc"))
 }

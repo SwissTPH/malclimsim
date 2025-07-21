@@ -2,10 +2,25 @@
 % Please edit documentation in R/aux_functions.R
 \name{model_date_360}
 \alias{model_date_360}
-\title{Given a start-year and a 360-day offset, return (Year,Mon,Day) in 30‑day months}
+\title{Convert sequential day indices to dates in a simplified 360-day calendar}
 \usage{
 model_date_360(day_index, start_year)
 }
+\arguments{
+\item{day_index}{Numeric vector of sequential day indices starting from 1.}
+
+\item{start_year}{Numeric scalar specifying the initial calendar year for day_index = 1.}
+}
+\value{
+A data frame with columns:
+\describe{
+\item{year}{The calendar year corresponding to each day index.}
+\item{month}{The month number (1 to 12) corresponding to each day index.}
+\item{day}{The day number within the month (1 to 30).}
+}
+}
 \description{
-Given a start-year and a 360-day offset, return (Year,Mon,Day) in 30‑day months
+Given a start year and sequential day indices (1-based), this function returns
+the corresponding year, month, and day, assuming a simplified calendar of
+12 months per year with exactly 30 days each.
 }

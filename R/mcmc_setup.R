@@ -68,10 +68,10 @@ create_mcmc_params <- function(stage = "stage1",
       forget_rate = 0.6,
       forget_end = Inf,
       adapt_end = Inf,
-      pre_diminish = 40000
+      pre_diminish = Inf
     )
 
-    control_params <- list(n_steps = 40000, n_burnin = 0, n_chains = 4, n_workers = 4, n_threads_total = 8)
+    control_params <- list(n_steps = 20000, n_burnin = 0, n_chains = 4, n_workers = 4, n_threads_total = 8)
   }
 
   if(stage == "stage2"){
@@ -101,13 +101,13 @@ create_mcmc_params <- function(stage = "stage1",
       scaling_increment = NULL,
       log_scaling_update = TRUE,
       acceptance_target = 0.234,
-      forget_rate = 0.4,
+      forget_rate = 0.0,
       forget_end = Inf,
       adapt_end = 0,
       pre_diminish = 0
     )
 
-    control_params <- list(n_steps = 20000, n_burnin = 0, n_chains = 3, n_workers = 3, n_threads_total = 6)
+    control_params <- list(n_steps = 20000, n_burnin = 0, n_chains = 4, n_workers = 4, n_threads_total = 8)
   }
 
   if(stage == "noadapt2"){
@@ -121,11 +121,11 @@ create_mcmc_params <- function(stage = "stage1",
       acceptance_target = 0.234,
       forget_rate = 0.0,
       forget_end = Inf,
-      adapt_end = 20000,
+      adapt_end = 0,
       pre_diminish = 0
     )
 
-    control_params <- list(n_steps = 100000, n_burnin = 20000, n_chains = 3, n_workers = 3, n_threads_total = 6)
+    control_params <- list(n_steps = 100000, n_burnin = 20000, n_chains = 4, n_workers = 4, n_threads_total = 8)
   }
 
   return(list(

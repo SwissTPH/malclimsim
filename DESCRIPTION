@@ -35,7 +35,8 @@ Imports:
     patchwork,
     RColorBrewer,
     stringr,
-    tsibble
+    tsibble,
+    xtable
 Depends:
     ecmwfr,
     sf,

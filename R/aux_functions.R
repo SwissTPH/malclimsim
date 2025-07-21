@@ -488,24 +488,35 @@ extend_inputs_with_prewarm <- function(param_inputs,
   return(out)
 }
 
-
-#' Given a start-year and a 360-day offset, return (Year,Mon,Day) in 30‑day months
+#' Convert sequential day indices to dates in a simplified 360-day calendar
 #'
-#' @param day_index
-#' @param start_year
+#' Given a start year and sequential day indices (1-based), this function returns
+#' the corresponding year, month, and day, assuming a simplified calendar of
+#' 12 months per year with exactly 30 days each.
+#'
+#' @param day_index Numeric vector of sequential day indices starting from 1.
+#' @param start_year Numeric scalar specifying the initial calendar year for day_index = 1.
+#'
+#' @return A data frame with columns:
+#'   \describe{
+#'     \item{year}{The calendar year corresponding to each day index.}
+#'     \item{month}{The month number (1 to 12) corresponding to each day index.}
+#'     \item{day}{The day number within the month (1 to 30).}
+#'   }
 #' @export
 model_date_360 <- function(day_index, start_year) {
-  # day_index: 1..N
   year_num     <- start_year + (day_index - 1) %/% 360
   day_in_year  <- ((day_index - 1) %% 360) + 1
   month_num    <- ((day_in_year - 1) %/% 30) + 1
   day_in_month <- ((day_in_year - 1) %% 30) + 1
+
   data.frame(
     year  = year_num,
     month = month_num,
     day   = day_in_month
   )
 }
+
 
 #' Generate weekly model dates (by 7-day blocks) in 360‑day calendar
 #'

@@ -27,9 +27,9 @@ This vignette will go through the process of defining the inputs for, and simula
 
 ```{r message=FALSE, warning=FALSE}
 #detach("package:malclimsim", unload = TRUE)
-#devtools::install_github("https://github.com/SwissTPH/malclimsim", ref = "master")
-#install.packages("odin.dust", repos = c("https://mrc-ide.r-universe.dev", "https://cloud.r-project.org"))
-#install.packages("mcstate", repos = c("https://mrc-ide.r-universe.dev", "https://cloud.r-project.org"))
+install.packages("odin.dust", repos = c("https://mrc-ide.r-universe.dev", "https://cloud.r-project.org"))
+install.packages("mcstate", repos = c("https://mrc-ide.r-universe.dev", "https://cloud.r-project.org"))
+devtools::install_github("https://github.com/SwissTPH/malclimsim", ref = "master")
 library(malclimsim)
 ```
 ## Setting Up Model Inputs
@@ -109,7 +109,7 @@ smc_schedule <- smc_schedule_from_data(
   years = years_analysis
 )
 
-head(smc_schedule, n = 5)
+head(smc_schedule, n = 200)
 ```
 
 
@@ -241,7 +241,7 @@ head(obs_cases, n = 3)
 ```
 
 ### Weighting observed data
-In our example, SMC was deployed each year except for 2019. This means the inference procedure, which aims to maximize the posterior probability globally, naturally gives more weight to years when SMC was deployed (simply because there are more of them). The consequence is a tendency to have worse model predictions for the year that SMC was stopped. As we are ultimately interested in comparing scenarios where SMC was and was not given, comparable performance across SMC status is preferred to better global predictions. 
+In our example, SMC was deployed each year except for 2019. This means the inference procedure, which aims to maximize the posterior probability globally, naturally gives more weight to years when SMC was deployed (simply because there are more of them). The consequence is a tendency to have worse model predictions for the year that SMC was stopped. As we are ultimately interested in comparing scenarios where SMC was and was not given, comparable performance across SMC status is preferred to better global predictions.
 
 Towards this goal, we take a simple approach and weight the non SMC observations by how many times more SMC observations there are (e.g. if across the dataset, SMC was given for 5 years and not given for 1 year, then the weight for each observation in the years SMC was given would be 1, and the weight would be 5 for the year SMC was not given).
 
@@ -270,11 +270,12 @@ Random-Walk Metropolis has different parameters that must be specified prior to 
 
 In our case, we do inference in three stages. First, we start with a relatively uninformed proposal distribution with a high level of adaptation. Afterwards, we use this first stage to inform a second stage where we update the proposal distribution and the starting values of the chain. This second stage has less strong adaptation and the idea is to continue until some sort of "convergence" is reached. Lastly, the algorithm is run with no adaptation so that the algorithm represents valid draws from the posterior distribution.
 
+
 ```{r}
 params_default <- create_mcmc_params(stage = "stage1")
 adaptive_params_1 <- params_default$adaptive_params
 control_params_1 <- params_default$control_params
-control_params_1$n_steps = 5000
+control_params_1$n_steps = 500
 
 # Defining starting values for chains
 start_values_1 <- create_start_values(params_to_estimate, control_params_1,
@@ -293,7 +294,7 @@ Here we choose if we are using monthly or weekly data, which age groups we are f
 ```{r}
 inf_config <- make_obs_config(
   use_monthly = FALSE,
-  age_group = "u5",
+  age_group = c("u5"),
   include_pop_growth = TRUE
 )
 ```
@@ -347,7 +348,7 @@ inf_params_stage_2 <- update_inf_stage(results_obj = mcmc_stage_1,
    proposal_matrix = proposal_matrix_1,
    param_names = rownames(proposal_matrix_1),
    S_prev = 3000, draw_n = ncol(start_values_1),
-   shrink = 0.95, stage = "stage2", n_steps = 10000)
+   shrink = 0.95, stage = "stage2", n_steps = 1000)
           
 rm(mcmc_stage_1)
 
@@ -366,7 +367,7 @@ inf_params_stage_3 <- update_inf_stage(results_obj = mcmc_stage_2,
    proposal_matrix = inf_params_stage_2$proposal_matrix,
    param_names = rownames(proposal_matrix_1),
    S_prev = 3000, draw_n = 3,
-   shrink = 0.8, stage = "noadapt", n_steps = 20000)
+   shrink = 0.8, stage = "noadapt", n_steps = 1000)
           
 rm(mcmc_stage_2)
 
@@ -419,7 +420,7 @@ We will now plot the values predicted by the model to the observed values to ass
 
 ```{r}
 # Sample posterior draws from MCMC
-n_samples <- 400
+n_samples <- 200
 param_samples <- sample_mcmc_steps(mcmc_stage_3$coda_pars, n_samples)
 ```
 
@@ -433,6 +434,7 @@ r_df <- get_population_scaling(
   growth_rate_C = param_inputs$r_C_0,
   growth_rate_A = param_inputs$r_A_0
 )
+
 pop_growth_df <- data.frame(
   date_ymd = obs_cases$date_ymd,
   r_C = r_df$r_C
@@ -442,6 +444,8 @@ pop_growth_df <- data.frame(
 mu_transform_C <- function(inc_df, param_inputs) {
   inc_df$inc_C * inc_df$r_C
 }
+
+head(pop_growth_df)
 ```
 
 ### Simulating cases using the best parameters
@@ -478,7 +482,7 @@ Now, we simulate using the different parameter sets sampled from the posterior d
 simulations <- run_simulations_from_samples(
   model         = malaria_model,
   param_inputs  = param_inputs_best,
-  param_samples = param_samples,
+  param_samples = aram_samples,
   start_date    = start_date,
   end_date      = end_date,
   prewarm_years = 2,

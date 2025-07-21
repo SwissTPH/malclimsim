@@ -105,10 +105,15 @@ generate_incidence_comparison <- function(month,
   coverage_divisor <- if (month) 30 else 7
 
   # --- Helper: Unadjusted likelihood ---
-  ll_inc_nb <- function(observed, predicted, size) {
+  ll_inc_nb <- function(observed, predicted, size, obs_weight = 1, r_scale = 1) {
     if (is.na(observed)) return(0)
     #cat(paste0(round(predicted, 0), ","))
     dnbinom(x = observed, mu = predicted, size = size, log = TRUE)
+  }
+
+  ll_inc_nb <- function(observed, predicted, size, obs_weight = 1) {
+    if (is.na(observed)) return(0)
+    obs_weight * dnbinom(x = observed, mu = predicted, size = size, log = TRUE)
   }
 
   # --- Helper: SMC-adjusted incidence likelihood ---
@@ -168,7 +173,10 @@ generate_incidence_comparison <- function(month,
         )
       } else {
         mu_C_adj <- mu_C * r_C
-        ll_C <- ll_inc_nb(observed$inc_C, mu_C_adj, size_1)
+        ll_C <- ll_inc_nb(observed = observed$inc_C,
+                          predicted = mu_C_adj,
+                          size = size_1,
+                          obs_weight = observed$obs_weight)
       }
 
       total_ll <- total_ll + ll_C
@@ -180,7 +188,10 @@ generate_incidence_comparison <- function(month,
       r_A <- if (include_pop_growth) state["r_A", , drop = TRUE] else 1
       mu_A_adj <- mu_A * r_A
       size_2 <- ifelse(is.null(pars$size_2), 1e-3, max(pars$size_2, 1e-3))
-      ll_A <- ll_inc_nb(observed$inc_A, mu_A_adj, size_2)
+      ll_A <- ll_inc_nb(observed = observed$inc_A,
+                        predicted = mu_A_adj,
+                        size = size_2,
+                        obs_weight = observed$obs_weight)
       total_ll <- total_ll + ll_A
     }
 
