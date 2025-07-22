@@ -489,13 +489,28 @@ extend_inputs_with_prewarm <- function(param_inputs,
 }
 
 
-#' Given a start-year and a 360-day offset, return (Year,Mon,Day) in 30‑day months
+#' Convert model day index to calendar date assuming 360-day years
 #'
-#' @param day_index
-#' @param start_year
+#' Converts a given day index (e.g. from a model using 360-day years) into
+#' a calendar-like date assuming each year has 12 months of 30 days.
+#'
+#' @param day_index Integer vector of day indices (starting from 1).
+#'   Represents the number of days since the start of the model.
+#' @param start_year Integer. The starting calendar year for day_index = 1.
+#'
+#' @return A data frame with columns:
+#'   \describe{
+#'     \item{year}{The calendar year corresponding to each day index.}
+#'     \item{month}{The calendar month (1–12) assuming 30-day months.}
+#'     \item{day}{The day of the month (1–30).}
+#'   }
+#'
+#' @examples
+#' model_date_360(1:3, 2000)
+#' model_date_360(365, 2020)
+#'
 #' @export
 model_date_360 <- function(day_index, start_year) {
-  # day_index: 1..N
   year_num     <- start_year + (day_index - 1) %/% 360
   day_in_year  <- ((day_index - 1) %% 360) + 1
   month_num    <- ((day_in_year - 1) %/% 30) + 1

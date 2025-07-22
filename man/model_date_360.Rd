@@ -2,10 +2,30 @@
 % Please edit documentation in R/aux_functions.R
 \name{model_date_360}
 \alias{model_date_360}
-\title{Given a start-year and a 360-day offset, return (Year,Mon,Day) in 30‑day months}
+\title{Convert model day index to calendar date assuming 360-day years}
 \usage{
 model_date_360(day_index, start_year)
 }
+\arguments{
+\item{day_index}{Integer vector of day indices (starting from 1).
+Represents the number of days since the start of the model.}
+
+\item{start_year}{Integer. The starting calendar year for day_index = 1.}
+}
+\value{
+A data frame with columns:
+\describe{
+\item{year}{The calendar year corresponding to each day index.}
+\item{month}{The calendar month (1–12) assuming 30-day months.}
+\item{day}{The day of the month (1–30).}
+}
+}
 \description{
-Given a start-year and a 360-day offset, return (Year,Mon,Day) in 30‑day months
+Converts a given day index (e.g. from a model using 360-day years) into
+a calendar-like date assuming each year has 12 months of 30 days.
+}
+\examples{
+model_date_360(1:3, 2000)
+model_date_360(365, 2020)
+
 }

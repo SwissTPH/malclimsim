@@ -96,10 +96,10 @@ Afterwords, a number parameters of this model will be inferred using the
 mcstate package. Lastly, diagnostics will be examined and relevant
 quantities calculated.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co">#library(devtools)</span></span>
-<span><span class="co">#load_all(path = "C:\\Users\\putnni\\Documents\\git-hub-repositories\\malclimsim\\")</span></span>
-<span><span class="co">#detach("package:malclimsim", unload = TRUE)</span></span>
-<span><span class="co">#devtools::install_github("https://github.com/SwissTPH/malclimsim", ref = "master")</span></span>
+<code class="sourceCode R"><span><span class="co">#detach("package:malclimsim", unload = TRUE)</span></span>
+<span><span class="co">#devtools::install_github("https://github.com/SwissTPH/malclimsim", ref = "development")</span></span>
+<span><span class="co">#install.packages("odin.dust", repos = c("https://mrc-ide.r-universe.dev", "https://cloud.r-project.org"))</span></span>
+<span><span class="co">#install.packages("mcstate", repos = c("https://mrc-ide.r-universe.dev", "https://cloud.r-project.org"))</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/nputney4/malclimsim" class="external-link">malclimsim</a></span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
@@ -271,13 +271,17 @@ parameters (still need to define).</p>
 <span></span>
 <span>  <span class="co"># Immunity and Reporting Parameters</span></span>
 <span>  pi_s_1 <span class="op">=</span> <span class="fl">0.75</span>, c_s <span class="op">=</span> <span class="fl">0.12</span>,</span>
-<span>  qR <span class="op">=</span> <span class="fl">0.025</span>,</span>
+<span>  qR <span class="op">=</span> <span class="fl">0.24</span>,</span>
 <span></span>
 <span>  <span class="co"># Immunity and Reporting Parameters</span></span>
-<span>  fT_C <span class="op">=</span> <span class="fl">0.28</span>, </span>
-<span>  </span>
+<span>  fT_C <span class="op">=</span> <span class="fl">0.28</span>,</span>
+<span></span>
 <span>  <span class="co"># Population Scaling factor</span></span>
 <span>  s <span class="op">=</span> <span class="fl">9</span>,</span>
+<span></span>
+<span>  <span class="co"># Growth rates</span></span>
+<span>  r_C_0 <span class="op">=</span> <span class="fl">1.000079</span>,</span>
+<span>  r_A_0 <span class="op">=</span> <span class="fl">1.000108</span>,</span>
 <span></span>
 <span>  <span class="co"># Time-varying Inputs</span></span>
 <span>  decay <span class="op">=</span> <span class="va">decay</span>,</span>
@@ -286,9 +290,10 @@ parameters (still need to define).</p>
 <span>  c_R_D <span class="op">=</span> <span class="va">rain</span>, temp <span class="op">=</span> <span class="va">temp</span>,</span>
 <span></span>
 <span>  <span class="co"># Climate Parameters</span></span>
-<span>  b <span class="op">=</span> <span class="op">-</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">0.93</span><span class="op">)</span>, R_opt <span class="op">=</span> <span class="fl">0</span>,</span>
-<span>  alpha <span class="op">=</span> <span class="fl">0.15</span>,</span>
-<span>  T_opt <span class="op">=</span> <span class="fl">27</span>, sigma_LT <span class="op">=</span> <span class="fl">4</span>, sigma_RT <span class="op">=</span> <span class="fl">4</span>,</span>
+<span>  b <span class="op">=</span> <span class="fl">3</span>,</span>
+<span>  R_opt <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  alpha <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  sigma_LT <span class="op">=</span> <span class="fl">4</span>, sigma_RT <span class="op">=</span> <span class="fl">4</span>,</span>
 <span>  k1 <span class="op">=</span> <span class="fl">1.5</span>, lag_R <span class="op">=</span> <span class="fl">30</span>, lag_T <span class="op">=</span> <span class="fl">15</span>,</span>
 <span></span>
 <span>  <span class="co"># Likelihood function parameters</span></span>
@@ -296,7 +301,7 @@ parameters (still need to define).</p>
 <span></span>
 <span>  <span class="co"># SMC parameters</span></span>
 <span>  eff_SMC <span class="op">=</span> <span class="fl">0.8</span>,</span>
-<span>  </span>
+<span></span>
 <span>  <span class="co"># Misc</span></span>
 <span>  clim_SMC_lag <span class="op">=</span> <span class="va">clim_smc_lag</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -325,7 +330,7 @@ values and seeing how it changes the model outputs!</p>
 <h3 id="loading-observed-data">Loading observed data<a class="anchor" aria-label="anchor" href="#loading-observed-data"></a>
 </h3>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">obs_cases</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">readRDS</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">path_to_data</span>, <span class="st">"simulated_malaria_cases_2018_2023.rds"</span><span class="op">)</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">obs_cases</span><span class="op">)</span></span>
 <span><span class="va">obs_cases</span> <span class="op">&lt;-</span> <span class="va">obs_cases</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">date_ymd</span> <span class="op">&gt;=</span> <span class="va">start_date</span><span class="op">)</span></span></code></pre></div>
 <p>The observed data needs to have columns named in the same way shown
 below. If the data is monthly, the `date_ymd’ column should correspond
@@ -359,10 +364,11 @@ then the weight for each observation in the years SMC was given would be
 </h3>
 <div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Listing the model parameters to be estimated</span></span>
-<span><span class="va">params_to_estimate</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>lag_R <span class="op">=</span> <span class="st">"lag_R"</span>, lag_T <span class="op">=</span> <span class="st">"lag_T"</span>, alpha <span class="op">=</span> <span class="st">"alpha"</span>,</span>
+<span><span class="va">params_to_estimate</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>lag_R <span class="op">=</span> <span class="st">"lag_R"</span>, lag_T <span class="op">=</span> <span class="st">"lag_T"</span>,</span>
 <span>                        sigma_LT <span class="op">=</span> <span class="st">"sigma_LT"</span>, sigma_RT <span class="op">=</span> <span class="st">"sigma_RT"</span>,</span>
-<span>                        R_opt <span class="op">=</span> <span class="st">"R_opt"</span>, k1 <span class="op">=</span> <span class="st">"k1"</span>, size_1 <span class="op">=</span> <span class="st">"size_1"</span>,</span>
-<span>                        eff_SMC <span class="op">=</span> <span class="st">"eff_SMC"</span>, s <span class="op">=</span> <span class="st">"s"</span>, qR <span class="op">=</span> <span class="st">"qR"</span><span class="op">)</span></span></code></pre></div>
+<span>                        k1 <span class="op">=</span> <span class="st">"k1"</span>, size_1 <span class="op">=</span> <span class="st">"size_1"</span>,</span>
+<span>                        eff_SMC <span class="op">=</span> <span class="st">"eff_SMC"</span>, s <span class="op">=</span> <span class="st">"s"</span>,</span>
+<span>                        b <span class="op">=</span> <span class="st">"b"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="defining-parameters-of-the-random-walk-metropolis-algorithm">Defining parameters of the Random-walk Metropolis Algorithm<a class="anchor" aria-label="anchor" href="#defining-parameters-of-the-random-walk-metropolis-algorithm"></a>
@@ -399,7 +405,7 @@ valid draws from the posterior distribution.</p>
 <code class="sourceCode R"><span><span class="va">params_default</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_mcmc_params.html">create_mcmc_params</a></span><span class="op">(</span>stage <span class="op">=</span> <span class="st">"stage1"</span><span class="op">)</span></span>
 <span><span class="va">adaptive_params_1</span> <span class="op">&lt;-</span> <span class="va">params_default</span><span class="op">$</span><span class="va">adaptive_params</span></span>
 <span><span class="va">control_params_1</span> <span class="op">&lt;-</span> <span class="va">params_default</span><span class="op">$</span><span class="va">control_params</span></span>
-<span><span class="va">control_params_1</span><span class="op">$</span><span class="va">n_steps</span> <span class="op">=</span> <span class="fl">15000</span></span>
+<span><span class="va">control_params_1</span><span class="op">$</span><span class="va">n_steps</span> <span class="op">=</span> <span class="fl">5000</span></span>
 <span></span>
 <span><span class="co"># Defining starting values for chains</span></span>
 <span><span class="va">start_values_1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_start_values.html">create_start_values</a></span><span class="op">(</span><span class="va">params_to_estimate</span>, <span class="va">control_params_1</span>,</span>
@@ -470,7 +476,7 @@ fitting procedure and not within the model itself.</p>
 <span>   proposal_matrix <span class="op">=</span> <span class="va">proposal_matrix_1</span>,</span>
 <span>   param_names <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">proposal_matrix_1</span><span class="op">)</span>,</span>
 <span>   S_prev <span class="op">=</span> <span class="fl">3000</span>, draw_n <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">start_values_1</span><span class="op">)</span>,</span>
-<span>   shrink <span class="op">=</span> <span class="fl">0.95</span>, stage <span class="op">=</span> <span class="st">"stage2"</span>, n_steps <span class="op">=</span> <span class="fl">15000</span><span class="op">)</span></span>
+<span>   shrink <span class="op">=</span> <span class="fl">0.95</span>, stage <span class="op">=</span> <span class="st">"stage2"</span>, n_steps <span class="op">=</span> <span class="fl">10000</span><span class="op">)</span></span>
 <span>          </span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/rm.html" class="external-link">rm</a></span><span class="op">(</span><span class="va">mcmc_stage_1</span><span class="op">)</span></span>
 <span></span>
@@ -487,7 +493,7 @@ fitting procedure and not within the model itself.</p>
 <span>   proposal_matrix <span class="op">=</span> <span class="va">inf_params_stage_2</span><span class="op">$</span><span class="va">proposal_matrix</span>,</span>
 <span>   param_names <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">proposal_matrix_1</span><span class="op">)</span>,</span>
 <span>   S_prev <span class="op">=</span> <span class="fl">3000</span>, draw_n <span class="op">=</span> <span class="fl">3</span>,</span>
-<span>   shrink <span class="op">=</span> <span class="fl">0.8</span>, stage <span class="op">=</span> <span class="st">"noadapt"</span>, n_steps <span class="op">=</span> <span class="fl">25000</span><span class="op">)</span></span>
+<span>   shrink <span class="op">=</span> <span class="fl">0.8</span>, stage <span class="op">=</span> <span class="st">"noadapt"</span>, n_steps <span class="op">=</span> <span class="fl">20000</span><span class="op">)</span></span>
 <span>          </span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/rm.html" class="external-link">rm</a></span><span class="op">(</span><span class="va">mcmc_stage_2</span><span class="op">)</span></span>
 <span></span>
@@ -502,28 +508,30 @@ fitting procedure and not within the model itself.</p>
 <div class="section level2">
 <h2 id="inference-diagnostics">Inference Diagnostics<a class="anchor" aria-label="anchor" href="#inference-diagnostics"></a>
 </h2>
+<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">mcmc_stage_3</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">readRDS</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="va">mcmc_results_out_dir</span>, <span class="st">"mcmc_results_stage_3.rds"</span><span class="op">)</span><span class="op">)</span> </span></code></pre></div>
 <div class="section level3">
 <h3 id="examining-trace-plots">Examining trace plots<a class="anchor" aria-label="anchor" href="#examining-trace-plots"></a>
 </h3>
-<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">mcmc_trace</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/MCMC_diag.html">MCMC_diag</a></span><span class="op">(</span><span class="va">mcmc_stage_3</span>, params <span class="op">=</span> <span class="st">"trace"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="gelman-rubin-test">Gelman-rubin test<a class="anchor" aria-label="anchor" href="#gelman-rubin-test"></a>
 </h3>
-<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/MCMC_diag.html">MCMC_diag</a></span><span class="op">(</span><span class="va">mcmc_stage_3</span>, params <span class="op">=</span> <span class="st">"gelman"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="correlation-between-parameters">Correlation between parameters<a class="anchor" aria-label="anchor" href="#correlation-between-parameters"></a>
 </h3>
-<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_corr.html">plot_corr</a></span><span class="op">(</span><span class="va">mcmc_stage_3</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="marginal-posterior-distributions">Marginal posterior distributions<a class="anchor" aria-label="anchor" href="#marginal-posterior-distributions"></a>
 </h3>
-<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Posterior plot</span></span>
 <span><span class="va">post_plot_fig</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/post_plot.html">post_plot</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">mcmc_stage_3</span><span class="op">)</span>, <span class="va">params_to_estimate</span>, dim_plot <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">4</span>, <span class="fl">3</span><span class="op">)</span>,</span>
@@ -544,7 +552,7 @@ fitting procedure and not within the model itself.</p>
 values to assess how well our model is recreating the data (aka a
 posterior predictive check). To do this, we first sample a certain
 number of parameter sets from the posterior distribution.</p>
-<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Sample posterior draws from MCMC</span></span>
 <span><span class="va">n_samples</span> <span class="op">&lt;-</span> <span class="fl">400</span></span>
 <span><span class="va">param_samples</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/sample_mcmc_steps.html">sample_mcmc_steps</a></span><span class="op">(</span><span class="va">mcmc_stage_3</span><span class="op">$</span><span class="va">coda_pars</span>, <span class="va">n_samples</span><span class="op">)</span></span></code></pre></div>
@@ -555,13 +563,13 @@ number of parameter sets from the posterior distribution.</p>
 <p>As population growth was used as part of the inference procedure, we
 also need to include population growth when comparing the model to the
 observed data.</p>
-<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Create covariate matrix (population growth)</span></span>
 <span><span class="va">r_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_population_scaling.html">get_population_scaling</a></span><span class="op">(</span></span>
 <span>  n             <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">obs_cases</span><span class="op">)</span>,</span>
 <span>  month         <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  growth_rate_C <span class="op">=</span> <span class="fl">1.000071</span>,</span>
-<span>  growth_rate_A <span class="op">=</span> <span class="fl">1.000092</span></span>
+<span>  growth_rate_C <span class="op">=</span> <span class="va">param_inputs</span><span class="op">$</span><span class="va">r_C_0</span>,</span>
+<span>  growth_rate_A <span class="op">=</span> <span class="va">param_inputs</span><span class="op">$</span><span class="va">r_A_0</span></span>
 <span><span class="op">)</span></span>
 <span><span class="va">pop_growth_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  date_ymd <span class="op">=</span> <span class="va">obs_cases</span><span class="op">$</span><span class="va">date_ymd</span>,</span>
@@ -579,7 +587,7 @@ observed data.</p>
 <p>We start by extracting which parameter sets maximized the posterior
 distribution and simulate the weekly number of cases using these
 values</p>
-<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Extract MAP (max posterior) parameter set</span></span>
 <span><span class="va">max_posterior_params</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/extract_max_posterior_params.html">extract_max_posterior_params</a></span><span class="op">(</span><span class="va">mcmc_stage_3</span><span class="op">)</span></span>
 <span><span class="va">param_inputs_best</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/update_param_list.html">update_param_list</a></span><span class="op">(</span><span class="va">param_inputs</span>, <span class="va">max_posterior_params</span><span class="op">)</span></span>
@@ -608,7 +616,7 @@ values</p>
 posterior distribution. We also add observation noise coming from a
 negative binomial distribution. This provides an interval that gives the
 range of weekly malaria cases we’d be likely to observe.</p>
-<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Simulate cases using different parameter sets coming from MCMC run</span></span>
 <span><span class="va">simulations</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/run_simulations_from_samples.html">run_simulations_from_samples</a></span><span class="op">(</span></span>
 <span>  model         <span class="op">=</span> <span class="va">malaria_model</span>,</span>
@@ -625,7 +633,7 @@ range of weekly malaria cases we’d be likely to observe.</p>
 <span><span class="op">)</span></span></code></pre></div>
 <p>The simulations are then summarized and we plot the resulting
 posterior predictive check.</p>
-<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Summarize the simulations</span></span>
 <span><span class="va">ci_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/summarize_simulation_ci.html">summarize_simulation_ci</a></span><span class="op">(</span><span class="va">simulations</span>, variables <span class="op">=</span> <span class="st">"inc_C_transformed"</span>, ci_level <span class="op">=</span> <span class="fl">0.95</span><span class="op">)</span></span>
 <span></span>
@@ -649,7 +657,7 @@ posterior predictive check.</p>
 <span>  show_best   <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  show_ribbon <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">ppc_plot</span><span class="op">)</span></span></code></pre></div>
 </div>
 </div>
@@ -664,7 +672,7 @@ posterior predictive check.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.2.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
 </div>
 
     </footer>

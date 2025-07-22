@@ -18,6 +18,3 @@ The bias value.
 Calculates the bias, which shows if the model tends to underpredict or overpredict.
 Positive bias means overprediction, while negative bias means underprediction.
 }
-\examples{
-bias_value <- calculate_bias(observed, simulated)
-}

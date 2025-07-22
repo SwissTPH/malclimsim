@@ -38,7 +38,7 @@ library(malclimsim)
 
 The first step to using the model is to specify the region (latitude and longitude) in which you want your model to simulate from. Additionally, the years used in the analysis must be specified.
 
-```{r}
+```{r, fig.height = 10, fig.width = 12}
 # Years used for the analysis
 years_clim <- 2017:2023
 start_date <- ymd("2018-01-01")  # Start date of the analysis

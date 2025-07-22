@@ -86,8 +86,6 @@ simulate_without_smc <- function(results, start_date, end_date, model,
 #' @param without_smc_df Data frame containing the incidence data from the model simulated without SMC.
 #' @return A list containing the number of cases averted and the percentage of cases averted.
 #' @export
-#' @examples
-#' cases_averted <- calculate_cases_averted(sim_with_smc, sim_without_smc)
 calculate_cases_averted <- function(with_smc_df, without_smc_df) {
 
   # Ensure both data frames have the same dates for proper comparison
