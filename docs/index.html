@@ -54,7 +54,38 @@
   </div>
 </nav><div class="container template-home">
 <div class="row">
-  <main id="main" class="col-md-9"><p>The model is an adaptation of the one found here - <a href="https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1010161" class="external-link uri">https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1010161</a></p>
+  <main id="main" class="col-md-9"><div class="section level1">
+<div class="page-header"><h1 id="malclimsim">malclimsim<a class="anchor" aria-label="anchor" href="#malclimsim"></a>
+</h1></div>
+<div class="section level2">
+<h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
+</h2>
+<p>The package source code can be installed from GitHub using:</p>
+<pre><code><span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"https://github.com/SwissTPH/malclimsim"</span><span class="op">)</span></span></code></pre>
+<p>If there is trouble installing the package in this way, first installing two of the dependencies, <em>odin.dust</em> and <em>mcstate</em>, may help.</p>
+<pre><code><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"odin.dust"</span>, repos <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"https://mrc-ide.r-universe.dev"</span>, <span class="st">"https://cloud.r-project.org"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"mcstate"</span>, repos <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"https://mrc-ide.r-universe.dev"</span>, <span class="st">"https://cloud.r-project.org"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"https://github.com/SwissTPH/malclimsim"</span><span class="op">)</span></span></code></pre>
+</div>
+<div class="section level2">
+<h2 id="purpose">Purpose<a class="anchor" aria-label="anchor" href="#purpose"></a>
+</h2>
+<p>The purpose of the package is to facilitate the simulation and calibration of a climate-driven model of malaria transmission as described in:</p>
+<p><strong>Nicholas Putney, Jessica Sayyad Hilario, Israel Ukawuba, Francesco Grandesso, Saschveen Singh, Emilie Pothin, Elkoussing Djovouna, Mahamat Saleh Issakha Diar, Clara Champagne, and Anton Camacho. <em>Modelling malaria routine surveillance data to inform seasonal malaria chemoprevention strategy in Moissala, Southern Chad</em></strong> (not yet published).</p>
+<p>The general methodology described in the paper could be used to estimate SMC effectiveness and assess different strategies in other geographies. Furthermore, the package is flexibility enough to allow users to change the model and inference procedures to suit their application.</p>
+</div>
+<div class="section level2">
+<h2 id="usage">Usage<a class="anchor" aria-label="anchor" href="#usage"></a>
+</h2>
+<p>Tutorials showing how to use the package are located at <a href="https://swisstph.github.io/malclimsim/" class="external-link uri">https://swisstph.github.io/malclimsim/</a>.</p>
+</div>
+<div class="section level2">
+<h2 id="general-information">General Information<a class="anchor" aria-label="anchor" href="#general-information"></a>
+</h2>
+<p>The package heavily relies on (is essentially a wrapper for) the suite of packages described in:</p>
+<p><strong>FitzJohn RG, Knock ES, Whittles LK, Perez-Guzman PN, Bhatia S, Guntoro F, Watson OJ, Whittaker C, Ferguson NM, Cori A, Baguelin M, Lees JA. Reproducible parallel inference and simulation of stochastic state space models using odin, dust, and mcstate. Wellcome Open Res. 2021 Jun 10;5:288. doi: 10.12688/wellcomeopenres.16466.2. PMID: 34761122; PMCID: PMC8552050.</strong></p>
+</div>
+</div>
   </main><aside class="col-md-3"><div class="links">
 <h2 data-toc-skip>Links</h2>
 <ul class="list-unstyled">
