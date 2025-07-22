@@ -18,6 +18,3 @@ A list containing the number of cases averted and the percentage of cases averte
 This function calculates the number and percent of malaria cases averted due to SMC intervention by comparing
 the simulated scenarios with and without SMC.
 }
-\examples{
-cases_averted <- calculate_cases_averted(sim_with_smc, sim_without_smc)
-}

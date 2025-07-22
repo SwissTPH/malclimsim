@@ -107,9 +107,6 @@ calculate_mape <- function(observed, simulated) {
 #' @param observed A numeric vector of observed values.
 #' @param simulated A numeric vector of simulated values.
 #' @return The bias value.
-#'
-#' @examples
-#' bias_value <- calculate_bias(observed, simulated)
 calculate_bias <- function(observed, simulated) {
   bias <- mean(simulated - observed)
   return(bias)
@@ -175,6 +172,7 @@ plot_residuals <- function(observed_df, simulated_df, date_column, groups = c("i
 
   return(residual_plot)
 }
+<<<<<<< HEAD
 
 
 
@@ -356,3 +354,5 @@ compare_bias_2019_vs_other_years <- function(simulated_df, obs_cases) {
 
   return(comparison)
 }
+=======
+>>>>>>> development
