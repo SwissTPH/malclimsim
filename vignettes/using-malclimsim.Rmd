@@ -30,6 +30,7 @@ This vignette will go through the process of defining the inputs for, and simula
 #install.packages("odin.dust", repos = c("https://mrc-ide.r-universe.dev", "https://cloud.r-project.org"))
 #install.packages("mcstate", repos = c("https://mrc-ide.r-universe.dev", "https://cloud.r-project.org"))
 #devtools::install_github("https://github.com/SwissTPH/malclimsim", ref = "master")
+# testing
 library(malclimsim)
 ```
 ## Setting Up Model Inputs
