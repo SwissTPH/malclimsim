@@ -2,42 +2,22 @@
 % Please edit documentation in R/aux_functions.R
 \name{model_date_360}
 \alias{model_date_360}
-<<<<<<< HEAD
-\title{Convert sequential day indices to dates in a simplified 360-day calendar}
-=======
 \title{Convert model day index to calendar date assuming 360-day years}
->>>>>>> development
 \usage{
 model_date_360(day_index, start_year)
 }
 \arguments{
-<<<<<<< HEAD
-\item{day_index}{Numeric vector of sequential day indices starting from 1.}
-
-\item{start_year}{Numeric scalar specifying the initial calendar year for day_index = 1.}
-=======
 \item{day_index}{Integer vector of day indices (starting from 1).
 Represents the number of days since the start of the model.}
 
 \item{start_year}{Integer. The starting calendar year for day_index = 1.}
->>>>>>> development
 }
 \value{
 A data frame with columns:
-\describe{
-\item{year}{The calendar year corresponding to each day index.}
-<<<<<<< HEAD
-\item{month}{The month number (1 to 12) corresponding to each day index.}
-\item{day}{The day number within the month (1 to 30).}
-}
-}
-\description{
-Given a start year and sequential day indices (1-based), this function returns
-the corresponding year, month, and day, assuming a simplified calendar of
-12 months per year with exactly 30 days each.
-=======
-\item{month}{The calendar month (1–12) assuming 30-day months.}
-\item{day}{The day of the month (1–30).}
+\itemize{
+\item \code{year}: The calendar year.
+\item \code{month}: The calendar month (1–12).
+\item \code{day}: The day of the month (1–30).
 }
 }
 \description{
@@ -48,5 +28,4 @@ a calendar-like date assuming each year has 12 months of 30 days.
 model_date_360(1:3, 2000)
 model_date_360(365, 2020)
 
->>>>>>> development
 }
