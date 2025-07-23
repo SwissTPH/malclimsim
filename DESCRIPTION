@@ -21,7 +21,6 @@ Imports:
     lubridate,
     magrittr,
     ncdf4,
-    odin.dust,
     raster,
     sf,
     tidyr,
@@ -46,7 +45,8 @@ Depends:
     ggplot2,
     mcstate,
     coda,
-    R (>= 3.5)
+    R (>= 3.5),
+    odin.dust
 URL: https://github.com/nputney4/malclimsim, https://swisstph.github.io/malclimsim/
 BugReports: https://github.com/nputney4/malclimsim/issues
 Suggests: 
