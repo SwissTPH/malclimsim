@@ -13,7 +13,7 @@ vignette: >
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
-	eval = TRUE,
+	eval = FALSE,
 	collapse = FALSE,
 	comment = "#>",
 	include = TRUE
