@@ -35,7 +35,9 @@ Imports:
     RColorBrewer,
     stringr,
     tsibble,
-    xtable
+    xtable,
+    mcstate,
+    odin.dust
 Depends:
     ecmwfr,
     sf,
@@ -49,8 +51,6 @@ URL: https://github.com/nputney4/malclimsim, https://swisstph.github.io/malclims
 BugReports: https://github.com/nputney4/malclimsim/issues
 Suggests: 
     knitr,
-    mcstate,
-    odin.dust,
     rmarkdown
 Remotes:
   mrc-ide/odin.dust,
