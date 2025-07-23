@@ -1,0 +1,12 @@
+pandoc: '3.4'
+pkgdown: 2.1.3
+pkgdown_sha: ~
+articles:
+  using-malclimsim: using-malclimsim.html
+  using-your-own-model: using-your-own-model.html
+  viewing-and-modifying-observation-functions: viewing-and-modifying-observation-functions.html
+  viewing-and-modifying-priors: viewing-and-modifying-priors.html
+last_built: 2025-07-23T10:09Z
+urls:
+  reference: https://swisstph.github.io/malclimsim/reference
+  article: https://swisstph.github.io/malclimsim/articles
