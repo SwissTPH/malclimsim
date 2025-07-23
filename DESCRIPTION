@@ -43,14 +43,14 @@ Depends:
     lubridate,
     tidyr,
     ggplot2,
-    mcstate,
     coda,
-    R (>= 3.5),
-    odin.dust
+    R (>= 3.5)
 URL: https://github.com/nputney4/malclimsim, https://swisstph.github.io/malclimsim/
 BugReports: https://github.com/nputney4/malclimsim/issues
 Suggests: 
     knitr,
+    mcstate,
+    odin.dust,
     rmarkdown
 VignetteBuilder: knitr
 LazyData: true
