@@ -498,11 +498,9 @@ extend_inputs_with_prewarm <- function(param_inputs,
 #' @param start_year Integer. The starting calendar year for day_index = 1.
 #'
 #' @return A data frame with columns:
-#'   \describe{
-#'     \item{year}{The calendar year corresponding to each day index.}
-#'     \item{month}{The calendar month (1–12) assuming 30-day months.}
-#'     \item{day}{The day of the month (1–30).}
-#'   }
+#' * `year`: The calendar year.
+#' * `month`: The calendar month (1–12).
+#' * `day`: The day of the month (1–30).
 #'
 #' @examples
 #' model_date_360(1:3, 2000)
