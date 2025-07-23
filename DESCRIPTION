@@ -52,5 +52,8 @@ Suggests:
     mcstate,
     odin.dust,
     rmarkdown
+Remotes:
+  mrc-ide/odin.dust,
+  mrc-ide/mcstate
 VignetteBuilder: knitr
 LazyData: true
