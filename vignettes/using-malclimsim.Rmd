@@ -45,6 +45,7 @@ years_clim <- 2017:2023
 start_date <- ymd("2018-01-01")  # Start date of the analysis
 end_date <- ymd("2023-12-31")  # End date of the analysis
 years_analysis <- year(start_date) : year(end_date)
+print("this is a test")
 ```
 
 
