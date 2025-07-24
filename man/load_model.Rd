@@ -16,5 +16,5 @@ the loaded model to be used for simulation, inference, etc
 Loading an Odin Model
 }
 \examples{
-load_model("model_det_1")
+load_model("model_new_R_with_FOI")
 }

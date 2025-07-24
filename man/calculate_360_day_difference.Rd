@@ -12,7 +12,8 @@ calculate_360_day_difference(date1, date2)
 \item{date2}{The end date as a character string or Date object.}
 }
 \value{
-The difference in days between date1 and date2 assuming a 360-day year.
+An integer representing the number of days between \code{date1} and \code{date2}
+assuming each year has 360 days and each month has 30 days.
 }
 \description{
 This function calculates the difference between two dates, assuming a 360-day year
@@ -20,9 +21,11 @@ where each month is treated as having 30 days. This approach is commonly used in
 financial calculations for simplicity.
 }
 \examples{
-# Example 1: Calculate difference between two dates
+# Example 1: Using character strings
 calculate_360_day_difference("2023-01-01", "2023-12-31")
 
-# Example 2: Use Date class objects
-calculate_360_day_difference(as.Date("2023-01-01"), as.Date("2024-01-01"))
+# Example 2: Using Date objects
+start_date <- as.Date("2023-01-01")
+end_date <- as.Date("2024-01-01")
+calculate_360_day_difference(start_date, end_date)
 }

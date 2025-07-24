@@ -7,20 +7,18 @@
 plot_priors(param_inputs, proposal_matrix, params_to_estimate, priors = NULL)
 }
 \arguments{
-\item{param_inputs}{List of input parameters for the model.}
+\item{param_inputs}{A list of model inputs (used only if default priors are initialized).}
 
-\item{proposal_matrix}{Covariance matrix for the MCMC proposal distribution.}
+\item{proposal_matrix}{A covariance matrix used to generate default priors if \code{priors} is not supplied.}
 
-\item{params_to_estimate}{Character vector specifying which parameters' priors should be plotted.}
+\item{params_to_estimate}{A character vector specifying which parameters to include in the plot.}
 
-\item{priors}{List of priors to plot. If NULL, the default priors will be displayed.}
+\item{priors}{A named list of priors. Each prior should be a list containing \code{min}, \code{max}, and a \code{prior} function
+that returns the log-density for a given numeric input. If \code{NULL}, default priors will be computed.}
 }
 \value{
-A ggplot object showing the prior distributions for each of the specified parameters.
+A \code{ggplot} object showing the prior distributions of the selected parameters.
 }
 \description{
-This function plots the default priors for the specified parameters, showing their distributions.
-}
-\examples{
-plot_priors(param_inputs, proposal_matrix, params_to_estimate = c("a_R", "b_R", "qR", "z", "eff_SMC", "phi", "size"))
+Plots the default or user-specified prior distributions for the parameters of interest.
 }

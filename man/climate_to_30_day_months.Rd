@@ -7,7 +7,7 @@
 climate_to_30_day_months(clim_df, start_year = 2014, end_year = 2022)
 }
 \arguments{
-\item{clim_df}{A data frame of climate data, which must include columns for \code{date}, \code{month}, \code{day}, \code{anom}, \code{temp}, and \code{rollrain}.}
+\item{clim_df}{A data frame of climate data, which must include columns for \code{date}, \code{month}, \code{day}, \code{anom}, \code{temp}, and \code{CumulativeRainfall}.}
 
 \item{start_year}{The starting year of the conversion (default is 2014).}
 
@@ -21,5 +21,17 @@ This function converts climate data to a 360-day calendar, with each month force
 Data is either removed or repeated to ensure the adjustment, useful for simplifying climate simulations.
 }
 \examples{
-climate_to_30_day_months(clim_df, start_year = 2014, end_year = 2022)
+library(lubridate)
+# Create example climate data for 1 year
+example_dates <- seq(as.Date("2014-01-01"), as.Date("2014-12-31"), by = "day")
+clim_df <- data.frame(
+  date = example_dates,
+  month = month(example_dates),
+  day = day(example_dates),
+  anom = rnorm(length(example_dates)),
+  temp = runif(length(example_dates), min = 20, max = 35),
+  CumulativeRainfall = cumsum(runif(length(example_dates), 0, 5))
+)
+# Run conversion
+climate_to_30_day_months(clim_df, start_year = 2014, end_year = 2014)
 }

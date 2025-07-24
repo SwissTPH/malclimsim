@@ -8,16 +8,16 @@ daily_smooth_rain(cum_rain)
 }
 \arguments{
 \item{cum_rain}{A data frame with two columns:
-\describe{
-\item{period}{A column representing the time period (e.g., week or month), convertible to numeric.}
-\item{cumulative_rainfall}{A column representing the cumulative rainfall for each period.}
+\itemize{
+\item \code{period}: A column representing the time period (e.g., weekly dates), of class \code{Date}.
+\item \code{cumulative_rainfall}: A column representing the cumulative rainfall for each period.
 }}
 }
 \value{
 A data frame with two columns:
-\describe{
-\item{Date}{A column with daily dates, interpolated from the original period.}
-\item{CumulativeRainfall}{A column with smoothed daily cumulative rainfall values.}
+\itemize{
+\item \code{Date}: A column with daily dates, interpolated from the original period.
+\item \code{CumulativeRainfall}: A column with smoothed daily cumulative rainfall values.
 }
 }
 \description{
@@ -26,20 +26,22 @@ weekly or monthly cumulative rainfall values.
 }
 \examples{
 # Example dataset with weekly cumulative rainfall
+weekly_dates <- seq(as.Date("2023-01-01"), as.Date("2023-12-24"), by = "7 days")
 cum_rain <- data.frame(
-  period = seq(as.Date("2023-01-01"), as.Date("2023-12-31"), by = "week"),
-  cumulative_rainfall = cumsum(runif(52, min = 0, max = 20))
+  period = weekly_dates,
+  cumulative_rainfall = cumsum(runif(length(weekly_dates), min = 0, max = 20))
 )
 
 # Smooth to daily cumulative rainfall
 daily_rain <- daily_smooth_rain(cum_rain)
 
 # Plot the results
-library(ggplot2)
-ggplot(daily_rain, aes(x = Date, y = CumulativeRainfall)) +
-  geom_line(color = "blue") +
-  labs(title = "Daily Smoothed Cumulative Rainfall",
-       x = "Date", y = "Cumulative Rainfall") +
-  theme_minimal()
+if (requireNamespace("ggplot2", quietly = TRUE)) {
+  ggplot2::ggplot(daily_rain, ggplot2::aes(x = Date, y = CumulativeRainfall)) +
+    ggplot2::geom_line(color = "blue") +
+    ggplot2::labs(title = "Daily Smoothed Cumulative Rainfall",
+                  x = "Date", y = "Cumulative Rainfall") +
+    ggplot2::theme_minimal()
+}
 
 }

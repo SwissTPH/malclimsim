@@ -14,49 +14,51 @@ data_sim_for_inference(
 )
 }
 \arguments{
-\item{model}{The model to use for simulation. This should be a valid model object that \code{data_sim} can process.}
+\item{model}{A compiled model object compatible with \code{data_sim()}. Typically created using \code{odin.dust::odin_dust()}.}
 
-\item{param_inputs}{A list or vector of parameters required by the model for simulation.}
+\item{param_inputs}{A named list of parameter values required by the model.}
 
-\item{dates}{A vector of two dates (\code{start_date} and \code{end_date}) specifying the time range for the simulation.}
+\item{dates}{A character vector of length two specifying the start and end dates (e.g., \code{c("2022-01-01", "2022-12-31")}).}
 
-\item{noise}{Logical. If \code{TRUE}, random noise is added to the simulated incidence data using a negative binomial distribution.}
+\item{noise}{Logical. If \code{TRUE}, random noise is added using a negative binomial distribution. Defaults to \code{FALSE}.}
 
-\item{month}{Logical. If \code{TRUE}, incidence data is aggregated by month. Defaults to \code{FALSE}.}
+\item{month}{Logical. If \code{TRUE}, the output is aggregated by month. Defaults to \code{FALSE}.}
 
-\item{month_unequal_days}{Logical. If \code{TRUE}, the function accounts for months with unequal days in the simulation. Defaults to \code{FALSE}.}
+\item{month_unequal_days}{Logical. If \code{TRUE}, accounts for unequal month lengths when aggregating. Defaults to \code{FALSE}.}
 }
 \value{
-A data frame containing simulated incidence data, formatted according to the output of \code{data_sim}.
-If \code{noise} is enabled, the \code{inc} column will include added noise.
+A data frame of simulated incidence data, in the same format as the output of \code{data_sim()}.
+If \code{noise = TRUE}, the \code{inc} column will include added random variation.
 }
 \description{
-This function generates a simulated dataset for inference, based on the specified model and parameters.
-It can include optional features such as monthly aggregation, unequal days in months, and adding noise to the simulated data.
+This function generates a simulated dataset for inference based on a specified model and parameter values.
+It supports options for monthly aggregation, adjusting for unequal days in months, and adding stochastic noise
+to the incidence data.
 }
 \details{
 \itemize{
-\item When \code{month = TRUE}, the simulation aggregates incidence by month, and the \code{month_unequal_days} parameter can control
-whether or not to adjust for months with different numbers of days.
-\item If \code{noise = TRUE}, a negative binomial distribution is used to add random noise to the incidence values.
-The size parameter for the negative binomial distribution is fixed at 100.
+\item When \code{month = TRUE}, output is aggregated by month. If \code{month_unequal_days = TRUE}, aggregation is adjusted
+to reflect actual month lengths.
+\item If \code{noise = TRUE}, the function adds variability to the incidence estimates using a negative binomial distribution
+with size = 100.
 }
 }
 \examples{
-# Example usage
-model <- some_model_object
+# Example (requires a model created using odin.dust, not run here):
+\dontrun{
+model <- odin.dust::odin_dust("path/to/model.R")
 param_inputs <- list(beta = 0.3, gamma = 0.1)
 dates <- c("2022-01-01", "2022-12-31")
 
-# Simulate data with no noise, not aggregated by month
-sim_data <- data_sim_for_inference(model, param_inputs, dates, noise = FALSE, month = FALSE)
+# Simulate data without noise
+sim_data <- data_sim_for_inference(model, param_inputs, dates, noise = FALSE)
 
-# Simulate data with noise, aggregated by month
-sim_data_with_noise <- data_sim_for_inference(model, param_inputs, dates, noise = TRUE, month = TRUE)
+# Simulate data with noise and monthly aggregation
+sim_data_monthly <- data_sim_for_inference(model, param_inputs, dates,
+                                           noise = TRUE, month = TRUE)
+}
 
 }
 \seealso{
-\itemize{
-\item \code{data_sim}: The underlying function used for simulation.
-}
+\code{\link{data_sim}} for the underlying simulation function.
 }

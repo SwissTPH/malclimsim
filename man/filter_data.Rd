@@ -7,22 +7,39 @@
 filter_data(incidence_observed, month = FALSE, initial_time_obs = 0, rate = 7)
 }
 \arguments{
-\item{incidence_observed}{A data frame containing observed incidence data (cumulative incidence or other types of observations).}
+\item{incidence_observed}{A data frame of observed incidence data. Must include a column named \code{week_no} (if \code{month = FALSE})
+or \code{month_no} (if \code{month = TRUE}), and a column named \code{value} for the observed incidence.}
 
-\item{month}{A logical value indicating whether the data is provided in monthly intervals (\code{TRUE}) or weekly intervals (\code{FALSE}).}
+\item{month}{Logical. If \code{TRUE}, assumes data is monthly; otherwise, weekly.}
 
-\item{initial_time_obs}{An integer specifying the initial time step for monthly data (defaults to 0 for weekly data).}
+\item{initial_time_obs}{Integer. The starting time index for monthly data (default is 0).}
 
-\item{rate}{An integer specifying the rate (e.g., 7 for weekly data, 30 for monthly data) for resampling the time steps.}
+\item{rate}{Integer. The time step rate (e.g., 7 for weekly, 30 for monthly). Default is 7.}
 }
 \value{
-A data frame with filtered data, including time intervals and the appropriate columns for particle filtering.
+A data frame formatted for use with \code{mcstate::particle_filter}, including time start and end steps.
 }
 \description{
-This function formats observed data into a form usable by the \code{mcstate} particle filter, adjusting for time steps (weeks or months) and ensuring the data is in the correct format for particle filtering.
+This function formats observed data into a structure usable by the \code{mcstate} particle filter, adjusting for time steps
+(weekly or monthly) and ensuring compatibility with the filtering framework.
 }
 \examples{
-# Assuming 'incidence_observed' is a data frame with your observed data
-formatted_data <- relate_time_steps_to_observed_data(incidence_observed, month = FALSE, initial_time_obs = 0, rate = 7)
+if (requireNamespace("mcstate", quietly = TRUE)) {
+  # Weekly example
+  incidence_observed <- data.frame(
+    week_no = 0:10,
+    value = rpois(11, lambda = 5)
+  )
+  formatted_data <- filter_data(incidence_observed, month = FALSE, initial_time_obs = 0, rate = 7)
+  head(formatted_data)
+
+  # Monthly example
+  incidence_observed_month <- data.frame(
+    month_no = 0:10,
+    value = rpois(11, lambda = 10)
+  )
+  formatted_month_data <- filter_data(incidence_observed_month, month = TRUE, initial_time_obs = 0, rate = 30)
+  head(formatted_month_data)
+}
 
 }

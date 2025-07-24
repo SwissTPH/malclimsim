@@ -40,14 +40,3 @@ This function visualizes the output of a compartmental model simulation with
 options for line plots, stacked area plots, and faceted visualizations. Users
 can also plot proportions relative to the total population.
 }
-\examples{
-# Basic line plot
-plot_compartments(compart_df, plot_type = "line")
-
-# Stacked area plot with selected compartments
-plot_compartments(compart_df, plot_type = "stacked", compartments = c("SC", "IC", "RA"))
-
-# Faceted plot with proportions and log scale
-plot_compartments(compart_df, plot_type = "line", plot_proportion = TRUE, log_scale = TRUE, facet = TRUE)
-
-}

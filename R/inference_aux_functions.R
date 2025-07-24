@@ -24,15 +24,38 @@ make_transform <- function(temp, c_R_D, SMC, decay, cov_SMC) {
 
 #' Create Index Mapping for Model Variables
 #'
-#' This function creates a list of indices for different model variables, organizing them into 'run' and 'state' categories based on the provided info.
+#' This function creates a list of indices for different model variables,
+#' organizing them into `run` and `state` categories based on the provided info.
 #'
 #' @param info A list containing index information, typically provided from a model setup.
+#'   It must include `info$index$...` entries for each variable named below.
 #'
-#' @return A list containing two elements, `run` and `state`, each with named indices for different model variables.
+#' @return A list with two named elements:
+#' * `run`: Named integer vector of indices for running the model (monthly and weekly incidence, prevalence, and rates)
+#' * `state`: Integer vector of state indices, in a predefined order matching model state variables.
+#'
+#' @examples
+#' # Create a dummy info object with index entries
+#' info <- list(
+#'   index = as.list(setNames(seq_along(c(
+#'     "month_inc_C", "month_inc_A", "month_inc_total",
+#'     "wk_inc_C",   "wk_inc_A",    "wk_inc_total",
+#'     "prev_C_2",   "prev_A_2",    "prev_C_1",
+#'     "prev_A_1",   "r_C",         "r_A"
+#'   )),
+#'   paste0("index$", c(
+#'     "month_inc_C", "month_inc_A", "month_inc_total",
+#'     "wk_inc_C",   "wk_inc_A",    "wk_inc_total",
+#'     "prev_C_2",   "prev_A_2",    "prev_C_1",
+#'     "prev_A_1",   "r_C",         "r_A"
+#'   ))))
+#' )
+#'
+#' # Extract mapping
+#' model_indices <- index(info)
+#' str(model_indices)
 #'
 #' @export
-#' @examples
-#' model_indices <- index(info)
 index <- function(info) {
   list(
     run = c(
@@ -71,19 +94,37 @@ index <- function(info) {
 
 #' Relate Time Steps to Observed Data for mcstate
 #'
-#' This function formats observed data into a form usable by the `mcstate` particle filter, adjusting for time steps (weeks or months) and ensuring the data is in the correct format for particle filtering.
+#' This function formats observed data into a structure usable by the `mcstate` particle filter, adjusting for time steps
+#' (weekly or monthly) and ensuring compatibility with the filtering framework.
 #'
-#' @param incidence_observed A data frame containing observed incidence data (cumulative incidence or other types of observations).
-#' @param month A logical value indicating whether the data is provided in monthly intervals (`TRUE`) or weekly intervals (`FALSE`).
-#' @param initial_time_obs An integer specifying the initial time step for monthly data (defaults to 0 for weekly data).
-#' @param rate An integer specifying the rate (e.g., 7 for weekly data, 30 for monthly data) for resampling the time steps.
+#' @param incidence_observed A data frame of observed incidence data. Must include a column named `week_no` (if `month = FALSE`)
+#'   or `month_no` (if `month = TRUE`), and a column named `value` for the observed incidence.
+#' @param month Logical. If `TRUE`, assumes data is monthly; otherwise, weekly.
+#' @param initial_time_obs Integer. The starting time index for monthly data (default is 0).
+#' @param rate Integer. The time step rate (e.g., 7 for weekly, 30 for monthly). Default is 7.
 #'
-#' @return A data frame with filtered data, including time intervals and the appropriate columns for particle filtering.
-#' @export
+#' @return A data frame formatted for use with `mcstate::particle_filter`, including time start and end steps.
+#'
 #' @examples
-#' # Assuming 'incidence_observed' is a data frame with your observed data
-#' formatted_data <- relate_time_steps_to_observed_data(incidence_observed, month = FALSE, initial_time_obs = 0, rate = 7)
+#' if (requireNamespace("mcstate", quietly = TRUE)) {
+#'   # Weekly example
+#'   incidence_observed <- data.frame(
+#'     week_no = 0:10,
+#'     value = rpois(11, lambda = 5)
+#'   )
+#'   formatted_data <- filter_data(incidence_observed, month = FALSE, initial_time_obs = 0, rate = 7)
+#'   head(formatted_data)
 #'
+#'   # Monthly example
+#'   incidence_observed_month <- data.frame(
+#'     month_no = 0:10,
+#'     value = rpois(11, lambda = 10)
+#'   )
+#'   formatted_month_data <- filter_data(incidence_observed_month, month = TRUE, initial_time_obs = 0, rate = 30)
+#'   head(formatted_month_data)
+#' }
+#'
+#' @export
 filter_data <- function(incidence_observed, month = FALSE, initial_time_obs = 0, rate = 7) {
   # Check if the 'mcstate' package is loaded
   if (!requireNamespace("mcstate", quietly = TRUE)) {

@@ -133,18 +133,6 @@ plot_time_series <- function(results, met = NULL,
 #' @param y_label Character string specifying the Y-axis label (default: "Population Count").
 #'
 #' @return A ggplot object visualizing the compartmental data.
-#'
-#' @examples
-#' # Basic line plot
-#' plot_compartments(compart_df, plot_type = "line")
-#'
-#' # Stacked area plot with selected compartments
-#' plot_compartments(compart_df, plot_type = "stacked", compartments = c("SC", "IC", "RA"))
-#'
-#' # Faceted plot with proportions and log scale
-#' plot_compartments(compart_df, plot_type = "line", plot_proportion = TRUE, log_scale = TRUE, facet = TRUE)
-#'
-#' @import ggplot2 reshape2 patchwork
 #' @export
 plot_compartments <- function(compart_df, plot_type = "line", compartments = NULL,
                               plot_proportion = FALSE, log_scale = FALSE,
@@ -476,69 +464,4 @@ plot_ppc_single <- function(plot_data,
   }
 
   return(p)
-}
-
-#########
-## Misc #
-#########
-
-#' Plot Residuals of Observed vs Simulated Data
-#'
-#' This function creates residual plots for observed and simulated data, allowing the user to select specific groups.
-#'
-#' @param observed_df Data frame containing the observed data.
-#' @param simulated_df Data frame containing the simulated data.
-#' @param date_column The name of the date column in both data frames.
-#' @param groups A character vector specifying which groups to include in the plot (`inc_A`, `inc_C`, `inc`).
-#' @return A ggplot object displaying the residual plots.
-#' @export
-#' @examples
-#' residual_plot <- plot_residuals(obs_cases, simulated_df, date_column = "date_ymd", groups = c("inc_A", "inc_C"))
-plot_residuals <- function(observed_df, simulated_df, date_column, groups = c("inc_A", "inc_C", "inc")) {
-
-  # Ensure date compatibility and merge observed and simulated data
-  observed_df[[date_column]] <- as.Date(observed_df[[date_column]])
-  simulated_df[[date_column]] <- as.Date(simulated_df[[date_column]])
-  combined_data <- merge(observed_df, simulated_df, by = date_column, suffixes = c("_obs", "_sim"))
-
-  # Calculate residuals for each group: (observed - simulated)
-  combined_data$residual_inc_A <- combined_data$inc_A_obs - combined_data$inc_A_sim
-  combined_data$residual_inc_C <- combined_data$inc_C_obs - combined_data$inc_C_sim
-  combined_data$residual_inc <- combined_data$inc_obs - combined_data$inc_sim
-
-  # Prepare data for plotting residuals for each selected group
-  residuals_long <- data.frame(
-    date_ymd = combined_data[[date_column]],
-    inc_A = combined_data$residual_inc_A,
-    inc_C = combined_data$residual_inc_C,
-    inc = combined_data$residual_inc
-  ) %>%
-    tidyr::pivot_longer(cols = c("inc_A", "inc_C", "inc"),
-                        names_to = "Group",
-                        values_to = "Residual") %>%
-    dplyr::filter(Group %in% groups)  # Filter selected groups
-
-  # Create facet plot for residuals
-  residual_plot <- ggplot(residuals_long, aes(x = date_ymd, y = Residual)) +
-    geom_line(color = "darkblue") +
-    geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
-    facet_wrap(~ Group, scales = "free_y", ncol = 1,
-               labeller = labeller(Group = c(
-                 "inc_A" = ">=5 years old (inc_A)",
-                 "inc_C" = "<5 years old (inc_C)",
-                 "inc" = "Total incidence (inc)"
-               ))) +
-    labs(
-      title = "Residuals: Observed vs Simulated Incidence",
-      x = "Date",
-      y = "Residuals (Observed - Simulated)"
-    ) +
-    theme_minimal() +
-    theme(
-      plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
-      axis.text.x = element_text(angle = 45, hjust = 1),
-      strip.text = element_text(size = 14, face = "bold")
-    )
-
-  return(residual_plot)
 }

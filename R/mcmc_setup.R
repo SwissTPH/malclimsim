@@ -297,44 +297,44 @@ create_proposal_matrix <- function(params_to_estimate, proposal_variance = NULL,
 #' Extract Variance-Covariance Matrix and Restart Values
 #'
 #' This function extracts the variance-covariance matrix and restart values from the results of an MCMC run.
-#' It can save the computed proposal matrix and start values to specified file paths.
+#' It can optionally save the computed proposal matrix and start values to specified file paths.
 #'
-#' @param results list: Results of the `inf_run` function containing MCMC parameters and chain identifiers.
-#' @param S_prev numeric: Number of previous steps in the MCMC chains to include in the calculation.
-#' @param save boolean: Whether or not to save the computed results to files (default: TRUE).
-#' @param param_names list: List of model parameter names, used for labeling the proposal matrix.
-#' @param file_proposal character: File path to save the proposal covariance matrix (if `save = TRUE`).
-#' @param file_start character: File path to save the start values (if `save = TRUE`).
+#' @param results A list containing MCMC output with elements `mcmc_run$pars` (a matrix of parameter values)
+#'   and `mcmc_run$chain` (a vector indicating chain membership).
+#' @param S_prev Number of previous samples to include from each chain.
+#' @param save Logical. If `TRUE`, saves the proposal matrix and start values to files.
+#' @param param_names A character vector of parameter names to label the proposal matrix.
+#' @param file_proposal File path to save the proposal covariance matrix (only if `save = TRUE`).
+#' @param file_start File path to save the start values (only if `save = TRUE`).
 #'
-#' @return A list containing:
+#' @return A list with two elements:
 #' \describe{
-#'   \item{start_values}{A matrix of restart values (medians of the selected MCMC steps) for each parameter.}
-#'   \item{proposal_matrix}{The variance-covariance matrix for use as the proposal distribution.}
+#'   \item{start_values}{A matrix of start values (medians) for each parameter.}
+#'   \item{proposal_matrix}{A variance-covariance matrix used as a proposal distribution.}
 #' }
 #'
 #' @examples
-#' # Example usage:
+#' # Simulate dummy MCMC output
+#' set.seed(42)
 #' results <- list(
 #'   mcmc_run = list(
-#'     pars = matrix(runif(1000), ncol = 10),
-#'     chain = rep(1:5, each = 200)
+#'     pars = matrix(rnorm(1000), ncol = 5),
+#'     chain = rep(1:5, each = 40)
 #'   )
 #' )
-#' param_names <- paste0("param_", 1:10)
-#' S_prev <- 100
-#' file_proposal <- "proposal_matrix.rds"
-#' file_start <- "start_values.rds"
+#' param_names <- paste0("param_", 1:5)
+#' S_prev <- 20
 #'
+#' # Run without saving files
 #' output <- extract_vcv(
 #'   results = results,
 #'   S_prev = S_prev,
 #'   save = FALSE,
 #'   param_names = param_names,
-#'   file_proposal = file_proposal,
-#'   file_start = file_start
+#'   file_proposal = tempfile(fileext = ".rds"),
+#'   file_start = tempfile(fileext = ".rds")
 #' )
-#'
-#' print(output)
+#' str(output)
 #'
 #' @export
 extract_vcv <- function(results, S_prev, save = TRUE, param_names,

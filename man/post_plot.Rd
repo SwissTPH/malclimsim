@@ -46,10 +46,3 @@ The plot includes optional lines for true values if \code{show_true = TRUE}, and
 Generates density or histogram plots for each estimated parameter from MCMC output, with annotated quantiles
 and optional true values if available. It helps users visualize the posterior distribution of model parameters.
 }
-\examples{
-# Example usage:
-params_to_estimate <- c("param1", "param2")
-dim_plot <- c(1, 2)  # Arrange in 1 row, 2 columns
-post_plot(results_list, params_to_estimate, dim_plot, show_prior = TRUE,
-          run_labels = c("Experiment A", "Experiment B"), plot_type = "density")
-}

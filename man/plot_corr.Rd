@@ -18,13 +18,3 @@ A \code{GGally} ggpairs object visualizing the correlation structure of MCMC sam
 This function creates a correlation plot for MCMC samples, showing the relationships between sampled parameters.
 The upper panels display correlation values, and the lower panels show smoothed plots of parameter relationships.
 }
-\examples{
-# Example usage:
-results <- list(
-  NULL,
-  matrix(rnorm(5000), ncol = 5, dimnames = list(NULL, c("param1", "param2", "param3", "param4", "param5")))
-)
-correlation_plot <- plot_corr(results, title = "MCMC Parameter Correlation")
-print(correlation_plot)
-
-}

@@ -205,16 +205,15 @@ view_priors <- function(param_inputs, proposal_matrix, params_to_estimate, prior
 
 #' Plot Default Priors
 #'
-#' This function plots the default priors for the specified parameters, showing their distributions.
+#' Plots the default or user-specified prior distributions for the parameters of interest.
 #'
-#' @param param_inputs List of input parameters for the model.
-#' @param proposal_matrix Covariance matrix for the MCMC proposal distribution.
-#' @param params_to_estimate Character vector specifying which parameters' priors should be plotted.
-#' @param priors List of priors to plot. If NULL, the default priors will be displayed.
-#' @return A ggplot object showing the prior distributions for each of the specified parameters.
-#' @export
-#' @examples
-#' plot_priors(param_inputs, proposal_matrix, params_to_estimate = c("a_R", "b_R", "qR", "z", "eff_SMC", "phi", "size"))
+#' @param param_inputs A list of model inputs (used only if default priors are initialized).
+#' @param proposal_matrix A covariance matrix used to generate default priors if `priors` is not supplied.
+#' @param params_to_estimate A character vector specifying which parameters to include in the plot.
+#' @param priors A named list of priors. Each prior should be a list containing `min`, `max`, and a `prior` function
+#'        that returns the log-density for a given numeric input. If `NULL`, default priors will be computed.
+#'
+#' @return A `ggplot` object showing the prior distributions of the selected parameters.
 plot_priors <- function(param_inputs, proposal_matrix, params_to_estimate, priors = NULL) {
   if (is.null(priors)) {
     priors <- initialize_priors(param_inputs, proposal_matrix, params_to_estimate)

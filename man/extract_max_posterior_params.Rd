@@ -7,16 +7,31 @@
 extract_max_posterior_params(results)
 }
 \arguments{
-\item{results}{The MCMC results object containing parameter samples.}
+\item{results}{A list containing MCMC output, with a \code{coda_pars} element (a matrix or data frame)
+that includes a column named \code{"log_posterior"} and columns for sampled parameters.}
 }
 \value{
-A named vector of parameter values corresponding to the maximum log posterior.
+A named numeric vector of parameter values corresponding to the maximum log posterior.
 }
 \description{
 This function finds and extracts the parameter set corresponding to the maximum log posterior value
-from the MCMC results.
+from MCMC output. It assumes that the MCMC results object includes a \code{coda_pars} matrix or data frame
+with columns for \code{log_prior}, \code{log_likelihood}, and \code{log_posterior}, along with parameter names.
 }
 \examples{
-# Assuming `results` contains the MCMC output
-max_posterior_params <- extract_max_posterior_params(results)
+# Create dummy MCMC output for illustration
+set.seed(123)
+results <- list(
+  coda_pars = data.frame(
+    param1 = rnorm(100),
+    param2 = rnorm(100),
+    log_prior = rnorm(100),
+    log_likelihood = rnorm(100),
+    log_posterior = rnorm(100)
+  )
+)
+
+# Extract parameters corresponding to the maximum log posterior
+extract_max_posterior_params(results)
+
 }

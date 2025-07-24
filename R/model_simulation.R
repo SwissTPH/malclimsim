@@ -5,7 +5,7 @@
 #' @export
 #'
 #' @examples
-#' load_model("model_det_1")
+#' load_model("model_new_R_with_FOI")
 load_model <- function(name){
   file <- system.file("models", paste0(name, ".R"), package = "malclimsim")
   return(odin.dust::odin_dust(file))
@@ -302,41 +302,42 @@ data_sim <- function(model, param_inputs, start_date, end_date,
 
 #' Simulate Data for Inference
 #'
-#' This function generates a simulated dataset for inference, based on the specified model and parameters.
-#' It can include optional features such as monthly aggregation, unequal days in months, and adding noise to the simulated data.
+#' This function generates a simulated dataset for inference based on a specified model and parameter values.
+#' It supports options for monthly aggregation, adjusting for unequal days in months, and adding stochastic noise
+#' to the incidence data.
 #'
-#' @param model The model to use for simulation. This should be a valid model object that `data_sim` can process.
-#' @param param_inputs A list or vector of parameters required by the model for simulation.
-#' @param dates A vector of two dates (`start_date` and `end_date`) specifying the time range for the simulation.
-#' @param noise Logical. If `TRUE`, random noise is added to the simulated incidence data using a negative binomial distribution.
-#' @param month Logical. If `TRUE`, incidence data is aggregated by month. Defaults to `FALSE`.
-#' @param month_unequal_days Logical. If `TRUE`, the function accounts for months with unequal days in the simulation. Defaults to `FALSE`.
+#' @param model A compiled model object compatible with `data_sim()`. Typically created using `odin.dust::odin_dust()`.
+#' @param param_inputs A named list of parameter values required by the model.
+#' @param dates A character vector of length two specifying the start and end dates (e.g., \code{c("2022-01-01", "2022-12-31")}).
+#' @param noise Logical. If \code{TRUE}, random noise is added using a negative binomial distribution. Defaults to \code{FALSE}.
+#' @param month Logical. If \code{TRUE}, the output is aggregated by month. Defaults to \code{FALSE}.
+#' @param month_unequal_days Logical. If \code{TRUE}, accounts for unequal month lengths when aggregating. Defaults to \code{FALSE}.
 #'
-#' @return A data frame containing simulated incidence data, formatted according to the output of `data_sim`.
-#'         If `noise` is enabled, the `inc` column will include added noise.
+#' @return A data frame of simulated incidence data, in the same format as the output of \code{data_sim()}.
+#' If \code{noise = TRUE}, the \code{inc} column will include added random variation.
 #'
-#' @export
 #' @details
-#' - When `month = TRUE`, the simulation aggregates incidence by month, and the `month_unequal_days` parameter can control
-#'   whether or not to adjust for months with different numbers of days.
-#' - If `noise = TRUE`, a negative binomial distribution is used to add random noise to the incidence values.
-#'   The size parameter for the negative binomial distribution is fixed at 100.
+#' - When \code{month = TRUE}, output is aggregated by month. If \code{month_unequal_days = TRUE}, aggregation is adjusted
+#'   to reflect actual month lengths.
+#' - If \code{noise = TRUE}, the function adds variability to the incidence estimates using a negative binomial distribution
+#'   with size = 100.
 #'
 #' @examples
-#' # Example usage
-#' model <- some_model_object
+#' # Example (requires a model created using odin.dust, not run here):
+#' \dontrun{
+#' model <- odin.dust::odin_dust("path/to/model.R")
 #' param_inputs <- list(beta = 0.3, gamma = 0.1)
 #' dates <- c("2022-01-01", "2022-12-31")
 #'
-#' # Simulate data with no noise, not aggregated by month
-#' sim_data <- data_sim_for_inference(model, param_inputs, dates, noise = FALSE, month = FALSE)
+#' # Simulate data without noise
+#' sim_data <- data_sim_for_inference(model, param_inputs, dates, noise = FALSE)
 #'
-#' # Simulate data with noise, aggregated by month
-#' sim_data_with_noise <- data_sim_for_inference(model, param_inputs, dates, noise = TRUE, month = TRUE)
+#' # Simulate data with noise and monthly aggregation
+#' sim_data_monthly <- data_sim_for_inference(model, param_inputs, dates,
+#'                                            noise = TRUE, month = TRUE)
+#' }
 #'
-#' @seealso
-#' - `data_sim`: The underlying function used for simulation.
-#'
+#' @seealso \code{\link{data_sim}} for the underlying simulation function.
 #' @export
 data_sim_for_inference <- function(model, param_inputs,
                                    dates, noise = FALSE, month = FALSE,
@@ -358,14 +359,31 @@ data_sim_for_inference <- function(model, param_inputs,
 #' Extract Parameters with Maximum Log Posterior
 #'
 #' This function finds and extracts the parameter set corresponding to the maximum log posterior value
-#' from the MCMC results.
+#' from MCMC output. It assumes that the MCMC results object includes a `coda_pars` matrix or data frame
+#' with columns for `log_prior`, `log_likelihood`, and `log_posterior`, along with parameter names.
 #'
-#' @param results The MCMC results object containing parameter samples.
-#' @return A named vector of parameter values corresponding to the maximum log posterior.
-#' @export
+#' @param results A list containing MCMC output, with a `coda_pars` element (a matrix or data frame)
+#' that includes a column named `"log_posterior"` and columns for sampled parameters.
+#'
+#' @return A named numeric vector of parameter values corresponding to the maximum log posterior.
+#'
 #' @examples
-#' # Assuming `results` contains the MCMC output
-#' max_posterior_params <- extract_max_posterior_params(results)
+#' # Create dummy MCMC output for illustration
+#' set.seed(123)
+#' results <- list(
+#'   coda_pars = data.frame(
+#'     param1 = rnorm(100),
+#'     param2 = rnorm(100),
+#'     log_prior = rnorm(100),
+#'     log_likelihood = rnorm(100),
+#'     log_posterior = rnorm(100)
+#'   )
+#' )
+#'
+#' # Extract parameters corresponding to the maximum log posterior
+#' extract_max_posterior_params(results)
+#'
+#' @export
 extract_max_posterior_params <- function(results) {
   coda_pars <- results$coda_pars
 
@@ -560,49 +578,6 @@ simulate_models <- function(model, param_inputs, sampled_params, start_date, end
 
   return(simulations)
 }
-
-#' Calculate Quantiles for Incidence from Multiple Simulations
-#'
-#' This function calculates the 1st and 99th quantiles of the simulated incidence data across multiple simulations,
-#' for each group (`inc_A`, `inc_C`, and `inc`).
-#'
-#' @param simulations A list of data frames, each containing the simulation output for different parameter sets.
-#' @return A data frame containing the quantiles for each group (`inc_A`, `inc_C`, and `inc`) for each time point.
-#' @export
-#' @examples
-#' # Assuming `simulations` is a list of data frames with simulated incidence data
-#' incidence_quantiles <- calculate_incidence_quantiles(simulations)
-calculate_incidence_quantiles <- function(simulations) {
-  # Extract incidence data for each group (inc_A, inc_C, inc) across all simulations
-  inc_A_data <- do.call(cbind, lapply(simulations, function(sim) sim$inc_A))
-  inc_C_data <- do.call(cbind, lapply(simulations, function(sim) sim$inc_C))
-  inc_data <- do.call(cbind, lapply(simulations, function(sim) sim$inc))
-
-  # Calculate quantiles along rows (for each time point) for each group
-  quantiles_inc_A <- apply(inc_A_data, 1, function(x) {
-    c(quantile(x, probs = 0.005), quantile(x, probs = 0.995))
-  })
-  quantiles_inc_C <- apply(inc_C_data, 1, function(x) {
-    c(quantile(x, probs = 0.005), quantile(x, probs = 0.995))
-  })
-  quantiles_inc <- apply(inc_data, 1, function(x) {
-    c(quantile(x, probs = 0.005), quantile(x, probs = 0.995))
-  })
-
-  # Format the output into a data frame
-  quantiles_df <- data.frame(
-    date_ymd = simulations[[1]]$date_ymd,
-    inc_A_q005 = quantiles_inc_A[1, ],
-    inc_A_q995 = quantiles_inc_A[2, ],
-    inc_C_q005 = quantiles_inc_C[1, ],
-    inc_C_q995 = quantiles_inc_C[2, ],
-    inc_q005 = quantiles_inc[1, ],
-    inc_q995 = quantiles_inc[2, ]
-  )
-
-  return(quantiles_df)
-}
-
 
 #' Simulate Compartments Over Time with Prewarm Period
 #'

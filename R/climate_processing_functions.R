@@ -195,31 +195,21 @@ extract_era5 <- function(lon, lat, path_to_file){
 #' Daily Smoothed Temperature Function
 #'
 #' This function takes a data frame with monthly temperature data and produces a daily smoothed
-#' temperature series using a smoothing spline. The resulting data frame includes predicted temperatures
-#' for every day in the range from the earliest to the latest date in the original data.
+#' temperature series using a smoothing spline. The output includes predicted temperatures
+#' for each day from the earliest to the latest date in the original data.
 #'
-#' @param temp_df A data frame containing two columns:
-#'   \describe{
-#'     \item{Date}{A character or numeric column representing the year and month (e.g., "2024-11").}
-#'     \item{Temperature}{A numeric column representing the temperature for the corresponding month.}
-#'   }
+#' @param temp_df A data frame with two columns:
+#' \itemize{
+#'   \item \code{Date}: A character vector in "YYYY-MM" format (e.g., "2024-11") or a Date object representing the first day of the month.
+#'   \item \code{Temperature}: A numeric vector giving the temperature for each month.
+#' }
 #'
 #' @return A data frame with two columns:
-#'   \describe{
-#'     \item{Date}{A Date column representing daily dates.}
-#'     \item{Temperature}{A numeric column with the smoothed daily temperature predictions.}
-#'   }
+#' \itemize{
+#'   \item \code{Date}: A Date vector representing daily dates.
+#'   \item \code{Temperature}: A numeric vector with the smoothed daily temperature predictions.
+#' }
 #'
-#' @examples
-#' # Example usage:
-#' temp_data <- data.frame(
-#'   Date = c("2024-01", "2024-02", "2024-03"),
-#'   Temperature = c(30.5, 28.0, 25.3)
-#' )
-#' daily_smooth_temp(temp_data)
-#'
-#' @importFrom stats smooth.spline predict
-#' @export
 daily_smooth_temp <- function(temp_df) {
   # Convert the Date column to Date type
   temp_df$Date <- as.Date(paste0(temp_df$Date, "-01"))
@@ -283,34 +273,36 @@ calculate_cumulative_rainfall <- function(rain_path, time_period = c("monthly", 
 #' weekly or monthly cumulative rainfall values.
 #'
 #' @param cum_rain A data frame with two columns:
-#' \describe{
-#'   \item{period}{A column representing the time period (e.g., week or month), convertible to numeric.}
-#'   \item{cumulative_rainfall}{A column representing the cumulative rainfall for each period.}
+#' \itemize{
+#'   \item \code{period}: A column representing the time period (e.g., weekly dates), of class \code{Date}.
+#'   \item \code{cumulative_rainfall}: A column representing the cumulative rainfall for each period.
 #' }
 #'
 #' @return A data frame with two columns:
-#' \describe{
-#'   \item{Date}{A column with daily dates, interpolated from the original period.}
-#'   \item{CumulativeRainfall}{A column with smoothed daily cumulative rainfall values.}
+#' \itemize{
+#'   \item \code{Date}: A column with daily dates, interpolated from the original period.
+#'   \item \code{CumulativeRainfall}: A column with smoothed daily cumulative rainfall values.
 #' }
 #'
 #' @examples
 #' # Example dataset with weekly cumulative rainfall
+#' weekly_dates <- seq(as.Date("2023-01-01"), as.Date("2023-12-24"), by = "7 days")
 #' cum_rain <- data.frame(
-#'   period = seq(as.Date("2023-01-01"), as.Date("2023-12-31"), by = "week"),
-#'   cumulative_rainfall = cumsum(runif(52, min = 0, max = 20))
+#'   period = weekly_dates,
+#'   cumulative_rainfall = cumsum(runif(length(weekly_dates), min = 0, max = 20))
 #' )
 #'
 #' # Smooth to daily cumulative rainfall
 #' daily_rain <- daily_smooth_rain(cum_rain)
 #'
 #' # Plot the results
-#' library(ggplot2)
-#' ggplot(daily_rain, aes(x = Date, y = CumulativeRainfall)) +
-#'   geom_line(color = "blue") +
-#'   labs(title = "Daily Smoothed Cumulative Rainfall",
-#'        x = "Date", y = "Cumulative Rainfall") +
-#'   theme_minimal()
+#' if (requireNamespace("ggplot2", quietly = TRUE)) {
+#'   ggplot2::ggplot(daily_rain, ggplot2::aes(x = Date, y = CumulativeRainfall)) +
+#'     ggplot2::geom_line(color = "blue") +
+#'     ggplot2::labs(title = "Daily Smoothed Cumulative Rainfall",
+#'                   x = "Date", y = "Cumulative Rainfall") +
+#'     ggplot2::theme_minimal()
+#' }
 #'
 #' @export
 daily_smooth_rain <- function(cum_rain) {
@@ -334,26 +326,6 @@ daily_smooth_rain <- function(cum_rain) {
 
   return(daily_rain_df)
 }
-
-# daily_smooth_rain <- function(cum_rain) {
-#   cum_rain$Date_numeric <- as.numeric(cum_rain$period)
-#   predicted_dates_numeric <- seq(min(cum_rain$Date_numeric), max(cum_rain$Date_numeric), by = 1)
-#   interpolated_rain <- approx(x = cum_rain$Date_numeric, y = cum_rain$cumulative_rainfall, xout = predicted_dates_numeric)
-#   predicted_dates <- as.Date(predicted_dates_numeric, origin = "1970-01-01")
-#   daily_rain_df <- data.frame(Date = predicted_dates, CumulativeRainfall = interpolated_rain$y)
-#   return(daily_rain_df)
-# }
-
-# Example usage
-# lat <- 8.3
-# lon <- 17.9
-# path_to_data <- "C:/Users/putnni/switchdrive/Chad/Data/climate-data/"
-# temp_path <- paste0(path_to_data, "era5_moiss.nc")
-# rain_path <- paste0(path_to_data, "chirps_moiss.rds")
-# cum_rain <- calculate_cumulative_rainfall(rain_path, time_period = "monthly")
-# daily_rain_df <- daily_smooth_rain(cum_rain)
-# temp_df <- extract_era5(lat = lat, lon = lon, path_to_file = temp_path)
-# daily_temp_df <- daily_smooth_temp(temp_df)
 
 #' Saving Climate Data From ERA5 and CHIRTSdaily
 #'
