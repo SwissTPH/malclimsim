@@ -39,7 +39,7 @@ financial calculations for simplicity."></head><body>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Calculate the Day Difference Assuming a 360-Day Year</h1>
-      <small class="dont-index">Source: <a href="https://github.com/nputney4/malclimsim/blob/HEAD/R/aux_functions.R" class="external-link"><code>R/aux_functions.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/nputney4/malclimsim/blob/master/R/aux_functions.R" class="external-link"><code>R/aux_functions.R</code></a></small>
       <div class="d-none name"><code>calculate_360_day_difference.Rd</code></div>
     </div>
 
@@ -68,17 +68,20 @@ financial calculations for simplicity.</p>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>The difference in days between date1 and date2 assuming a 360-day year.</p>
+    <p>An integer representing the number of days between <code>date1</code> and <code>date2</code>
+assuming each year has 360 days and each month has 30 days.</p>
     </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># Example 1: Calculate difference between two dates</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># Example 1: Using character strings</span></span></span>
 <span class="r-in"><span><span class="fu">calculate_360_day_difference</span><span class="op">(</span><span class="st">"2023-01-01"</span>, <span class="st">"2023-12-31"</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 360</span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Example 2: Use Date class objects</span></span></span>
-<span class="r-in"><span><span class="fu">calculate_360_day_difference</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2023-01-01"</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2024-01-01"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># Example 2: Using Date objects</span></span></span>
+<span class="r-in"><span><span class="va">start_date</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2023-01-01"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">end_date</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2024-01-01"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">calculate_360_day_difference</span><span class="op">(</span><span class="va">start_date</span>, <span class="va">end_date</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 360</span>
 </code></pre></div>
     </div>

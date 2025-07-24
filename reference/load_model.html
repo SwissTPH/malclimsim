@@ -35,7 +35,7 @@
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Loading an Odin Model</h1>
-      <small class="dont-index">Source: <a href="https://github.com/nputney4/malclimsim/blob/HEAD/R/model_simulation.R" class="external-link"><code>R/model_simulation.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/nputney4/malclimsim/blob/master/R/model_simulation.R" class="external-link"><code>R/model_simulation.R</code></a></small>
       <div class="d-none name"><code>load_model.Rd</code></div>
     </div>
 
@@ -63,8 +63,90 @@
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu">load_model</span><span class="op">(</span><span class="st">"model_det_1"</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in odin_preprocess_detect(x, type):</span> '' looks like a filename, but file does not exist</span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu">load_model</span><span class="op">(</span><span class="st">"model_new_R_with_FOI"</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Loading required namespace: pkgbuild</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Unused equations: dt, size, size_1, size_2</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 	dt &lt;- 1 / steps_per_day # (line 7)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 	size &lt;- user(10) # (line 178)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 	size_1 &lt;- user(10) # (line 179)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 	size_2 &lt;- user(10) # (line 180)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> 21 functions decorated with [[cpp11::register]]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> generated file <span style="color: #0000BB;">cpp11.R</span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> generated file <span style="color: #0000BB;">cpp11.cpp</span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Re-compiling <span style="color: #0000BB;">dust4d72123d</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">──</span> <span style="color: #00BBBB;">R CMD INSTALL</span> <span style="color: #00BBBB;">───────────────────────────────────────────────────────────────</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> * installing *source* package ‘dust4d72123d’ ...</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ** this is package ‘dust4d72123d’ version ‘0.0.1’</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ** using staged installation</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ** libs</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> using C++ compiler: ‘g++ (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0’</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> g++ -std=gnu++17 -I"/opt/R/4.5.1/lib/R/include" -DNDEBUG  -I'/home/runner/work/_temp/Library/cpp11/include' -I/usr/local/include   -I"/home/runner/work/_temp/Library/dust/include" -DHAVE_INLINE -fopenmp  -fpic  -g -O2  -Wall -pedantic -fdiagnostics-color=always  -c cpp11.cpp -o cpp11.o</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> g++ -std=gnu++17 -I"/opt/R/4.5.1/lib/R/include" -DNDEBUG  -I'/home/runner/work/_temp/Library/cpp11/include' -I/usr/local/include   -I"/home/runner/work/_temp/Library/dust/include" -DHAVE_INLINE -fopenmp  -fpic  -g -O2  -Wall -pedantic -fdiagnostics-color=always  -c dust.cpp -o dust.o</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> g++ -std=gnu++17 -shared -L/opt/R/4.5.1/lib/R/lib -L/usr/local/lib -o dust4d72123d.so cpp11.o dust.o -fopenmp -L/opt/R/4.5.1/lib/R/lib -lR</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> installing to /tmp/RtmpzcBuX3/devtools_install_23672e0ed94/00LOCK-file23673b5f56a2/00new/dust4d72123d/libs</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ** checking absolute paths in shared objects and dynamic libraries</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> * DONE (dust4d72123d)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Loading <span style="color: #0000BB;">dust4d72123d</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;dust&gt; object generator</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Public:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     initialize: function (pars, time, n_particles, n_threads = 1L, seed = NULL, </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     name: function () </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     param: function () </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     run: function (time_end) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     simulate: function (time_end) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     run_adjoint: function () </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     set_index: function (index) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     index: function () </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     ode_control: function () </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     ode_statistics: function () </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     n_threads: function () </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     n_state: function () </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     n_particles: function () </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     n_particles_each: function () </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     shape: function () </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     update_state: function (pars = NULL, state = NULL, time = NULL, set_initial_state = NULL, </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     state: function (index = NULL) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     time: function () </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     set_stochastic_schedule: function (time) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     reorder: function (index) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     resample: function (weights) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     info: function () </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     pars: function () </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     rng_state: function (first_only = FALSE, last_only = FALSE) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     set_rng_state: function (rng_state) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     has_openmp: function () </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     has_gpu_support: function (fake_gpu = FALSE) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     has_compare: function () </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     real_size: function () </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     time_type: function () </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     rng_algorithm: function () </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     uses_gpu: function (fake_gpu = FALSE) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     n_pars: function () </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     set_n_threads: function (n_threads) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     set_data: function (data, shared = FALSE) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     compare_data: function () </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     filter: function (time_end = NULL, save_trajectories = FALSE, time_snapshot = NULL, </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     gpu_info: function () </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     transform_variables: function (y) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Private:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     pars_: NULL</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     pars_multi_: NULL</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     index_: NULL</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     info_: NULL</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     n_threads_: NULL</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     n_particles_: NULL</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     n_particles_each_: NULL</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     shape_: NULL</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     ptr_: NULL</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     gpu_config_: NULL</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     ode_control_: NULL</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     methods_: NULL</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     param_: list</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     reload_: list</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Parent env: &lt;environment: namespace:dust4d72123d&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Locked objects: TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Locked class: FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Portable: TRUE</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

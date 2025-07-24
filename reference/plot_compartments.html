@@ -39,7 +39,7 @@ can also plot proportions relative to the total population."></head><body>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Plot Compartmental Simulation Results</h1>
-      <small class="dont-index">Source: <a href="https://github.com/nputney4/malclimsim/blob/HEAD/R/model_visualizations.R" class="external-link"><code>R/model_visualizations.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/nputney4/malclimsim/blob/master/R/model_visualizations.R" class="external-link"><code>R/model_visualizations.R</code></a></small>
       <div class="d-none name"><code>plot_compartments.Rd</code></div>
     </div>
 
@@ -104,22 +104,6 @@ can also plot proportions relative to the total population.</p>
     <p>A ggplot object visualizing the compartmental data.</p>
     </div>
 
-    <div class="section level2">
-    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># Basic line plot</span></span></span>
-<span class="r-in"><span><span class="fu">plot_compartments</span><span class="op">(</span><span class="va">compart_df</span>, plot_type <span class="op">=</span> <span class="st">"line"</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'compart_df' not found</span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Stacked area plot with selected compartments</span></span></span>
-<span class="r-in"><span><span class="fu">plot_compartments</span><span class="op">(</span><span class="va">compart_df</span>, plot_type <span class="op">=</span> <span class="st">"stacked"</span>, compartments <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"SC"</span>, <span class="st">"IC"</span>, <span class="st">"RA"</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'compart_df' not found</span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Faceted plot with proportions and log scale</span></span></span>
-<span class="r-in"><span><span class="fu">plot_compartments</span><span class="op">(</span><span class="va">compart_df</span>, plot_type <span class="op">=</span> <span class="st">"line"</span>, plot_proportion <span class="op">=</span> <span class="cn">TRUE</span>, log_scale <span class="op">=</span> <span class="cn">TRUE</span>, facet <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in plot_compartments(compart_df, plot_type = "line", plot_proportion = TRUE,     log_scale = TRUE, facet = TRUE):</span> unused argument (facet = TRUE)</span>
-<span class="r-in"><span></span></span>
-</code></pre></div>
-    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

@@ -37,7 +37,7 @@ The upper panels display correlation values, and the lower panels show smoothed 
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Plot Correlation of MCMC Samples</h1>
-      <small class="dont-index">Source: <a href="https://github.com/nputney4/malclimsim/blob/HEAD/R/inference_diagnostics.R" class="external-link"><code>R/inference_diagnostics.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/nputney4/malclimsim/blob/master/R/inference_diagnostics.R" class="external-link"><code>R/inference_diagnostics.R</code></a></small>
       <div class="d-none name"><code>plot_corr.Rd</code></div>
     </div>
 
@@ -68,19 +68,6 @@ The upper panels display correlation values, and the lower panels show smoothed 
     <p>A <code>GGally</code> ggpairs object visualizing the correlation structure of MCMC samples.</p>
     </div>
 
-    <div class="section level2">
-    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># Example usage:</span></span></span>
-<span class="r-in"><span><span class="va">results</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>  <span class="cn">NULL</span>,</span></span>
-<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">5000</span><span class="op">)</span>, ncol <span class="op">=</span> <span class="fl">5</span>, dimnames <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="cn">NULL</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"param1"</span>, <span class="st">"param2"</span>, <span class="st">"param3"</span>, <span class="st">"param4"</span>, <span class="st">"param5"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">correlation_plot</span> <span class="op">&lt;-</span> <span class="fu">plot_corr</span><span class="op">(</span><span class="va">results</span>, title <span class="op">=</span> <span class="st">"MCMC Parameter Correlation"</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">correlation_plot</span><span class="op">)</span></span></span>
-<span class="r-plt img"><img src="plot_corr-1.png" alt="" width="700" height="433"></span>
-<span class="r-in"><span></span></span>
-</code></pre></div>
-    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

@@ -50,10 +50,10 @@
 
       <dl><dt>
 
-          <code><a href="assess_model_performance.html">assess_model_performance()</a></code>
+          <code><a href="MCMC_diag.html">MCMC_diag()</a></code>
 
         </dt>
-        <dd>Assess Model Performance</dd>
+        <dd>MCMC Diagnostic and Summary Plots with Save Options</dd>
       </dl><dl><dt>
 
           <code><a href="build_priors.html">build_priors()</a></code>
@@ -62,16 +62,16 @@
         <dd>Build a list of mcstate::pmcmc_parameter() objects, starting from the return_default_priors() template and then layering on any overrides.</dd>
       </dl><dl><dt>
 
+          <code><a href="calc_decay_arr.html">calc_decay_arr()</a></code>
+
+        </dt>
+        <dd>Calculate Normalized SMC Decay Array Over Time</dd>
+      </dl><dl><dt>
+
           <code><a href="calculate_360_day_difference.html">calculate_360_day_difference()</a></code>
 
         </dt>
         <dd>Calculate the Day Difference Assuming a 360-Day Year</dd>
-      </dl><dl><dt>
-
-          <code><a href="calculate_bias.html">calculate_bias()</a></code>
-
-        </dt>
-        <dd>Calculate Bias</dd>
       </dl><dl><dt>
 
           <code><a href="calculate_cases_averted.html">calculate_cases_averted()</a></code>
@@ -80,34 +80,10 @@
         <dd>Calculate Cases Averted by SMC</dd>
       </dl><dl><dt>
 
-          <code><a href="calculate_eff_smc_confidence_intervals.html">calculate_eff_smc_confidence_intervals()</a></code>
-
-        </dt>
-        <dd>Calculate Confidence Intervals for eff_SMC</dd>
-      </dl><dl><dt>
-
           <code><a href="calculate_estimate.html">calculate_estimate()</a></code>
 
         </dt>
         <dd>Calculate Outcome Across Matched Simulation Lists</dd>
-      </dl><dl><dt>
-
-          <code><a href="calculate_incidence_quantiles.html">calculate_incidence_quantiles()</a></code>
-
-        </dt>
-        <dd>Calculate Quantiles for Incidence from Multiple Simulations</dd>
-      </dl><dl><dt>
-
-          <code><a href="calculate_mae.html">calculate_mae()</a></code>
-
-        </dt>
-        <dd>Calculate Mean Absolute Error (MAE)</dd>
-      </dl><dl><dt>
-
-          <code><a href="calculate_mape.html">calculate_mape()</a></code>
-
-        </dt>
-        <dd>Calculate Mean Absolute Percentage Error (MAPE)</dd>
       </dl><dl><dt>
 
           <code><a href="calculate_monthly_metrics.html">calculate_monthly_metrics()</a></code>
@@ -116,22 +92,10 @@
         <dd>Compute monthly metrics from SMC schedule</dd>
       </dl><dl><dt>
 
-          <code><a href="calculate_rmse.html">calculate_rmse()</a></code>
-
-        </dt>
-        <dd>Calculate Root Mean Squared Error (RMSE)</dd>
-      </dl><dl><dt>
-
           <code><a href="calculate_weekly_metrics.html">calculate_weekly_metrics()</a></code>
 
         </dt>
         <dd>Compute weekly metrics from SMC schedule (epidemiological weeks, starting Sunday)</dd>
-      </dl><dl><dt>
-
-          <code><a href="calc_decay_arr.html">calc_decay_arr()</a></code>
-
-        </dt>
-        <dd>Calculate Normalized SMC Decay Array Over Time</dd>
       </dl><dl><dt>
 
           <code><a href="climate_to_30_day_months.html">climate_to_30_day_months()</a></code>
@@ -302,6 +266,12 @@
         <dd>Filter Incidence Data by Date Range</dd>
       </dl><dl><dt>
 
+          <code><a href="gen_smc_schedule.html">gen_smc_schedule()</a></code>
+
+        </dt>
+        <dd>Generate an SMC deployment schedule with optional month-specific coverages</dd>
+      </dl><dl><dt>
+
           <code><a href="generate_360_day_dates.html">generate_360_day_dates()</a></code>
 
         </dt>
@@ -324,12 +294,6 @@
 
         </dt>
         <dd>Generate Synthetic Incidence Data (Optional)</dd>
-      </dl><dl><dt>
-
-          <code><a href="gen_smc_schedule.html">gen_smc_schedule()</a></code>
-
-        </dt>
-        <dd>Generate an SMC deployment schedule with optional month-specific coverages</dd>
       </dl><dl><dt>
 
           <code><a href="get_field_mapping.html">get_field_mapping()</a></code>
@@ -416,16 +380,10 @@
         <dd>Extract and Print Maximum Log-Likelihood and Log-Posterior</dd>
       </dl><dl><dt>
 
-          <code><a href="MCMC_diag.html">MCMC_diag()</a></code>
-
-        </dt>
-        <dd>MCMC Diagnostic and Summary Plots with Save Options</dd>
-      </dl><dl><dt>
-
           <code><a href="model_date_360.html">model_date_360()</a></code>
 
         </dt>
-        <dd>Convert sequential day indices to dates in a simplified 360-day calendar</dd>
+        <dd>Convert model day index to calendar date assuming 360-day years</dd>
       </dl><dl><dt>
 
           <code><a href="plot_cases_averted_barplot.html">plot_cases_averted_barplot()</a></code>
@@ -474,12 +432,6 @@
 
         </dt>
         <dd>Plot Default Priors</dd>
-      </dl><dl><dt>
-
-          <code><a href="plot_residuals.html">plot_residuals()</a></code>
-
-        </dt>
-        <dd>Plot Residuals of Observed vs Simulated Data</dd>
       </dl><dl><dt>
 
           <code><a href="plot_time_series.html">plot_time_series()</a></code>
@@ -536,16 +488,16 @@
         <dd>Run Model Simulations for Each Parameter Set</dd>
       </dl><dl><dt>
 
-          <code><a href="run_simulations_from_samples.html">run_simulations_from_samples()</a></code>
-
-        </dt>
-        <dd>Run Simulations from Sampled Parameter Sets</dd>
-      </dl><dl><dt>
-
           <code><a href="run_simulation_with_prewarm.html">run_simulation_with_prewarm()</a></code>
 
         </dt>
         <dd>Run Model Simulation with Pre-Warm Period</dd>
+      </dl><dl><dt>
+
+          <code><a href="run_simulations_from_samples.html">run_simulations_from_samples()</a></code>
+
+        </dt>
+        <dd>Run Simulations from Sampled Parameter Sets</dd>
       </dl><dl><dt>
 
           <code><a href="sample_mcmc_steps.html">sample_mcmc_steps()</a></code>
@@ -596,6 +548,12 @@
         <dd>Set SMC Coverage Level</dd>
       </dl><dl><dt>
 
+          <code><a href="sim_mod.html">sim_mod()</a></code>
+
+        </dt>
+        <dd>Simulate the Malaria Model Over Time</dd>
+      </dl><dl><dt>
+
           <code><a href="simulate_best.html">simulate_best()</a></code>
 
         </dt>
@@ -612,12 +570,6 @@
 
         </dt>
         <dd>Simulate and Extract Yearly Prevalence Estimates for a District</dd>
-      </dl><dl><dt>
-
-          <code><a href="simulate_without_smc.html">simulate_without_smc()</a></code>
-
-        </dt>
-        <dd>Simulate Model Without SMC</dd>
       </dl><dl><dt>
 
           <code><a href="simulate_with_full_coverage.html">simulate_with_full_coverage()</a></code>
@@ -638,10 +590,10 @@
         <dd>Simulate Model with SMC</dd>
       </dl><dl><dt>
 
-          <code><a href="sim_mod.html">sim_mod()</a></code>
+          <code><a href="simulate_without_smc.html">simulate_without_smc()</a></code>
 
         </dt>
-        <dd>Simulate the Malaria Model Over Time</dd>
+        <dd>Simulate Model Without SMC</dd>
       </dl><dl><dt>
 
           <code><a href="smc_schedule_from_data.html">smc_schedule_from_data()</a></code>
@@ -650,16 +602,16 @@
         <dd>Generate a schedule of coverage values for a given period with decay</dd>
       </dl><dl><dt>
 
-          <code><a href="summarize_simulations.html">summarize_simulations()</a></code>
-
-        </dt>
-        <dd>Summarize Simulation Results with Confidence Intervals and Selective Variables</dd>
-      </dl><dl><dt>
-
           <code><a href="summarize_simulation_ci.html">summarize_simulation_ci()</a></code>
 
         </dt>
         <dd>Create Long Format Data for Simulated Posterior Median and CI</dd>
+      </dl><dl><dt>
+
+          <code><a href="summarize_simulations.html">summarize_simulations()</a></code>
+
+        </dt>
+        <dd>Summarize Simulation Results with Confidence Intervals and Selective Variables</dd>
       </dl><dl><dt>
 
           <code><a href="update_inf_stage.html">update_inf_stage()</a></code>
