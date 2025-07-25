@@ -20,16 +20,20 @@ This function returns a list of default priors used in the inference procedure. 
 an associated prior distribution, an initial value, and range constraints.
 }
 \examples{
-# Get default priors
+# Retrieve the default priors
 priors <- return_default_priors()
 
-# Access the prior for a specific parameter
-phi_prior <- priors$phi
-print(phi_prior)
+# List the names of all parameters with priors
+names(priors)
 
-# Evaluate the prior for phi at a specific value
-phi_value <- 0.5
-log_prior_density <- phi_prior$prior(phi_value)
-print(log_prior_density)
+# Access the prior definition for a specific parameter
+if ("phi" \%in\% names(priors)) {
+  phi_prior <- priors$phi
+  print(phi_prior)
 
+  # Evaluate the log-prior density at a specific value
+  phi_value <- 0.5
+  log_density <- phi_prior$prior(phi_value)
+  print(log_density)
+}
 }

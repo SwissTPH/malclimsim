@@ -13,13 +13,20 @@ update_priors(
 )
 }
 \arguments{
-\item{priors}{List of priors to update. Default is NULL, which means using the default priors.}
+\item{param_inputs}{A named list of model parameter inputs used to initialize default priors.}
 
-\item{new_priors}{A named list of new prior specifications to replace the defaults.}
+\item{proposal_matrix}{A proposal covariance matrix used to set up default priors.}
+
+\item{params_to_estimate}{A character vector of parameters to estimate and update priors for.}
+
+\item{priors}{Optional. A list of existing priors. If NULL (default), default priors are generated using \code{initialize_priors()}.}
+
+\item{new_priors}{A named list of new prior specifications. Each element should be a list with updated fields (e.g., \code{initial}, \code{min}, \code{max}, \code{prior}).}
 }
 \value{
-A list containing updated priors.
+A list of prior specifications with selected entries updated based on \code{new_priors}.
 }
 \description{
-This function allows the user to update the default priors with new values.
+Updates the default prior specifications for a set of parameters, allowing users to replace or modify
+elements such as distribution type, bounds, and initial values.
 }

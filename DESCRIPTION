@@ -11,20 +11,11 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
 Imports: 
     chirps,
-    cli,
-    dplyr,
-    ecmwfr,
-    geodata,
-    glue,
     gridExtra,
-    lifecycle,
     lubridate,
     magrittr,
     ncdf4,
-    raster,
-    sf,
     tidyr,
-    withr,
     zoo,
     rlang,
     reshape2,
@@ -33,11 +24,12 @@ Imports:
     scales,
     patchwork,
     RColorBrewer,
-    stringr,
-    tsibble,
     xtable,
     mcstate,
-    odin.dust
+    odin.dust,
+    purrr,
+    readxl,
+    tibble
 Depends:
     ecmwfr,
     sf,

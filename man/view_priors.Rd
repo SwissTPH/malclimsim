@@ -2,21 +2,53 @@
 % Please edit documentation in R/prior_distributions.R
 \name{view_priors}
 \alias{view_priors}
-\title{View Default Priors}
+\title{View Details of Specified Priors}
 \usage{
 view_priors(param_inputs, proposal_matrix, params_to_estimate, priors = NULL)
 }
 \arguments{
-\item{params_to_estimate}{Character vector specifying which parameters' priors should be viewed.}
+\item{param_inputs}{A named list of base parameter values. Used if \code{priors} is not supplied.}
 
-\item{priors}{List of priors to view. If NULL, the default priors will be displayed.}
+\item{proposal_matrix}{Covariance matrix used in proposal distribution. Required if \code{priors} is NULL.}
+
+\item{params_to_estimate}{A character vector specifying which parameters' priors should be viewed.}
+
+\item{priors}{Optional list of priors. If \code{NULL}, the function calls \code{initialize_priors()} to generate defaults.}
 }
 \value{
-A data frame containing the details of each prior specified in params_to_estimate.
+A data frame with one row per parameter and the following columns:
+\describe{
+\item{Name}{The parameter name.}
+\item{Initial}{The initial value used in inference.}
+\item{Min}{The lower bound of the prior.}
+\item{Max}{The upper bound of the prior.}
+\item{Description}{A textual representation of the prior function.}
+}
 }
 \description{
-This function displays the default priors and their details, including initial values, min/max bounds, and prior distributions.
+Returns a data frame summarizing the details of the specified priors, including initial values,
+bounds, and the functional form of the prior distribution.
 }
 \examples{
-view_priors(param_inputs, proposal_matrix, params_to_estimate = c("a_R", "b_R", "qR", "z", "eff_SMC", "phi", "size"))
+# Define dummy prior functions
+dummy_prior <- function(p) dnorm(p, mean = 0, sd = 1, log = TRUE)
+
+# Create a minimal list of priors matching the expected structure
+dummy_priors <- list(
+  a_R = list(name = "a_R", initial = 0.1, min = -2, max = 2, prior = dummy_prior),
+  b_R = list(name = "b_R", initial = 1.5, min = 0, max = 3, prior = dummy_prior),
+  qR  = list(name = "qR",  initial = 0.01, min = 0, max = 1, prior = dummy_prior),
+  z   = list(name = "z",   initial = 0.2, min = 0, max = 1, prior = dummy_prior),
+  eff_SMC = list(name = "eff_SMC", initial = 0.5, min = 0, max = 1, prior = dummy_prior),
+  phi = list(name = "phi", initial = 0.3, min = -1, max = 1, prior = dummy_prior),
+  size = list(name = "size", initial = 5, min = 0.01, max = 20, prior = dummy_prior)
+)
+
+# View priors for a subset of parameters using a supplied list
+view_priors(
+  param_inputs = NULL,
+  proposal_matrix = NULL,
+  params_to_estimate = c("a_R", "b_R", "qR", "z", "eff_SMC", "phi", "size"),
+  priors = dummy_priors
+)
 }

@@ -11,7 +11,7 @@ validate_smc_climate_alignment(smc_df, clim_df, lag_days)
 
 \item{clim_df}{Data.frame with Date column \code{dates}.}
 
-\item{lag_days}{Integer ≥ 0: days Climate lags behind SMC.}
+\item{lag_days}{Integer >= 0: days Climate lags behind SMC.}
 }
 \value{
 Invisibly TRUE if all checks pass; stops with an error otherwise.
@@ -20,8 +20,8 @@ Invisibly TRUE if all checks pass; stops with an error otherwise.
 Ensures:
 \enumerate{
 \item SMC \code{dates} are continuous daily with no gaps.
-\item Climate \code{dates} start no earlier than (SMC_start − lag_days) and
+\item Climate \code{dates} start no earlier than (SMC_start - lag_days) and
 cover through SMC_end with no gaps.
-\item For the intended \code{lag_days}, every SMC_date − lag_days exists in climate.
+\item For the intended \code{lag_days}, every SMC_date - lag_days exists in climate.
 }
 }

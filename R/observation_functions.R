@@ -199,19 +199,6 @@ generate_incidence_comparison <- function(month,
   })
 }
 
-
-
-#' Print Configuration for Observation Function
-#'
-#' Utility to confirm current likelihood settings (time unit, age group, etc.).
-print_observation_structure <- function(month, age_for_inf, include_prev, use_beta_adjustment = FALSE) {
-  cat("Observation Function Configuration:\n")
-  cat("- Time unit:", ifelse(month, "Monthly", "Weekly"), "\n")
-  cat("- Age group:", age_for_inf, "\n")
-  cat("- Includes prevalence:", include_prev, "\n")
-  cat("- Uses beta_1 adjustment:", use_beta_adjustment, "\n")
-}
-
 #' Get Observation Function Based on User Configuration
 #'
 #' This helper function allows users to specify key options such as time resolution,

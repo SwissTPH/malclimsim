@@ -115,6 +115,7 @@ standardize_rainfall <- function(cum_rain, save = TRUE, file = "") {
 #'
 #' @param years A vector of years for which the data is to be downloaded (e.g., \code{c(2000, 2001)}).
 #' @param path A string specifying the path where the downloaded data file should be stored.
+#' @param file_name Optional string of file name. If none is specified, a default time-based name is given.
 #'
 #' @return The path to the downloaded NetCDF file.
 #' @export
@@ -342,11 +343,13 @@ daily_smooth_rain <- function(cum_rain) {
 #' @export
 #'
 #' @examples
+#' \dontrun{
 #' years <- 2014:2023
 #' lon <- 17.9
 #' lat <- 8.3
 #' path_to_data <- "C:/Users/putnni/Documents/r-packages/data/"
 #' save_climate_data(lon, lat, years, path_to_data)
+#' }
 save_climate_data <- function(lon, lat, years, path_to_data, rain = TRUE, temp = TRUE,
                               temp_file_name = NULL, rain_file_name = NULL){
   if(temp){
@@ -358,19 +361,27 @@ save_climate_data <- function(lon, lat, years, path_to_data, rain = TRUE, temp =
 }
 
 
-#' Title
+#' Process and Format Climate Data for Modeling
 #'
-#' @param lon - longitude coordinate
-#' @param lat - latitude coordinate
-#' @param years - vector containing each year for the analysis
-#' @param temp_path - path to temperature data saved by save_climate_data
-#' @param rain_path path to rainfall data saved by save_climate_data
-#' @param path_to_data path to directory where the processed climate data will be stored
+#' Reads and processes daily temperature and rainfall data, applies smoothing, standardizes rainfall,
+#' aligns dates, and optionally transforms the data to use 30-day months. Returns a clean climate dataset
+#' ready for use in modeling workflows.
 #'
-#' @return a data frame
+#' @param lon Numeric. Longitude coordinate for the location of interest.
+#' @param lat Numeric. Latitude coordinate for the location of interest.
+#' @param years Integer vector. Years to include in the climate dataset.
+#' @param temp_path Character. Path to the saved ERA5 temperature data file (NetCDF format).
+#' @param rain_path Character. Path to the saved CHIRPS rainfall data file (RDS format).
+#' @param months_30_days Logical. If TRUE (default), transforms calendar months into uniform 30-day months.
+#' @param save Logical. If TRUE, saves the processed data as an RDS file (default is FALSE).
+#' @param path_to_data Character. Directory where the processed climate data will be saved (required if `save = TRUE`).
+#'
+#' @return A data frame with daily or monthly climate data including standardized rainfall and smoothed temperature.
+#'
 #' @export
 #'
 #' @examples
+#' \dontrun{
 #' years <- 2014:2023
 #' lon <- 17.9
 #' lat <- 8.3
@@ -379,7 +390,8 @@ save_climate_data <- function(lon, lat, years, path_to_data, rain = TRUE, temp =
 #' temp_path <- paste0(path_to_data, "era5_11051417.nc")
 #' rain_path <- paste0(path_to_data, "chirps_11051418.rds")
 #' met <- process_climate_data(lon, lat, years, D1 = 30, D2 = 30, temp_path = temp_path,
-#' rain_path = rain_path, path_to_data
+#' rain_path = rain_path, path_to_data)
+#' }
 process_climate_data <- function(lon, lat, years, temp_path, rain_path, months_30_days = TRUE, save = FALSE, path_to_data = NULL){
   temp_df <- extract_era5(lat = lat, lon = lon, path_to_file = temp_path)
   temp <- daily_smooth_temp(temp_df)

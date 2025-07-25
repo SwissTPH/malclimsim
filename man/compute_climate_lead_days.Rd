@@ -12,7 +12,7 @@ compute_climate_lead_days(smc_df, clim_df)
 \item{clim_df}{Data.frame with a Date column \code{dates}.}
 }
 \value{
-Integer ≥ 0: days by which Climate must precede SMC.
+Integer >= 0: days by which Climate must precede SMC.
 }
 \description{
 Given SMC and Climate data.frames (both with a Date column \code{dates}),

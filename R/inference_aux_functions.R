@@ -13,7 +13,8 @@
 #' @return A function that takes a vector of parameters (`theta`) and combines them with the other provided values into a list.
 #' @export
 #' @examples
-#' transform_function <- make_transform(temp = 25, c_R_D = 0.5, SMC = 0.1, decay = 0.03, cov_SMC = 0.05)
+#' transform_function <- make_transform(temp = 25, c_R_D = 0.5, SMC = 0.1,
+#' decay = 0.03, cov_SMC = 0.05)
 #' transformed_params <- transform_function(c(0.1, 0.2, 0.3))
 make_transform <- function(temp, c_R_D, SMC, decay, cov_SMC) {
   function(theta) {
@@ -120,7 +121,8 @@ index <- function(info) {
 #'     month_no = 0:10,
 #'     value = rpois(11, lambda = 10)
 #'   )
-#'   formatted_month_data <- filter_data(incidence_observed_month, month = TRUE, initial_time_obs = 0, rate = 30)
+#'   formatted_month_data <- filter_data(incidence_observed_month, month = TRUE,
+#'   initial_time_obs = 0, rate = 30)
 #'   head(formatted_month_data)
 #' }
 #'

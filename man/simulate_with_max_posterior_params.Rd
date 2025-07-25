@@ -17,38 +17,42 @@ simulate_with_max_posterior_params(
 )
 }
 \arguments{
-\item{results}{The MCMC results object containing parameter samples, including \code{log_posterior}.}
+\item{results}{A list containing MCMC results. Must include \code{log_posterior}, \code{param_inputs},
+and samples of estimated parameters.}
 
-\item{start_date}{The start date for the desired simulation output, as a \code{Date} object or character string.}
+\item{start_date}{Simulation start date (as \code{Date} or character string) for the output period.}
 
-\item{end_date}{The end date for the simulation, as a \code{Date} object or character string.}
+\item{end_date}{Simulation end date (as \code{Date} or character string).}
 
-\item{model}{The model function to simulate from. This function should accept parameters, start/end dates,
-and additional arguments for the simulation.}
+\item{model}{The model function to simulate. Should be compatible with \code{data_sim()}.}
 
-\item{prewarm_years}{Integer, the number of years to simulate before \code{start_date} as a pre-warm period
-(default is 2 years).}
+\item{prewarm_years}{Number of years to simulate prior to \code{start_date} to allow system stabilization (default is 2).}
 
-\item{days_per_year}{Integer, the number of days in a year for the simulation (default is 360 days).}
+\item{days_per_year}{Number of days in a simulation year (default is 360).}
+
+\item{mu_transform_A}{Optional transformation function for adult incidence (default is \code{NULL}).}
+
+\item{mu_transform_C}{Optional transformation function for child incidence (default is \code{NULL}).}
+
+\item{covariate_matrix}{Optional covariate matrix used in incidence transformation (default is \code{NULL}).}
 }
 \value{
-A data frame containing the simulation results, filtered to include only the period
-from \code{start_date} to \code{end_date}.
+A data frame containing model simulation results from \code{start_date} to \code{end_date}.
 }
 \description{
-This function takes the MCMC results, extracts the parameter values corresponding to the maximum
-log posterior, updates the parameter list, and runs a simulation from the model. Additionally,
-the function includes a pre-warm period, where the simulation starts earlier than the specified
-\code{start_date} to allow the model to stabilize before the output period.
+Runs a model simulation using the parameter set corresponding to the highest posterior density
+(i.e., the maximum log posterior value) from the MCMC output. The function includes a prewarm period
+prior to the specified \code{start_date} to stabilize the system before collecting simulation results.
 }
 \examples{
-# Assuming `results` contains the MCMC output, and `data_sim` is the simulation function
-simulation_output <- simulate_with_max_posterior_params(
+\dontrun{
+# Run simulation using max-posterior parameter set
+sim_df <- simulate_with_max_posterior_params(
   results = results,
   start_date = "2021-01-01",
   end_date = "2021-12-31",
-  model = data_sim,
-  prewarm_years = 3,
-  days_per_year = 360
+  model = data_sim
 )
+}
+
 }

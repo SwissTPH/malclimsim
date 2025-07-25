@@ -13,7 +13,7 @@ extend_inputs_with_prewarm(
 )
 }
 \arguments{
-\item{param_inputs}{Named list of inputs, where time‑varying elements
+\item{param_inputs}{Named list of inputs, where time-varying elements
 include "cov_SMC", "SMC", "decay", "c_R_D", "temp".
 Each of those should be a numeric vector of length = raw_analysis_days.}
 
@@ -21,16 +21,16 @@ Each of those should be a numeric vector of length = raw_analysis_days.}
 
 \item{end_date}{Date at which your real series ends   (e.g. "2023-12-31").}
 
-\item{prewarm_years}{Integer number of 360‑day years to prepend.}
+\item{prewarm_years}{Integer number of 360-day years to prepend.}
 
 \item{days_per_year}{Number of days per model year (default: 360).}
 }
 \value{
-A list like \code{param_inputs} but with each time‑varying vector
+A list like \code{param_inputs} but with each time-varying vector
 extended to length = prewarm_years*360 + floor(analysis_days/7)*7.
 }
 \description{
-Takes your genuine, day‑1–to‑day‑N climate vectors (temp, rain, etc.)
+Takes your genuine, day 1 to day N climate vectors (temp, rain, etc.)
 and builds a single vector of length prewarm_years\emph{360 + analysis_days,
 where the first prewarm_years}360 days are just repeats of the first
 360 days of your real series, and the last analysis_days days are the

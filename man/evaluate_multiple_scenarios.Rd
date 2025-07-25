@@ -28,43 +28,45 @@ evaluate_multiple_scenarios(
 )
 }
 \arguments{
-\item{patterns}{A named list of 12-element binary vectors representing monthly SMC coverage patterns.}
+\item{patterns}{A named list of 12-element binary vectors or lists of such vectors (per year), indicating months when SMC is applied.}
 
-\item{smc_day_of_month}{Day of month for simulated SMC coverage start (default = 1).}
+\item{smc_day_of_month}{Integer specifying the day of the month to begin SMC each round (default is 1).}
 
-\item{model}{A compiled model object used for simulations.}
+\item{model}{A compiled model object to simulate from.}
 
-\item{param_inputs}{A named list of baseline parameter values.}
+\item{param_inputs}{A named list of baseline model parameters.}
 
-\item{param_samples}{A matrix of sampled parameter sets (rows = samples).}
+\item{param_samples}{A matrix or data frame of sampled parameter sets (one row per sample).}
 
-\item{start_date}{Start date for the simulation.}
+\item{start_date}{Simulation start date (character or Date).}
 
-\item{end_date}{End date for the simulation.}
+\item{end_date}{Simulation end date (character or Date).}
 
 \item{avg_cov}{Average SMC coverage to apply during active months.}
 
-\item{years}{A vector of years to apply SMC coverage.}
+\item{years}{A vector of years to apply SMC coverage (e.g., 2018:2023).}
 
-\item{exclude_years}{Years to exclude from summarizing coverage (default = 2023).}
+\item{exclude_years}{Years to exclude when computing summaries (default is 2023).}
 
-\item{mu_transform_C}{Optional transformation function for mu_C.}
+\item{mu_transform_C}{Optional transformation function for compartment C incidence.}
 
-\item{mu_transform_A}{Optional transformation function for mu_A.}
+\item{mu_transform_A}{Optional transformation function for compartment A incidence.}
 
-\item{outcome_fn}{A function defining the outcome to summarize (default: total cases).}
+\item{outcome_fn}{Function computing the scalar outcome of interest from two simulation outputs (default: sum of transformed incidence).}
 
-\item{o1}{Baseline simulations for comparison.}
+\item{o1}{Optional baseline simulation for comparison.}
 
-\item{ci_level}{Confidence level for credible intervals (default = 0.95).}
+\item{ci_level}{Confidence level for summary intervals (default is 0.95).}
 
-\item{out_dir}{Directory to save plots (optional).}
+\item{out_dir}{Output directory to save plots. If NULL, plots are not saved.}
 
-\item{month}{Logical. Whether to summarize and simulate using weekly data. Default is FALSE.}
+\item{month}{Logical. Whether the model and summaries are in monthly (TRUE) or weekly (FALSE) time (default is FALSE).}
 
-\item{apply_decay}{Logical. Whether to apply decay to SMC coverage. Default is TRUE.}
+\item{apply_decay}{Logical. Whether to apply time-decay to SMC coverage values (default is TRUE).}
 
-\item{use_SMC_as_covariate}{Logical. Whether or not SMC is included in the model or as a covariate in the observation model.}
+\item{use_SMC_as_covariate}{Logical. Whether SMC is used as a covariate in the observation model instead of being built into the transmission model (default is FALSE).}
+
+\item{noise}{Logical. Whether to add stochastic noise to simulated incidence (default is FALSE).}
 }
 \value{
 A list with three elements:

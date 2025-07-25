@@ -400,20 +400,30 @@ extract_max_posterior_params <- function(results) {
   return(param_values)
 }
 
-#' Update Parameters in List with Values from Extracted Vector
+#' Update a Parameter List with New Values
 #'
-#' This function updates values in a list of parameters (e.g., `param_inputs`)
-#' with values from a named vector of parameters obtained from an MCMC run.
+#' Replaces entries in a parameter list using a named vector of new values. Typically used to inject
+#' sampled or optimized parameter values (e.g., from an MCMC posterior) into a base parameter list.
 #'
-#' @param param_inputs A list of parameters where each element is a named parameter.
-#' @param param_values A named vector of parameters, typically from the maximum
-#' log posterior, to update values in `param_inputs`.
-#' @return An updated list of parameters with replaced values where matches exist.
-#' @export
+#' @param param_inputs A named list containing parameter values, where each name corresponds to a model parameter.
+#' @param param_values A named vector or list of parameter values to use for updating. Each name in this object
+#'   should correspond to a name in \code{param_inputs}.
+#'
+#' @return A modified version of \code{param_inputs} where parameters matching names in \code{param_values}
+#'   are replaced by the corresponding values.
+#'
 #' @examples
-#' # Assuming `param_inputs` is a list of parameters and `params_at_max_posterior`
-#' # is a named vector with values to update
+#' # Original parameter list
+#' param_inputs <- list(alpha = 1, beta = 2, gamma = 3)
+#'
+#' # New parameter values, e.g., from posterior sample
+#' params_at_max_posterior <- c(alpha = 0.9, gamma = 2.7)
+#'
+#' # Update the parameter list
 #' updated_params <- update_param_list(param_inputs, params_at_max_posterior)
+#' print(updated_params)
+#'
+#' @export
 update_param_list <- function(param_inputs, param_values) {
   # Loop over each element in the named vector 'param_values'
   for (param_name in names(param_values)) {
@@ -428,34 +438,35 @@ update_param_list <- function(param_inputs, param_values) {
 
 #' Simulate Model Using Parameters with Maximum Log Posterior
 #'
-#' This function takes the MCMC results, extracts the parameter values corresponding to the maximum
-#' log posterior, updates the parameter list, and runs a simulation from the model. Additionally,
-#' the function includes a pre-warm period, where the simulation starts earlier than the specified
-#' `start_date` to allow the model to stabilize before the output period.
+#' Runs a model simulation using the parameter set corresponding to the highest posterior density
+#' (i.e., the maximum log posterior value) from the MCMC output. The function includes a prewarm period
+#' prior to the specified `start_date` to stabilize the system before collecting simulation results.
 #'
-#' @param results The MCMC results object containing parameter samples, including `log_posterior`.
-#' @param start_date The start date for the desired simulation output, as a `Date` object or character string.
-#' @param end_date The end date for the simulation, as a `Date` object or character string.
-#' @param model The model function to simulate from. This function should accept parameters, start/end dates,
-#'              and additional arguments for the simulation.
-#' @param prewarm_years Integer, the number of years to simulate before `start_date` as a pre-warm period
-#'                      (default is 2 years).
-#' @param days_per_year Integer, the number of days in a year for the simulation (default is 360 days).
+#' @param results A list containing MCMC results. Must include `log_posterior`, `param_inputs`,
+#'                and samples of estimated parameters.
+#' @param start_date Simulation start date (as `Date` or character string) for the output period.
+#' @param end_date Simulation end date (as `Date` or character string).
+#' @param model The model function to simulate. Should be compatible with `data_sim()`.
+#' @param prewarm_years Number of years to simulate prior to `start_date` to allow system stabilization (default is 2).
+#' @param days_per_year Number of days in a simulation year (default is 360).
+#' @param mu_transform_A Optional transformation function for adult incidence (default is `NULL`).
+#' @param mu_transform_C Optional transformation function for child incidence (default is `NULL`).
+#' @param covariate_matrix Optional covariate matrix used in incidence transformation (default is `NULL`).
 #'
-#' @return A data frame containing the simulation results, filtered to include only the period
-#'         from `start_date` to `end_date`.
-#' @export
+#' @return A data frame containing model simulation results from `start_date` to `end_date`.
 #'
 #' @examples
-#' # Assuming `results` contains the MCMC output, and `data_sim` is the simulation function
-#' simulation_output <- simulate_with_max_posterior_params(
+#' \dontrun{
+#' # Run simulation using max-posterior parameter set
+#' sim_df <- simulate_with_max_posterior_params(
 #'   results = results,
 #'   start_date = "2021-01-01",
 #'   end_date = "2021-12-31",
-#'   model = data_sim,
-#'   prewarm_years = 3,
-#'   days_per_year = 360
+#'   model = data_sim
 #' )
+#' }
+#'
+#' @export
 simulate_with_max_posterior_params <- function(results, start_date, end_date, model,
                                                prewarm_years = 2, days_per_year = 360,
                                                mu_transform_A = NULL,
@@ -485,64 +496,47 @@ simulate_with_max_posterior_params <- function(results, start_date, end_date, mo
   return(simulation_output)
 }
 
-
-
-#' Sample Parameters from MCMC Results
-#'
-#' This function randomly selects `n` rows from the MCMC parameter output and extracts the
-#' parameter values from each row.
-#'
-#' @param results The MCMC results object containing parameter samples.
-#' @param n The number of samples to extract.
-#' @return A list of named vectors, each containing one set of sampled parameters.
-#' @export
-#' @examples
-#' # Assuming `results` contains the MCMC output
-#' sampled_parameters <- sample_params(results, 100)
-sample_params <- function(results, n) {
-  # Randomly sample `n` rows
-  sampled_indices <- sample(1:nrow(results$coda_pars), size = n, replace = TRUE)
-  sampled_params <- lapply(sampled_indices, function(idx) {
-    # Extract row and remove columns for log_prior, log_likelihood, and log_posterior
-    params <- results$coda_pars[idx, ]
-    params <- params[!names(params) %in% c("log_prior", "log_likelihood", "log_posterior")]
-    return(params)
-  })
-  return(sampled_params)
-}
-
 #' Simulate Models Using Sampled Parameters
 #'
-#' This function runs `n` model simulations, each using a different set of parameters sampled
-#' from the MCMC results.
+#' Runs the epidemiological model multiple times using different parameter sets sampled from MCMC results.
+#' Each simulation is optionally prewarmed using a specified number of years prior to the start date.
 #'
 #' @param model The model function to simulate from.
-#' @param sampled_params A list of parameter sets to use for each simulation.
-#' @param start_date The start date for the simulation.
-#' @param end_date The end date for the simulation.
-#' @param param_inputs The initial list of parameters to update for each simulation.
-#' @return A list of data frames, each containing the simulation output for a different parameter set.
-#' @export
+#' @param param_inputs A list of baseline parameters to be updated with each sampled parameter set.
+#' @param sampled_params A list of named parameter sets, typically obtained from posterior samples.
+#' @param start_date Character string giving the start date for the simulation (e.g., "2021-01-01").
+#' @param end_date Character string giving the end date for the simulation (e.g., "2021-12-31").
+#' @param prewarm_years Integer specifying how many years before `start_date` to simulate for model prewarming (default is 2).
+#' @param days_per_year Integer specifying the number of days per simulation year (default is 360).
+#'
+#' @return A list of data frames. Each data frame contains the simulation results for a different parameter set.
+#'
 #' @examples
-#' # Assuming `sampled_params` is a list of sampled parameter sets
-#' simulations <- simulate_models(model = data_sim, param_inputs = param_inputs,
-#'                                sampled_params = sampled_params,
-#'                                start_date = "2021-01-01", end_date = "2021-12-31")
-# simulate_models <- function(model, param_inputs, sampled_params, start_date, end_date) {
-#   simulations <- lapply(sampled_params, function(params) {
-#     # Make a copy of param_inputs for each simulation to prevent overwriting
-#     current_params <- param_inputs
-#
-#     # Update the copied parameters with the sampled parameters
-#     updated_params <- update_param_list(current_params, params)
-#
-#     # Run the simulation with the updated parameters
-#     sim_data <- data_sim(model, updated_params, start_date = start_date, end_date = end_date,
-#                          month = TRUE, round = FALSE, save = FALSE, month_unequal_days = FALSE)
-#     return(sim_data)
-#   })
-#   return(simulations)
-# }
+#' \dontrun{
+#' # Example setup with a dummy model and parameters
+#' model <- your_model_function  # Replace with your actual model function
+#' param_inputs <- return_default_inputs()  # Replace with your actual input generator
+#'
+#' # Simulate posterior parameter samples
+#' posterior_samples <- matrix(rnorm(30), nrow = 10, ncol = 3)
+#' colnames(posterior_samples) <- c("alpha", "beta", "gamma")
+#'
+#' # Convert to list of named parameter sets
+#' sampled_params <- lapply(1:nrow(posterior_samples), function(i) {
+#'   as.list(posterior_samples[i, ])
+#' })
+#'
+#' # Run simulations
+#' simulations <- simulate_models(
+#'   model = model,
+#'   param_inputs = param_inputs,
+#'   sampled_params = sampled_params,
+#'   start_date = "2021-01-01",
+#'   end_date = "2021-12-31"
+#' )
+#' }
+#'
+#' @export
 simulate_models <- function(model, param_inputs, sampled_params, start_date, end_date, prewarm_years = 2, days_per_year = 360) {
   # Extend parameter inputs to accommodate the prewarm period
   param_inputs_ext <- extend_time_varying_inputs(param_inputs, days_per_year = days_per_year, years_to_extend = prewarm_years)
@@ -682,85 +676,25 @@ compartments_sim <- function(model, param_inputs, start_date, end_date, prewarm_
   return(compart_df)
 }
 
-
-
-#' Simulate and Extract Yearly Prevalence Estimates for a District
-#'
-#' This function runs a compartmental model simulation for a specified district,
-#' extracts yearly prevalence estimates, and returns a summarized data frame.
-#'
-#' @param model An epidemiological model object used for simulation.
-#' @param results A list containing MCMC or model fitting results for the district,
-#'        including parameter estimates and prior information.
-#' @param start_date A character string or Date object specifying the start date of the simulation (e.g., "2014-01-01").
-#' @param end_date A character string or Date object specifying the end date of the simulation (e.g., "2022-12-31").
-#' @param district_name A character string specifying the name of the district.
-#' @param param_inputs A named vector of parameters and corresponding values. If NULL, uses parameters that maximize likelihood in results.
-#'
-#' @return A data frame containing yearly average prevalence estimates for the given district.
-#'         The data frame includes columns for `year`, various prevalence metrics (e.g., `prev_total_with_R`, `prev_C_with_R`),
-#'         and the corresponding `District` name.
-#'
-#' @details
-#' - The function first extracts the **maximum likelihood parameters** from the model fitting results.
-#' - It updates the **parameter inputs** with these best estimates.
-#' - The model is then **simulated** for the specified district and time period.
-#' - The output is aggregated into **yearly averages** for all prevalence metrics.
-#' - The district name is appended to the final data frame to facilitate later merging.
-#'
-#' @examples
-#' # Example usage for the Koumra district
-#' start_date <- "2014-01-01"
-#' end_date <- "2022-12-31"
-#' koumra_prev <- simulate_prevalence_for_district(model_simp, koumra_results, start_date, end_date, "Koumra")
-#'
-#' # View output
-#' head(koumra_prev)
-#'
-#' @seealso
-#' - `compartments_sim()`: Function used internally to simulate the model.
-#' - `update_param_list()`, `extract_max_posterior_params()`: Functions to extract and update model parameters.
-#'
-#' @export
-simulate_prevalence_for_district <- function(model, results, start_date, end_date, district_name, param_inputs = NULL) {
-
-  if(is.null(param_inputs)){
-    # Extract max likelihood parameters
-    max_ll_params <- extract_max_posterior_params(results$results)
-
-    # Update parameter inputs with max likelihood estimates
-    param_inputs <- update_param_list(results$results$param_inputs, max_ll_params)
-  }
-
-  # Run the compartment simulation for the district
-  compart_df <- compartments_sim(model = model, param_inputs = param_inputs,
-                                 start_date = start_date, end_date = end_date)
-
-  # Ensure date column is in Date format and extract year
-  compart_df <- compart_df %>%
-    mutate(date = as.Date(date), year = year(date))
-
-  # Compute yearly averages for prevalence metrics
-  compart_df_year_avg <- compart_df %>%
-    group_by(year) %>%
-    summarise(across(starts_with("prev"), mean, na.rm = TRUE), .groups = "drop")
-
-  # Add district name for identification
-  compart_df_year_avg <- compart_df_year_avg %>%
-    mutate(District = district_name)
-
-  return(compart_df_year_avg)
-}
-
 #' Sample Parameter Sets from MCMC Results
 #'
-#' This function randomly samples a specified number of parameter sets from the MCMC posterior distribution.
+#' Randomly samples rows from a matrix or data frame containing MCMC posterior samples. Useful for generating
+#' parameter sets to use in posterior predictive simulations or scenario analyses.
 #'
-#' @param mcmc_results A matrix or data frame containing MCMC posterior samples of parameters.
-#' @param num_samples An integer specifying the number of samples to draw.
-#' @return A matrix of sampled parameter sets.
+#' @param mcmc_results A matrix or data frame where each row represents a parameter set from the posterior distribution.
+#' @param num_samples Integer specifying how many parameter sets to sample.
+#'
+#' @return A matrix of dimension \code{num_samples} × \code{ncol(mcmc_results)}, containing randomly selected parameter sets.
+#'
 #' @examples
-#' sampled_params <- sample_mcmc_steps(MCMC_results_2_3$mcmc_run$pars, 100)
+#' # Simulate MCMC posterior with 100 samples and 3 parameters
+#' posterior_samples <- matrix(rnorm(300), nrow = 100, ncol = 3)
+#' colnames(posterior_samples) <- c("alpha", "beta", "gamma")
+#'
+#' # Draw 10 random samples from the MCMC results
+#' sampled <- sample_mcmc_steps(posterior_samples, 10)
+#' print(sampled)
+#'
 #' @export
 sample_mcmc_steps <- function(mcmc_results, num_samples) {
   if (num_samples > nrow(mcmc_results)) {
@@ -775,15 +709,46 @@ sample_mcmc_steps <- function(mcmc_results, num_samples) {
 #'
 #' This function runs the epidemiological model using different parameter sets sampled from the MCMC posterior.
 #'
-#' @param model A function representing the epidemiological model.
-#' @param param_samples A matrix of parameter sets sampled from the MCMC posterior.
-#' @param start_date The simulation start date.
-#' @param end_date The simulation end date.
-#' @param prewarm_years The number of years to prewarm the model.
-#' @param days_per_year The number of days in a simulation year.
-#' @return A list of data frames containing simulation results for each sampled parameter set.
+#' @param model A function representing the epidemiological model, typically compiled via `odin.dust`.
+#' @param param_inputs A list of default model parameters to be updated with sampled values.
+#' @param param_samples A matrix or data frame of parameter sets sampled from the MCMC posterior. Each row is a distinct sample.
+#' @param start_date Character string or Date object indicating the simulation start date (e.g., "2014-01-01").
+#' @param end_date Character string or Date object indicating the simulation end date (e.g., "2022-12-31").
+#' @param prewarm_years Number of years for model prewarming to reach equilibrium before the start date (default: 2).
+#' @param days_per_year Number of simulation time steps per year (default: 360).
+#'
+#' @return A list of data frames, each containing the simulated compartment outputs for one parameter set.
+#'
 #' @examples
-#' simulations <- run_mcmc_simulations(model, sampled_params, "2014-01-01", "2022-12-31", 2, 360)
+#' \dontrun{
+#' # Assume model is loaded via `load_model()` and priors are defined
+#' model <- load_model("model_det_1")
+#'
+#' # Get default parameter inputs and samples from MCMC
+#' param_inputs <- return_default_param_inputs()
+#' param_samples <- matrix(
+#'   c(0, 0, 2, 5, 3, 0, 1, 0.5, 0.8, 1),  # Example parameter set (one row)
+#'   nrow = 1,
+#'   byrow = TRUE
+#' )
+#' colnames(param_samples) <- c("lag_R", "lag_T", "alpha", "sigma_LT", "sigma_RT",
+#'                               "R_opt", "k1", "eff_SMC", "s", "b")  # Adjust as needed
+#'
+#' # Run simulation
+#' simulations <- run_mcmc_simulations(
+#'   model,
+#'   param_inputs,
+#'   param_samples,
+#'   start_date = "2014-01-01",
+#'   end_date = "2022-12-31",
+#'   prewarm_years = 2,
+#'   days_per_year = 360
+#' )
+#'
+#' # View first simulation output
+#' head(simulations[[1]])
+#' }
+#'
 #' @export
 run_mcmc_simulations <- function(model, param_inputs, param_samples, start_date, end_date, prewarm_years = 2, days_per_year = 360) {
   simulation_results <- lapply(1:nrow(param_samples), function(i) {
@@ -795,23 +760,23 @@ run_mcmc_simulations <- function(model, param_inputs, param_samples, start_date,
   return(simulation_results)
 }
 
-#' Summarize Simulation Results with Confidence Intervals and Selective Variables
+#' Summarize Simulation Outputs with Medians and Confidence Intervals
 #'
-#' This function calculates the median and confidence intervals for selected compartments
-#' from the simulation results.
+#' Computes the pointwise median and confidence intervals for selected variables across
+#' multiple simulation runs. Useful for summarizing posterior predictive distributions
+#' of model outputs.
 #'
-#' @param simulation_results A list of data frames containing model outputs for different parameter sets.
-#' @param ci_level The confidence level (e.g., 0.95 for 95% confidence intervals).
-#' @param variables A character vector specifying which compartments to summarize (e.g., c("SC", "EC", "prev_total_with_R")).
-#'                  If NULL, all compartments will be summarized.
+#' @param simulation_results A list of data frames, where each data frame contains the model
+#'   output for a different parameter set. Each data frame must include a \code{date_ymd} column.
+#' @param ci_level Numeric value between 0 and 1 specifying the confidence level for the intervals
+#'   (e.g., \code{0.95} for 95% confidence intervals).
+#' @param variables A character vector indicating which compartment names to summarize
+#'   (e.g., \code{c("SC", "EC", "prev_total_with_R")}). If \code{NULL}, all variables except
+#'   \code{date_ymd} and \code{simulation_id} will be included.
 #'
-#' @return A data frame with median values and confidence intervals for the selected compartments at each time step.
-#' @examples
-#' # Summarize SC and EC compartments
-#' summary_df <- summarize_simulations(simulations, ci_level = 0.95, variables = c("SC", "EC"))
-#'
-#' # Summarize all compartments
-#' summary_df <- summarize_simulations(simulations, ci_level = 0.95)
+#' @return A data frame with one row per date and summary statistics (median, lower, and upper
+#'   bounds) for each selected variable. Columns are named using the pattern \code{<variable>_median},
+#'   \code{<variable>_lower}, and \code{<variable>_upper}.
 #' @export
 summarize_simulations <- function(simulation_results, ci_level = 0.95, variables = NULL) {
   # Combine all simulation runs into a single data frame
@@ -839,20 +804,6 @@ summarize_simulations <- function(simulation_results, ci_level = 0.95, variables
     ungroup()
 
   return(summary_stats)
-}
-
-#' Sample Parameter Sets from MCMC Results
-#'
-#' @param mcmc_results A matrix or data frame containing MCMC posterior samples of parameters.
-#' @param num_samples Number of samples to draw.
-#' @return A matrix of sampled parameter sets.
-#' @export
-sample_mcmc_steps <- function(mcmc_results, num_samples) {
-  if (num_samples > nrow(mcmc_results)) {
-    stop("Number of samples requested exceeds available MCMC steps.")
-  }
-  sampled_indices <- sample(1:nrow(mcmc_results), num_samples, replace = FALSE)
-  mcmc_results[sampled_indices, , drop = FALSE]
 }
 
 #' Run Simulations from Sampled Parameter Sets

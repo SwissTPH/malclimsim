@@ -449,21 +449,21 @@ extend_time_varying_inputs_to_length <- function(param_inputs, days_needed, days
 
 #' Prepend Prewarm Climate to Your True Analysis Series
 #'
-#' Takes your genuine, day‑1–to‑day‑N climate vectors (temp, rain, etc.)
+#' Takes your genuine, day 1 to day N climate vectors (temp, rain, etc.)
 #' and builds a single vector of length prewarm_years*360 + analysis_days,
 #' where the first prewarm_years*360 days are just repeats of the first
 #' 360 days of your real series, and the last analysis_days days are the
 #' real data you passed in.
 #'
-#' @param param_inputs Named list of inputs, where time‑varying elements
+#' @param param_inputs Named list of inputs, where time-varying elements
 #'   include "cov_SMC", "SMC", "decay", "c_R_D", "temp".
 #'   Each of those should be a numeric vector of length = raw_analysis_days.
 #' @param start_date Date at which your real series begins (e.g. "2018-01-01").
 #' @param end_date   Date at which your real series ends   (e.g. "2023-12-31").
-#' @param prewarm_years Integer number of 360‑day years to prepend.
+#' @param prewarm_years Integer number of 360-day years to prepend.
 #' @param days_per_year Number of days per model year (default: 360).
 #'
-#' @return A list like `param_inputs` but with each time‑varying vector
+#' @return A list like `param_inputs` but with each time-varying vector
 #'   extended to length = prewarm_years*360 + floor(analysis_days/7)*7.
 #' @export
 extend_inputs_with_prewarm <- function(param_inputs,
@@ -514,13 +514,8 @@ extend_inputs_with_prewarm <- function(param_inputs,
 #'
 #' @return A data frame with columns:
 #' * `year`: The calendar year.
-#' * `month`: The calendar month (1–12).
-#' * `day`: The day of the month (1–30).
-#'
-#' @examples
-#' model_date_360(1:3, 2000)
-#' model_date_360(365, 2020)
-#'
+#' * `month`: The calendar month (1-12).
+#' * `day`: The day of the month (1-30).
 #' @export
 model_date_360 <- function(day_index, start_year) {
   year_num     <- start_year + (day_index - 1) %/% 360
@@ -536,9 +531,9 @@ model_date_360 <- function(day_index, start_year) {
 }
 
 
-#' Generate weekly model dates (by 7-day blocks) in 360‑day calendar
+#' Generate weekly model dates (by 7-day blocks) in 360-day calendar
 #'
-#' @param start_year integer, year of day 1
+#' @param start_year integer, year of day
 #' @param n_days     integer, total days (must be divisible by 7)
 #'
 #' @return A data.frame with one row per week: year, month, day (all numeric)
@@ -556,7 +551,7 @@ date_to_weeks_360 <- function(start_year, n_days) {
 #' This function imputes missing dates in a climate time series using the average
 #' value for each (month, day) combination across all prior years in the dataset.
 #' It is useful for filling in short gaps at the end of a time series, such as
-#' imputing values for December 2023 using earlier years’ averages.
+#' imputing values for December 2023 using earlier years' averages.
 #'
 #' @param data A data frame with at least the following columns:
 #'   - `dates` (Date): The observation date.
@@ -643,7 +638,7 @@ impute_climate_to_end_date <- function(data, end_date) {
 #'
 #' @param smc_df Data.frame with a Date column `dates`.
 #' @param clim_df Data.frame with a Date column `dates`.
-#' @return Integer ≥ 0: days by which Climate must precede SMC.
+#' @return Integer >= 0: days by which Climate must precede SMC.
 #' @export
 compute_climate_lead_days <- function(smc_df, clim_df) {
   smc_start  <- as.Date(min(smc_df$dates))
@@ -657,13 +652,13 @@ compute_climate_lead_days <- function(smc_df, clim_df) {
 #'
 #' Ensures:
 #'   1. SMC `dates` are continuous daily with no gaps.
-#'   2. Climate `dates` start no earlier than (SMC_start − lag_days) and
+#'   2. Climate `dates` start no earlier than (SMC_start - lag_days) and
 #'      cover through SMC_end with no gaps.
-#'   3. For the intended `lag_days`, every SMC_date − lag_days exists in climate.
+#'   3. For the intended `lag_days`, every SMC_date - lag_days exists in climate.
 #'
 #' @param smc_df Data.frame with Date column `dates`.
 #' @param clim_df Data.frame with Date column `dates`.
-#' @param lag_days Integer ≥ 0: days Climate lags behind SMC.
+#' @param lag_days Integer >= 0: days Climate lags behind SMC.
 #' @return Invisibly TRUE if all checks pass; stops with an error otherwise.
 #' @export
 validate_smc_climate_alignment <- function(smc_df, clim_df, lag_days) {
@@ -677,7 +672,7 @@ validate_smc_climate_alignment <- function(smc_df, clim_df, lag_days) {
     stop(
       "SMC schedule missing dates: ",
       paste(format(as.Date(miss_smc), "%Y-%m-%d"), collapse = ", "),
-      if (length(miss_smc) > 1) " …" else ""
+      if (length(miss_smc) > 1) " ..." else ""
     )
   }
 
@@ -692,7 +687,7 @@ validate_smc_climate_alignment <- function(smc_df, clim_df, lag_days) {
       "Climate data contains dates before required window start (",
       format(window_start, "%Y-%m-%d"), "): ",
       paste(format(as.Date(clim_dates[too_early]), "%Y-%m-%d"), collapse = ", "),
-      if (sum(too_early) > 1) " …" else ""
+      if (sum(too_early) > 1) " ..." else ""
     )
   }
 
@@ -702,10 +697,10 @@ validate_smc_climate_alignment <- function(smc_df, clim_df, lag_days) {
   if (length(miss_clim)) {
     stop(
       "Climate must cover ",
-      format(as.Date(window_start), "%Y-%m-%d"), " → ", format(as.Date(window_end), "%Y-%m-%d"),
+      format(as.Date(window_start), "%Y-%m-%d"), " to ", format(as.Date(window_end), "%Y-%m-%d"),
       ". Missing: ",
       paste(format(as.Date(miss_clim), "%Y-%m-%d"), collapse = ", "),
-      if (length(miss_clim) > 1) " …" else ""
+      if (length(miss_clim) > 1) " ..." else ""
     )
   }
 
@@ -715,9 +710,9 @@ validate_smc_climate_alignment <- function(smc_df, clim_df, lag_days) {
   if (length(miss_targets)) {
     stop(
       "With lag_days = ", lag_days,
-      ", no climate for SMC_date−lag on: ",
+      ", no climate for SMC_date-lag on: ",
       paste(format(as.Date(miss_targets), "%Y-%m-%d"), collapse = ", "),
-      if (length(miss_targets) > 1) " …" else ""
+      if (length(miss_targets) > 1) " ..." else ""
     )
   }
 
@@ -732,10 +727,10 @@ validate_smc_climate_alignment <- function(smc_df, clim_df, lag_days) {
 #'
 #' @param smc_df Data.frame with `dates` (Date) and SMC columns.
 #' @param clim_df Data.frame with `dates` (Date) and climate columns.
-#' @param lag_days Integer ≥ 0: days Climate lags behind SMC.
+#' @param lag_days Integer >= 0: days Climate lags behind SMC.
 #' @return List with:
-#'   * `smc` — ordered SMC data.frame,
-#'   * `climate` — climate aligned so row_i = SMC_date_i − lag_days.
+#'   * `smc` - ordered SMC data.frame,
+#'   * `climate` - climate aligned so row_i = SMC_date_i - lag_days.
 #' @export
 lag_and_trim_smc_climate <- function(smc_df, clim_df, lag_days) {
   #validate_smc_climate_alignment(smc_df, clim_df, lag_days)

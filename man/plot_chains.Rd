@@ -20,10 +20,3 @@ for easier visualization and diagnostics (e.g., trace plots or Gelman-Rubin diag
 This function assumes that \code{mcmc_run$pars} contains the posterior samples and that there is a
 \code{chain} vector in \code{mcmc_run$chain} specifying the chain each row belongs to.
 }
-\examples{
-\dontrun{
-mcmc_chains <- plot_chains(mcmc_run)
-plot(mcmc_chains)  # Trace plots for all chains
-}
-
-}

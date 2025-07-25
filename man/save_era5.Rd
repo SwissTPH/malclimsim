@@ -10,6 +10,8 @@ save_era5(years, path, file_name = NULL)
 \item{years}{A vector of years for which the data is to be downloaded (e.g., \code{c(2000, 2001)}).}
 
 \item{path}{A string specifying the path where the downloaded data file should be stored.}
+
+\item{file_name}{Optional string of file name. If none is specified, a default time-based name is given.}
 }
 \value{
 The path to the downloaded NetCDF file.

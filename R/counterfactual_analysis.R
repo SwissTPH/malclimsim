@@ -1,163 +1,3 @@
-#' Set eff_SMC Parameter to Zero
-#'
-#' This function takes a list of model parameters and sets the `eff_SMC` parameter to zero to simulate
-#' a scenario without Seasonal Malaria Chemoprevention (SMC).
-#'
-#' @param param_inputs A list of parameter values for the model.
-#' @return A list with the `eff_SMC` parameter set to zero.
-#' @export
-#' @examples
-#' no_smc_params <- set_eff_smc_to_zero(param_inputs)
-set_eff_smc_to_zero <- function(param_inputs) {
-  # Set the SMC effectiveness parameter to zero
-  param_inputs$eff_SMC <- 0
-  return(param_inputs)
-}
-
-#' Simulate Model with SMC
-#'
-#' This function simulates the model using the parameters that maximize the log posterior, which include SMC.
-#'
-#' @param results The MCMC results object containing the parameter samples.
-#' @param start_date The start date for the simulation.
-#' @param end_date The end date for the simulation.
-#' @param model The model function to simulate from.
-#' @return A data frame containing the simulation output with SMC.
-#' @export
-simulate_with_smc <- function(results, start_date, end_date, model,
-                              mu_transform_C = NULL, mu_transform_A = NULL,
-                              covariate_matrix = NULL) {
-  # Extract the best-fit parameters
-  max_posterior_params <- extract_max_posterior_params(results)
-
-  # Update the parameters to set eff_SMC to zero
-  param_inputs <- results$param_inputs
-  updated_params <- update_param_list(param_inputs, max_posterior_params)
-  no_smc_params <- set_eff_smc_to_zero(updated_params)
-
-  # Run the model simulation without SMC
-  simulation_output <- data_sim(model, no_smc_params, start_date, end_date,
-                                month = TRUE, round = FALSE, save = FALSE,
-                                month_unequal_days = FALSE,
-                                mu_transform_C = mu_transform_C,
-                                mu_transform_A = mu_transform_A,
-                                covariate_matrix = covariate_matrix)
-  return(sim_data)
-}
-
-#' Simulate Model Without SMC
-#'
-#' This function simulates the model with `eff_SMC` set to zero, representing a scenario without SMC intervention.
-#'
-#' @param results The MCMC results object containing the parameter samples.
-#' @param start_date The start date for the simulation.
-#' @param end_date The end date for the simulation.
-#' @param model The model function to simulate from.
-#' @return A data frame containing the simulation output without SMC.
-#' @export
-simulate_without_smc <- function(results, start_date, end_date, model,
-                                 mu_transform_C = NULL, mu_transform_A = NULL,
-                                 covariate_matrix = NULL) {
-  # Extract the best-fit parameters
-  max_posterior_params <- extract_max_posterior_params(results)
-
-  # Update the parameters to set eff_SMC to zero
-  param_inputs <- results$param_inputs
-  updated_params <- update_param_list(param_inputs, max_posterior_params)
-  no_smc_params <- set_eff_smc_to_zero(updated_params)
-
-  # Run the model simulation without SMC
-  simulation_output <- data_sim(model, no_smc_params, start_date, end_date,
-                                month = TRUE, round = FALSE, save = FALSE,
-                                month_unequal_days = FALSE,
-                                mu_transform_C = mu_transform_C,
-                                mu_transform_A = mu_transform_A,
-                                covariate_matrix = covariate_matrix)
-
-  return(simulation_output)
-}
-
-#' Calculate Cases Averted by SMC
-#'
-#' This function calculates the number and percent of malaria cases averted due to SMC intervention by comparing
-#' the simulated scenarios with and without SMC.
-#'
-#' @param with_smc_df Data frame containing the incidence data from the model simulated with SMC.
-#' @param without_smc_df Data frame containing the incidence data from the model simulated without SMC.
-#' @return A list containing the number of cases averted and the percentage of cases averted.
-#' @export
-calculate_cases_averted <- function(with_smc_df, without_smc_df) {
-
-  # Ensure both data frames have the same dates for proper comparison
-  if (!all(with_smc_df$date_ymd == without_smc_df$date_ymd)) {
-    stop("Dates in with_smc_df and without_smc_df do not match.")
-  }
-
-  # Calculate the total number of cases for each scenario
-  total_cases_with_smc <- sum(with_smc_df$inc, na.rm = TRUE)
-  total_cases_without_smc <- sum(without_smc_df$inc, na.rm = TRUE)
-
-  # Calculate the number and percentage of cases averted
-  cases_averted <- total_cases_without_smc - total_cases_with_smc
-  percent_averted <- (cases_averted / total_cases_without_smc) * 100
-
-  return(list(
-    cases_averted = cases_averted,
-    percent_averted = percent_averted
-  ))
-}
-
-#' Set SMC Coverage Level
-#'
-#' This function takes a list of model parameters and sets the `cov_SMC` parameter to a user-defined level.
-#'
-#' @param param_inputs A list of parameter values for the model.
-#' @param coverage_level A numeric value (between 0 and 1) representing the desired coverage level. Default is 1 (100% coverage).
-#' @return A list with the `cov_SMC` parameter updated to the specified coverage level.
-#' @export
-#' @examples
-#' full_coverage_params <- set_smc_coverage(param_inputs, coverage_level = 1)
-set_smc_coverage <- function(param_inputs, coverage_level = 1) {
-  # Update all values of cov_SMC to the desired level
-  param_inputs$cov_SMC <- rep(coverage_level, length(param_inputs$cov_SMC))
-  return(param_inputs)
-}
-
-
-#' Simulate Model with Full SMC Coverage
-#'
-#' This function simulates the model with `cov_SMC` set to a user-defined level (default is 100% coverage).
-#'
-#' @param results The MCMC results object containing the parameter samples.
-#' @param start_date The start date for the simulation.
-#' @param end_date The end date for the simulation.
-#' @param model The model function to simulate from.
-#' @param coverage_level A numeric value between 0 and 1 for the desired SMC coverage. Default is 1 (100% coverage).
-#' @return A data frame containing the simulation output with full or specified SMC coverage.
-#' @export
-#' @examples
-#' sim_full_coverage <- simulate_with_full_coverage(results, start_date, end_date, model, coverage_level = 1)
-simulate_with_full_coverage <- function(results, start_date, end_date, model, coverage_level = 1) {
-  # Extract the best-fit parameters
-  max_posterior_params <- extract_max_posterior_params(results)
-
-  # Update the parameters with the extracted values
-  param_inputs <- results$param_inputs
-  updated_params <- update_param_list(param_inputs, max_posterior_params)
-
-  # Set the SMC coverage level to full (or specified level)
-  updated_params <- set_smc_coverage(updated_params, coverage_level)
-
-  # Run the model simulation with the updated coverage level
-  simulation_output <- data_sim(model, updated_params, start_date, end_date,
-                                month = TRUE, round = FALSE, save = FALSE,
-                                month_unequal_days = FALSE)
-
-  return(simulation_output)
-}
-
-
-
 #' Calculate Outcome Across Matched Simulation Lists
 #'
 #' @param o1 List of data frames (e.g., with SMC).
@@ -248,25 +88,26 @@ plot_estimate_distribution <- function(estimates,
 #'
 #' Runs model simulations for a list of SMC coverage patterns and summarizes outcomes.
 #'
-#' @param patterns A named list of 12-element binary vectors representing monthly SMC coverage patterns.
-#' @param smc_day_of_month Day of month for simulated SMC coverage start (default = 1).
-#' @param model A compiled model object used for simulations.
-#' @param param_inputs A named list of baseline parameter values.
-#' @param param_samples A matrix of sampled parameter sets (rows = samples).
-#' @param start_date Start date for the simulation.
-#' @param end_date End date for the simulation.
+#' @param patterns A named list of 12-element binary vectors or lists of such vectors (per year), indicating months when SMC is applied.
+#' @param smc_day_of_month Integer specifying the day of the month to begin SMC each round (default is 1).
+#' @param model A compiled model object to simulate from.
+#' @param param_inputs A named list of baseline model parameters.
+#' @param param_samples A matrix or data frame of sampled parameter sets (one row per sample).
+#' @param start_date Simulation start date (character or Date).
+#' @param end_date Simulation end date (character or Date).
 #' @param avg_cov Average SMC coverage to apply during active months.
-#' @param years A vector of years to apply SMC coverage.
-#' @param exclude_years Years to exclude from summarizing coverage (default = 2023).
-#' @param mu_transform_C Optional transformation function for mu_C.
-#' @param mu_transform_A Optional transformation function for mu_A.
-#' @param outcome_fn A function defining the outcome to summarize (default: total cases).
-#' @param o1 Baseline simulations for comparison.
-#' @param ci_level Confidence level for credible intervals (default = 0.95).
-#' @param out_dir Directory to save plots (optional).
-#' @param month Logical. Whether to summarize and simulate using weekly data. Default is FALSE.
-#' @param apply_decay Logical. Whether to apply decay to SMC coverage. Default is TRUE.
-#' @param use_SMC_as_covariate Logical. Whether or not SMC is included in the model or as a covariate in the observation model.
+#' @param years A vector of years to apply SMC coverage (e.g., 2018:2023).
+#' @param exclude_years Years to exclude when computing summaries (default is 2023).
+#' @param mu_transform_C Optional transformation function for compartment C incidence.
+#' @param mu_transform_A Optional transformation function for compartment A incidence.
+#' @param outcome_fn Function computing the scalar outcome of interest from two simulation outputs (default: sum of transformed incidence).
+#' @param o1 Optional baseline simulation for comparison.
+#' @param ci_level Confidence level for summary intervals (default is 0.95).
+#' @param out_dir Output directory to save plots. If NULL, plots are not saved.
+#' @param month Logical. Whether the model and summaries are in monthly (TRUE) or weekly (FALSE) time (default is FALSE).
+#' @param apply_decay Logical. Whether to apply time-decay to SMC coverage values (default is TRUE).
+#' @param use_SMC_as_covariate Logical. Whether SMC is used as a covariate in the observation model instead of being built into the transmission model (default is FALSE).
+#' @param noise Logical. Whether to add stochastic noise to simulated incidence (default is FALSE).
 #'
 #' @return A list with three elements:
 #' \describe{
@@ -305,7 +146,7 @@ evaluate_multiple_scenarios <- function(patterns,
   for (label in names(patterns)) {
     month_pattern <- patterns[[label]]
 
-    # --- NEW BLOCK: unify to an n_years × 12 matrix ---
+    # --- NEW BLOCK: unify to an n_years x 12 matrix ---
     if (is.list(month_pattern) && all(names(month_pattern) %in% as.character(years))) {
       # ensure rows are in the same order as `years`
       year_strs     <- as.character(years)
@@ -313,14 +154,14 @@ evaluate_multiple_scenarios <- function(patterns,
       rownames(mat) <- year_strs
       months_active <- mat
     } else if (is.numeric(month_pattern) && length(month_pattern) == 12) {
-      # legacy single‐pattern: repeat it for each year
+      # legacy single-pattern: repeat it for each year
       months_active <- matrix(
         rep(month_pattern, length(years)),
         nrow   = length(years),
         byrow  = TRUE
       )
     } else {
-      stop("Each element of `patterns` must be either a 12‐vector or a named list-of-12-vectors.")
+      stop("Each element of `patterns` must be either a 12-vector or a named list-of-12-vectors.")
     }
 
     smc_schedule <- gen_smc_schedule(start_date, end_date, years = years, months_30_days = month,
@@ -430,108 +271,13 @@ evaluate_multiple_scenarios <- function(patterns,
 #' @param estimates A named list where each element is either:
 #'   - A numeric vector of posterior draws, or
 #'   - A list with elements `mean`, `lower`, and `upper`.
-#' @param title Plot title.
-#' @param x_lab Label for the x-axis.
-#' @param y_lab Label for the y-axis.
-#' @param horizontal Logical. If TRUE, produces a horizontal bar plot.
-#'
-#' @return A `ggplot2` bar plot object showing mean cases averted with 95% CI.
-#' @export
-plot_cases_averted_barplot <- function(estimates,
-                                       title      = "Estimated Cases Averted for Different SMC Timings",
-                                       x_lab      = "SMC Timing",
-                                       y_lab      = "Mean Cases Averted (95% CI)",
-                                       horizontal = FALSE) {
-
-  # Define colorblind-friendly scenario colors
-  scenario_colors <- c(
-    "4 rounds (July start)" = "#0072B2",  # Blue
-    "4 rounds (June start)" = "#E69F00",  # Orange
-    "5 rounds (July start)" = "#009E73",  # Green
-    "5 rounds (June start)" = "#D55E00"   # Red
-  )
-
-  # 1. Convert input into tidy data frame
-  est_df <- purrr::imap_dfr(estimates, function(est, label) {
-    if (is.numeric(est) && !is.list(est)) {
-      quant <- quantile(est, probs = c(0.025, 0.975), na.rm = TRUE)
-      tibble::tibble(
-        pattern       = label,
-        cases_averted = mean(est, na.rm = TRUE),
-        lower         = quant[1],
-        upper         = quant[2]
-      )
-    } else if (is.list(est) && all(c("mean", "lower", "upper") %in% names(est))) {
-      tibble::tibble(
-        pattern       = label,
-        cases_averted = est$mean,
-        lower         = est$lower,
-        upper         = est$upper
-      )
-    } else {
-      stop("Each element of 'estimates' must be a numeric vector or a list with 'mean', 'lower', and 'upper'.")
-    }
-  })
-
-  # 2. Sort by descending value and fix factor levels
-  est_df <- est_df %>%
-    #arrange(desc(cases_averted)) %>%
-    mutate(
-      pattern = factor(pattern, levels = unique(pattern)),
-      fill_color = scenario_colors[as.character(pattern)]
-    )
-
-  # 3. Plot
-  p <- ggplot(est_df, aes(x = pattern, y = cases_averted, fill = pattern)) +
-    geom_col(alpha = 0.9) +
-    geom_errorbar(
-      aes(ymin = lower, ymax = upper),
-      width = 0.2, color = "black"
-    ) +
-    scale_fill_manual(values = scenario_colors, drop = FALSE) +
-    labs(
-      title = title,
-      x     = x_lab,
-      y     = y_lab,
-      fill  = NULL
-    ) +
-    theme_minimal(base_size = 13) +
-    theme(
-      plot.title = element_text(face = "bold", hjust = 0.5),
-      axis.text  = element_text(size = 11),
-      axis.title = element_text(size = 13),
-      legend.position = "none"
-    )
-
-  # 4. Optional horizontal layout
-  if (horizontal) {
-    p <- p +
-      coord_flip() +
-      theme(axis.text.y = element_text(hjust = 1))
-  } else {
-    p <- p +
-      theme(axis.text.x = element_text(angle = 45, hjust = 1))
-  }
-
-  return(p)
-}
-
-#' Plot Cases Averted Across SMC Scenarios (with 95% Credible Intervals)
-#'
-#' Generates a bar plot of estimated cases averted for each SMC pattern/scenario,
-#' including 95% credible interval error bars. Supports either:
-#' * A list of numeric vectors (posterior samples), or
-#' * A list of lists with `mean`, `lower`, and `upper`.
-#'
-#' @param estimates A named list where each element is either:
-#'   - A numeric vector of posterior draws, or
-#'   - A list with elements `mean`, `lower`, and `upper`.
-#' @param title Plot title.
-#' @param x_lab Label for the x-axis.
-#' @param y_lab Label for the y-axis.
-#' @param horizontal Logical. If TRUE, produces a horizontal bar plot.
-#' @param by_year Logical. If TRUE, scales all values to per-year estimates.
-#' @param n_years Numeric. The number of years to divide by when `by_year = TRUE`.
+#' @param title Character string for the main plot title.
+#' @param x_lab Character string for the x-axis label.
+#' @param y_lab Character string for the y-axis label.
+#' @param horizontal Logical; if TRUE, produces a horizontal bar plot with patterns on the y-axis.
+#' @param by_year Logical; if TRUE, divides all values by `n_years` to yield per-year estimates.
+#' @param n_years Numeric; the number of years used for scaling if `by_year = TRUE`. Must be positive.
+#' @param bar_colors Named character vector specifying fill colors for each SMC pattern. The names should match the names in `estimates`.
 #'
 #' @return A `ggplot2` bar plot object showing mean cases averted with 95% CI.
 #' @export
@@ -629,10 +375,3 @@ plot_cases_averted_barplot <- function(estimates,
 
   return(p)
 }
-
-
-
-
-
-
-

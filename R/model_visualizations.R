@@ -332,11 +332,6 @@ plot_ppc_single <- function(plot_data,
                             severity   = "Uncomplicated",
                             scale_severe = 1,
                             scale_severe_by_year = NULL) {
-
-  library(dplyr)
-  library(ggplot2)
-  library(lubridate)
-
   # Define full label set (for consistent legends)
   legend_levels <- c("Observed", "With SMC", "Without SMC", "SMC in 2019", "2023 June", "2023 July",
                      "2023 True SMC Timing")

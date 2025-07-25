@@ -5,22 +5,26 @@
 \title{Sample Parameter Sets from MCMC Results}
 \usage{
 sample_mcmc_steps(mcmc_results, num_samples)
-
-sample_mcmc_steps(mcmc_results, num_samples)
 }
 \arguments{
-\item{mcmc_results}{A matrix or data frame containing MCMC posterior samples of parameters.}
+\item{mcmc_results}{A matrix or data frame where each row represents a parameter set from the posterior distribution.}
 
-\item{num_samples}{Number of samples to draw.}
+\item{num_samples}{Integer specifying how many parameter sets to sample.}
 }
 \value{
-A matrix of sampled parameter sets.
-
-A matrix of sampled parameter sets.
+A matrix of dimension \code{num_samples} × \code{ncol(mcmc_results)}, containing randomly selected parameter sets.
 }
 \description{
-This function randomly samples a specified number of parameter sets from the MCMC posterior distribution.
+Randomly samples rows from a matrix or data frame containing MCMC posterior samples. Useful for generating
+parameter sets to use in posterior predictive simulations or scenario analyses.
 }
 \examples{
-sampled_params <- sample_mcmc_steps(MCMC_results_2_3$mcmc_run$pars, 100)
+# Simulate MCMC posterior with 100 samples and 3 parameters
+posterior_samples <- matrix(rnorm(300), nrow = 100, ncol = 3)
+colnames(posterior_samples) <- c("alpha", "beta", "gamma")
+
+# Draw 10 random samples from the MCMC results
+sampled <- sample_mcmc_steps(posterior_samples, 10)
+print(sampled)
+
 }

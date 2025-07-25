@@ -13,17 +13,20 @@ create_proposal_matrix(
 )
 }
 \arguments{
-\item{params_to_estimate}{A character vector of parameter names to estimate.}
+\item{params_to_estimate}{A character vector of parameter names to estimate. Only scalar-valued model parameters will be considered.}
 
-\item{proposal_variance}{A named list containing the variance for each parameter. If \code{NULL}, default values are used.}
+\item{proposal_variance}{A named list of proposal variances for each parameter. If \code{NULL}, a default set of variances is used.}
 
-\item{model}{A model object with a \code{param()} method that returns all parameter names.}
+\item{correlation_matrix}{Optional correlation matrix for a subset of parameters. If provided, the correlation structure will be incorporated into the proposal matrix.}
 
-\item{param_inputs}{A list of parameter values passed to initialize the model, used to extract parameters.}
+\item{model}{A model object with a \code{new()} constructor and a \code{param()} method that returns all parameters in the model.}
+
+\item{param_inputs}{A named list of parameter values used to initialize the model. This is used to identify scalar parameters that are eligible for estimation.}
 }
 \value{
-A square matrix with dimensions equal to the number of parameters, with diagonal elements corresponding to the proposal variances for each parameter.
+A square numeric matrix with dimensions equal to the number of scalar parameters in the model. The diagonal contains the proposal variances, and the off-diagonal entries contain covariances if a correlation matrix is provided.
 }
 \description{
-This function generates a proposal matrix for use in MCMC methods, where each parameter has its own proposal variance.
+Generates a proposal covariance matrix for use in MCMC algorithms. The matrix is initialized
+with specified variances for parameters to be estimated and optionally incorporates parameter correlations.
 }

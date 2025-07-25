@@ -24,7 +24,7 @@ A data frame with the original data and appended imputed values, sorted by \code
 This function imputes missing dates in a climate time series using the average
 value for each (month, day) combination across all prior years in the dataset.
 It is useful for filling in short gaps at the end of a time series, such as
-imputing values for December 2023 using earlier years’ averages.
+imputing values for December 2023 using earlier years' averages.
 }
 \examples{
 # Suppose your climate data ends at 2023-12-01

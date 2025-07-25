@@ -12,18 +12,22 @@
 #' }
 #'
 #' @examples
-#' # Get default priors
+#' # Retrieve the default priors
 #' priors <- return_default_priors()
 #'
-#' # Access the prior for a specific parameter
-#' phi_prior <- priors$phi
-#' print(phi_prior)
+#' # List the names of all parameters with priors
+#' names(priors)
 #'
-#' # Evaluate the prior for phi at a specific value
-#' phi_value <- 0.5
-#' log_prior_density <- phi_prior$prior(phi_value)
-#' print(log_prior_density)
+#' # Access the prior definition for a specific parameter
+#' if ("phi" %in% names(priors)) {
+#'   phi_prior <- priors$phi
+#'   print(phi_prior)
 #'
+#'   # Evaluate the log-prior density at a specific value
+#'   phi_value <- 0.5
+#'   log_density <- phi_prior$prior(phi_value)
+#'   print(log_density)
+#' }
 #' @export
 return_default_priors <- function(){
   default_priors <- list(
@@ -170,16 +174,48 @@ build_priors <- function(param_inputs,
 
 
 
-#' View Default Priors
+#' View Details of Specified Priors
 #'
-#' This function displays the default priors and their details, including initial values, min/max bounds, and prior distributions.
+#' Returns a data frame summarizing the details of the specified priors, including initial values,
+#' bounds, and the functional form of the prior distribution.
 #'
-#' @param params_to_estimate Character vector specifying which parameters' priors should be viewed.
-#' @param priors List of priors to view. If NULL, the default priors will be displayed.
-#' @return A data frame containing the details of each prior specified in params_to_estimate.
-#' @export
+#' @param param_inputs A named list of base parameter values. Used if \code{priors} is not supplied.
+#' @param proposal_matrix Covariance matrix used in proposal distribution. Required if \code{priors} is NULL.
+#' @param params_to_estimate A character vector specifying which parameters' priors should be viewed.
+#' @param priors Optional list of priors. If \code{NULL}, the function calls \code{initialize_priors()} to generate defaults.
+#'
+#' @return A data frame with one row per parameter and the following columns:
+#' \describe{
+#'   \item{Name}{The parameter name.}
+#'   \item{Initial}{The initial value used in inference.}
+#'   \item{Min}{The lower bound of the prior.}
+#'   \item{Max}{The upper bound of the prior.}
+#'   \item{Description}{A textual representation of the prior function.}
+#' }
+#'
 #' @examples
-#' view_priors(param_inputs, proposal_matrix, params_to_estimate = c("a_R", "b_R", "qR", "z", "eff_SMC", "phi", "size"))
+#' # Define dummy prior functions
+#' dummy_prior <- function(p) dnorm(p, mean = 0, sd = 1, log = TRUE)
+#'
+#' # Create a minimal list of priors matching the expected structure
+#' dummy_priors <- list(
+#'   a_R = list(name = "a_R", initial = 0.1, min = -2, max = 2, prior = dummy_prior),
+#'   b_R = list(name = "b_R", initial = 1.5, min = 0, max = 3, prior = dummy_prior),
+#'   qR  = list(name = "qR",  initial = 0.01, min = 0, max = 1, prior = dummy_prior),
+#'   z   = list(name = "z",   initial = 0.2, min = 0, max = 1, prior = dummy_prior),
+#'   eff_SMC = list(name = "eff_SMC", initial = 0.5, min = 0, max = 1, prior = dummy_prior),
+#'   phi = list(name = "phi", initial = 0.3, min = -1, max = 1, prior = dummy_prior),
+#'   size = list(name = "size", initial = 5, min = 0.01, max = 20, prior = dummy_prior)
+#' )
+#'
+#' # View priors for a subset of parameters using a supplied list
+#' view_priors(
+#'   param_inputs = NULL,
+#'   proposal_matrix = NULL,
+#'   params_to_estimate = c("a_R", "b_R", "qR", "z", "eff_SMC", "phi", "size"),
+#'   priors = dummy_priors
+#' )
+#' @export
 view_priors <- function(param_inputs, proposal_matrix, params_to_estimate, priors = NULL) {
   if (is.null(priors)) {
     priors <- initialize_priors(param_inputs, proposal_matrix, params_to_estimate)
@@ -267,11 +303,17 @@ plot_priors <- function(param_inputs, proposal_matrix, params_to_estimate, prior
 
 #' Update Default Priors
 #'
-#' This function allows the user to update the default priors with new values.
+#' Updates the default prior specifications for a set of parameters, allowing users to replace or modify
+#' elements such as distribution type, bounds, and initial values.
 #'
-#' @param priors List of priors to update. Default is NULL, which means using the default priors.
-#' @param new_priors A named list of new prior specifications to replace the defaults.
-#' @return A list containing updated priors.
+#' @param param_inputs A named list of model parameter inputs used to initialize default priors.
+#' @param proposal_matrix A proposal covariance matrix used to set up default priors.
+#' @param params_to_estimate A character vector of parameters to estimate and update priors for.
+#' @param priors Optional. A list of existing priors. If NULL (default), default priors are generated using \code{initialize_priors()}.
+#' @param new_priors A named list of new prior specifications. Each element should be a list with updated fields (e.g., \code{initial}, \code{min}, \code{max}, \code{prior}).
+#'
+#' @return A list of prior specifications with selected entries updated based on \code{new_priors}.
+#'
 #' @export
 update_priors <- function(param_inputs, proposal_matrix, params_to_estimate, priors = NULL, new_priors) {
   if (is.null(priors)) {

@@ -2,25 +2,33 @@
 % Please edit documentation in R/model_simulation.R
 \name{update_param_list}
 \alias{update_param_list}
-\title{Update Parameters in List with Values from Extracted Vector}
+\title{Update a Parameter List with New Values}
 \usage{
 update_param_list(param_inputs, param_values)
 }
 \arguments{
-\item{param_inputs}{A list of parameters where each element is a named parameter.}
+\item{param_inputs}{A named list containing parameter values, where each name corresponds to a model parameter.}
 
-\item{param_values}{A named vector of parameters, typically from the maximum
-log posterior, to update values in \code{param_inputs}.}
+\item{param_values}{A named vector or list of parameter values to use for updating. Each name in this object
+should correspond to a name in \code{param_inputs}.}
 }
 \value{
-An updated list of parameters with replaced values where matches exist.
+A modified version of \code{param_inputs} where parameters matching names in \code{param_values}
+are replaced by the corresponding values.
 }
 \description{
-This function updates values in a list of parameters (e.g., \code{param_inputs})
-with values from a named vector of parameters obtained from an MCMC run.
+Replaces entries in a parameter list using a named vector of new values. Typically used to inject
+sampled or optimized parameter values (e.g., from an MCMC posterior) into a base parameter list.
 }
 \examples{
-# Assuming `param_inputs` is a list of parameters and `params_at_max_posterior`
-# is a named vector with values to update
+# Original parameter list
+param_inputs <- list(alpha = 1, beta = 2, gamma = 3)
+
+# New parameter values, e.g., from posterior sample
+params_at_max_posterior <- c(alpha = 0.9, gamma = 2.7)
+
+# Update the parameter list
 updated_params <- update_param_list(param_inputs, params_at_max_posterior)
+print(updated_params)
+
 }

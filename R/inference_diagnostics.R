@@ -10,13 +10,6 @@
 #' @details
 #' This function assumes that `mcmc_run$pars` contains the posterior samples and that there is a
 #' `chain` vector in `mcmc_run$chain` specifying the chain each row belongs to.
-#'
-#' @examples
-#' \dontrun{
-#' mcmc_chains <- plot_chains(mcmc_run)
-#' plot(mcmc_chains)  # Trace plots for all chains
-#' }
-#'
 #' @export
 plot_chains <- function(mcmc_run) {
   chains <- mcmc_run$chain
@@ -75,8 +68,6 @@ plot_corr <- function(results, title = NULL) {
 }
 
 #' MCMC Diagnostic and Summary Plots with Save Options
-#'
-#' Same functionality as before, now with file saving capabilities for diagnostics.
 #'
 #' @param results MCMC result object.
 #' @param params Diagnostics to compute.
@@ -418,4 +409,48 @@ post_plot <- function(results_list, params_to_estimate, dim_plot, show_true = TR
 
   return(combined_plot)
 
+}
+
+
+#' Extract and Print Maximum Log-Likelihood and Log-Posterior
+#'
+#' This function extracts and optionally prints the maximum values of the log-likelihood
+#' and log-posterior from the results of an MCMC run. It is useful for quickly evaluating
+#' the fit of a model.
+#'
+#' @param results A list containing the MCMC results from an inference run,
+#' including the `coda_pars` matrix with columns for `log_likelihood` and `log_posterior`.
+#' @param print_ll Boolean. If `TRUE`, the maximum log-likelihood and log-posterior values
+#' will be printed to the console (default: `TRUE`).
+#'
+#' @return A list with two named elements:
+#' \describe{
+#'   \item{max_log_likelihood}{The maximum value of the log-likelihood.}
+#'   \item{max_log_posterior}{The maximum value of the log-posterior.}
+#' }
+#' @export
+max_ll_post <- function(results, print_ll = TRUE) {
+  # Check if 'coda_pars' exists and contains required columns
+  if (!"coda_pars" %in% names(results)) {
+    stop("The results list must contain 'coda_pars'.")
+  }
+
+  if (!all(c("log_likelihood", "log_posterior") %in% colnames(results$coda_pars))) {
+    stop("'coda_pars' must contain 'log_likelihood' and 'log_posterior' columns.")
+  }
+
+  # Extract MCMC posterior results
+  coda_pars <- results$coda_pars
+
+  # Find maximum values for log_likelihood and log_posterior
+  max_log_likelihood <- max(coda_pars[ , "log_likelihood"], na.rm = TRUE)
+  max_log_posterior <- max(coda_pars[ , "log_posterior"], na.rm = TRUE)
+
+  # Print the results
+  if(print_ll){
+    cat("Maximum Log-Likelihood:", max_log_likelihood, "\n")
+    cat("Maximum Log-Posterior:", max_log_posterior, "\n")
+  }
+  return(list(max_log_likelihood = max_log_likelihood,
+              max_log_posterior = max_log_posterior))
 }

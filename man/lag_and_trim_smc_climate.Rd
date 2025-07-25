@@ -11,13 +11,13 @@ lag_and_trim_smc_climate(smc_df, clim_df, lag_days)
 
 \item{clim_df}{Data.frame with \code{dates} (Date) and climate columns.}
 
-\item{lag_days}{Integer ≥ 0: days Climate lags behind SMC.}
+\item{lag_days}{Integer >= 0: days Climate lags behind SMC.}
 }
 \value{
 List with:
 \itemize{
-\item \code{smc} — ordered SMC data.frame,
-\item \code{climate} — climate aligned so row_i = SMC_date_i − lag_days.
+\item \code{smc} - ordered SMC data.frame,
+\item \code{climate} - climate aligned so row_i = SMC_date_i - lag_days.
 }
 }
 \description{

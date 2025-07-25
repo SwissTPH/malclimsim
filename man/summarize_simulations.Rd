@@ -2,29 +2,28 @@
 % Please edit documentation in R/model_simulation.R
 \name{summarize_simulations}
 \alias{summarize_simulations}
-\title{Summarize Simulation Results with Confidence Intervals and Selective Variables}
+\title{Summarize Simulation Outputs with Medians and Confidence Intervals}
 \usage{
 summarize_simulations(simulation_results, ci_level = 0.95, variables = NULL)
 }
 \arguments{
-\item{simulation_results}{A list of data frames containing model outputs for different parameter sets.}
+\item{simulation_results}{A list of data frames, where each data frame contains the model
+output for a different parameter set. Each data frame must include a \code{date_ymd} column.}
 
-\item{ci_level}{The confidence level (e.g., 0.95 for 95\% confidence intervals).}
+\item{ci_level}{Numeric value between 0 and 1 specifying the confidence level for the intervals
+(e.g., \code{0.95} for 95\% confidence intervals).}
 
-\item{variables}{A character vector specifying which compartments to summarize (e.g., c("SC", "EC", "prev_total_with_R")).
-If NULL, all compartments will be summarized.}
+\item{variables}{A character vector indicating which compartment names to summarize
+(e.g., \code{c("SC", "EC", "prev_total_with_R")}). If \code{NULL}, all variables except
+\code{date_ymd} and \code{simulation_id} will be included.}
 }
 \value{
-A data frame with median values and confidence intervals for the selected compartments at each time step.
+A data frame with one row per date and summary statistics (median, lower, and upper
+bounds) for each selected variable. Columns are named using the pattern \code{<variable>_median},
+\code{<variable>_lower}, and \code{<variable>_upper}.
 }
 \description{
-This function calculates the median and confidence intervals for selected compartments
-from the simulation results.
-}
-\examples{
-# Summarize SC and EC compartments
-summary_df <- summarize_simulations(simulations, ci_level = 0.95, variables = c("SC", "EC"))
-
-# Summarize all compartments
-summary_df <- summarize_simulations(simulations, ci_level = 0.95)
+Computes the pointwise median and confidence intervals for selected variables across
+multiple simulation runs. Useful for summarizing posterior predictive distributions
+of model outputs.
 }

@@ -2,12 +2,12 @@
 % Please edit documentation in R/aux_functions.R
 \name{date_to_weeks_360}
 \alias{date_to_weeks_360}
-\title{Generate weekly model dates (by 7-day blocks) in 360‑day calendar}
+\title{Generate weekly model dates (by 7-day blocks) in 360-day calendar}
 \usage{
 date_to_weeks_360(start_year, n_days)
 }
 \arguments{
-\item{start_year}{integer, year of day 1}
+\item{start_year}{integer, year of day}
 
 \item{n_days}{integer, total days (must be divisible by 7)}
 }
@@ -15,5 +15,5 @@ date_to_weeks_360(start_year, n_days)
 A data.frame with one row per week: year, month, day (all numeric)
 }
 \description{
-Generate weekly model dates (by 7-day blocks) in 360‑day calendar
+Generate weekly model dates (by 7-day blocks) in 360-day calendar
 }

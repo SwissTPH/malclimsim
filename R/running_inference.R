@@ -299,24 +299,24 @@ filter_incidence_by_dates <- function(incidence_df, dates) {
 #'
 #' @param model The model object used for simulation and inference.
 #' @param param_inputs List of input parameters for the model, including temperature, decay, and coverage details.
-#' @param control_params Control parameters for the MCMC process including chain, burn-in, and step counts.
-#' @param params_to_estimate Character vector of parameters to estimate during inference.
-#' @param proposal_matrix Covariance matrix for the MCMC proposal distribution.
-#' @param adaptive_params Parameters for adaptive proposal distribution if adaptive MCMC is used.
-#' @param start_values Initial parameter values for starting the MCMC chains.
+#' @param control_params Named list of control parameters for MCMC (e.g., number of steps, burn-in, chains).
+#' @param params_to_estimate Character vector of parameter names to be estimated.
+#' @param proposal_matrix Covariance matrix used for the proposal distribution in MCMC.
+#' @param adaptive_params List of parameters controlling adaptation in MCMC (e.g., update interval, scale factor).
+#' @param start_values Named vector of initial values for MCMC chains.
 #' @param noise Logical; if TRUE, adds noise to the synthetic incidence data.
-#' @param seed Numeric; sets the random seed for reproducibility.
-#' @param month_unequal_days Logical; indicates if monthly data has unequal days.
-#' @param dates Vector of start and end dates for the simulation period.
-#' @param synthetic Logical; if TRUE, generates synthetic incidence data.
-#' @param incidence_df Data frame of observed incidence data if not synthetic.
-#' @param save_trajectories Logical; if TRUE, saves MCMC trajectories.
-#' @param rerun_n Numeric; frequency for re-running MCMC proposals.
-#' @param rerun_random Logical; if TRUE, re-runs MCMC randomly.
-#' @param param_priors Optional prior list for MCMC parameters.
-#' @param n_years_warmup Number of years to run prior to start of observation period.
-#' @param obs_config A named list specifying observation model configuration.
-#'        Use `make_obs_config()` to construct this.
+#' @param seed Numeric; random seed for reproducibility of simulations.
+#' @param month_unequal_days Logical; if TRUE, accounts for different numbers of days in each month.
+#' @param dates Character or Date vector of length two specifying the start and end date of the simulation period.
+#' @param synthetic Logical; if TRUE, synthetic data is generated using the model and parameters.
+#' @param incidence_df Data frame of observed incidence data. Required if `synthetic = FALSE`.
+#' @param save_trajectories Logical; if TRUE, saves intermediate state trajectories during MCMC.
+#' @param rerun_n Numeric; frequency (in iterations) at which to re-run the deterministic model (default is Inf).
+#' @param rerun_random Logical; if TRUE, re-run times are randomized instead of fixed interval.
+#' @param param_priors Optional named list of prior distributions for parameters being estimated.
+#' @param override_priors Optional list to override specific priors in `param_priors`.
+#' @param n_years_warmup Number of years to run the model prior to the start date (default is 3).
+#' @param obs_config A named list specifying configuration of the observation model. Use `make_obs_config()` to construct this.
 #'
 #' @return A list containing MCMC results, including posterior samples, fixed parameters, priors, and incidence data.
 #' @export

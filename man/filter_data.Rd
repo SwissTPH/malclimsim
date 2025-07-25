@@ -38,7 +38,8 @@ if (requireNamespace("mcstate", quietly = TRUE)) {
     month_no = 0:10,
     value = rpois(11, lambda = 10)
   )
-  formatted_month_data <- filter_data(incidence_observed_month, month = TRUE, initial_time_obs = 0, rate = 30)
+  formatted_month_data <- filter_data(incidence_observed_month, month = TRUE,
+  initial_time_obs = 0, rate = 30)
   head(formatted_month_data)
 }
 

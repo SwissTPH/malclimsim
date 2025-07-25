@@ -17,24 +17,48 @@ simulate_models(
 \arguments{
 \item{model}{The model function to simulate from.}
 
-\item{param_inputs}{The initial list of parameters to update for each simulation.}
+\item{param_inputs}{A list of baseline parameters to be updated with each sampled parameter set.}
 
-\item{sampled_params}{A list of parameter sets to use for each simulation.}
+\item{sampled_params}{A list of named parameter sets, typically obtained from posterior samples.}
 
-\item{start_date}{The start date for the simulation.}
+\item{start_date}{Character string giving the start date for the simulation (e.g., "2021-01-01").}
 
-\item{end_date}{The end date for the simulation.}
+\item{end_date}{Character string giving the end date for the simulation (e.g., "2021-12-31").}
+
+\item{prewarm_years}{Integer specifying how many years before \code{start_date} to simulate for model prewarming (default is 2).}
+
+\item{days_per_year}{Integer specifying the number of days per simulation year (default is 360).}
 }
 \value{
-A list of data frames, each containing the simulation output for a different parameter set.
+A list of data frames. Each data frame contains the simulation results for a different parameter set.
 }
 \description{
-This function runs \code{n} model simulations, each using a different set of parameters sampled
-from the MCMC results.
+Runs the epidemiological model multiple times using different parameter sets sampled from MCMC results.
+Each simulation is optionally prewarmed using a specified number of years prior to the start date.
 }
 \examples{
-# Assuming `sampled_params` is a list of sampled parameter sets
-simulations <- simulate_models(model = data_sim, param_inputs = param_inputs,
-                               sampled_params = sampled_params,
-                               start_date = "2021-01-01", end_date = "2021-12-31")
+\dontrun{
+# Example setup with a dummy model and parameters
+model <- your_model_function  # Replace with your actual model function
+param_inputs <- return_default_inputs()  # Replace with your actual input generator
+
+# Simulate posterior parameter samples
+posterior_samples <- matrix(rnorm(30), nrow = 10, ncol = 3)
+colnames(posterior_samples) <- c("alpha", "beta", "gamma")
+
+# Convert to list of named parameter sets
+sampled_params <- lapply(1:nrow(posterior_samples), function(i) {
+  as.list(posterior_samples[i, ])
+})
+
+# Run simulations
+simulations <- simulate_models(
+  model = model,
+  param_inputs = param_inputs,
+  sampled_params = sampled_params,
+  start_date = "2021-01-01",
+  end_date = "2021-12-31"
+)
+}
+
 }

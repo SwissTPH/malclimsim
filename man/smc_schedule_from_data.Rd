@@ -2,37 +2,47 @@
 % Please edit documentation in R/smc_scheduling.R
 \name{smc_schedule_from_data}
 \alias{smc_schedule_from_data}
-\title{Generate a schedule of coverage values for a given period with decay}
+\title{Generate SMC Coverage and Decay Schedule}
 \usage{
 smc_schedule_from_data(smc_cov, months_30_days, years, const = -0.1806)
 }
 \arguments{
-\item{smc_cov}{A data frame containing the coverage data. It should have at least two columns:
+\item{smc_cov}{A data frame with at least two columns:
 \itemize{
-\item \code{date_start}: The date of the coverage value.
-\item \code{coverage}: The coverage value corresponding to that date.
+\item \code{date_start}: A \code{Date} or character vector indicating the start of coverage.
+\item \code{coverage}: Numeric values indicating the coverage on each date.
 }}
 
-\item{months_30_days}{Logical; whether to generate dates in 30-day month format (defaults to \code{FALSE}).
-If \code{TRUE}, the sequence of dates will follow a 360-day year with 12 months of 30 days each.}
+\item{months_30_days}{Logical. If \code{TRUE}, generates a synthetic 360-day calendar (12 months of 30 days).
+Defaults to \code{FALSE}.}
 
-\item{years}{A numeric vector containing the range of years to generate the schedule for (e.g., \code{c(2014, 2022)}).}
+\item{years}{A numeric vector of length 2 specifying the range of years to include (e.g., \code{c(2014, 2022)}).}
 
-\item{const}{A numeric value representing the decay constant used in the decay calculation (default is \code{-0.1806}).}
+\item{const}{A numeric scalar for the exponential decay constant (default: \code{-0.1806}).}
 }
 \value{
-A data frame containing the following columns:
+A data frame with the following columns:
 \itemize{
-\item \code{dates}: The sequence of dates from the beginning to the end of the time period.
-\item \code{SMC}: A binary value indicating the presence (1) or absence (0) of coverage on each date.
-\item \code{cov}: The coverage value for each date.
-\item \code{decay}: The decay values calculated for each date based on the SMC and the decay constant.
+\item \code{dates}: A daily sequence of dates across the specified time range.
+\item \code{SMC}: Binary indicator (1 if SMC applied on that day, 0 otherwise).
+\item \code{cov}: Propagated SMC coverage values after filling and masking non-SMC months.
+\item \code{decay}: Daily decay values calculated using the specified constant.
 }
 }
 \description{
-This function generates a schedule of coverage values for the given time period,
-filling missing values with previous non-zero coverage and applying a decay calculation.
+Constructs a daily schedule of SMC (Seasonal Malaria Chemoprevention) coverage and decay values
+over a specified time period. Missing values are filled forward using the last observed non-zero
+coverage, and decay is applied according to a specified exponential decay constant.
 }
 \examples{
-smc_schedule_from_data(smc_cov = smc_cov_data, months_30_days = FALSE, years = c(2014, 2022))
+\dontrun{
+smc_data <- data.frame(
+  date_start = as.Date(c("2014-06-01", "2014-07-01", "2015-06-01")),
+  coverage = c(0.8, 0.85, 0.9)
+)
+schedule <- smc_schedule_from_data(smc_cov = smc_data,
+months_30_days = FALSE, years = c(2014, 2015))
+head(schedule)
+}
+
 }

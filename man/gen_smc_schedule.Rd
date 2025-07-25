@@ -21,24 +21,24 @@ gen_smc_schedule(
 
 \item{years}{Integer vector. Years included in the schedule.}
 
-\item{months_active}{Matrix (n_years × 12) with 1 = SMC month, 0 = not.}
+\item{months_active}{Matrix (n_years x 12) with 1 = SMC month, 0 = not.}
 
 \item{months_30_days}{Logical. Use 360-day calendar (every month = 30 days)?}
 
 \item{coverage}{Either \strong{(i)} a single numeric (legacy behaviour) or
 \strong{(ii)} a numeric vector of length 12 \emph{or} a named vector
-whose names are month numbers (1–12) / abbreviations
-("Jan", "Feb", …).  Values give coverage for each month.}
+whose names are month numbers (1-12) / abbreviations
+("Jan", "Feb", ...).  Values give coverage for each month.}
 
 \item{smc_day_of_month}{Integer. Day of month SMC is administered.}
 }
 \value{
 data.frame with columns:
 \itemize{
-\item dates – sequence of dates in the period
-\item SMC   – 1 on round day, 0 otherwise
-\item cov   – coverage applied (piecewise-constant blocks)
-\item decay – efficacy decay computed from round days
+\item dates - sequence of dates in the period
+\item SMC   - 1 on round day, 0 otherwise
+\item cov   - coverage applied (piecewise-constant blocks)
+\item decay - efficacy decay computed from round days
 }
 }
 \description{

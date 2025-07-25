@@ -15,18 +15,6 @@ plot_cases_averted_barplot(
   bar_colors = c(`4 rounds (July start)` = "#0072B2", `4 rounds (June start)` =
     "#E69F00", `5 rounds (July start)` = "#009E73", `5 rounds (June start)` = "#D55E00")
 )
-
-plot_cases_averted_barplot(
-  estimates,
-  title = "Estimated Cases Averted for Different SMC Timings",
-  x_lab = "SMC Timing",
-  y_lab = "Mean Cases Averted (95\% CI)",
-  horizontal = FALSE,
-  by_year = FALSE,
-  n_years = 1,
-  bar_colors = c(`4 rounds (July start)` = "#0072B2", `4 rounds (June start)` =
-    "#E69F00", `5 rounds (July start)` = "#009E73", `5 rounds (June start)` = "#D55E00")
-)
 }
 \arguments{
 \item{estimates}{A named list where each element is either:
@@ -35,31 +23,24 @@ plot_cases_averted_barplot(
 \item A list with elements \code{mean}, \code{lower}, and \code{upper}.
 }}
 
-\item{title}{Plot title.}
+\item{title}{Character string for the main plot title.}
 
-\item{x_lab}{Label for the x-axis.}
+\item{x_lab}{Character string for the x-axis label.}
 
-\item{y_lab}{Label for the y-axis.}
+\item{y_lab}{Character string for the y-axis label.}
 
-\item{horizontal}{Logical. If TRUE, produces a horizontal bar plot.}
+\item{horizontal}{Logical; if TRUE, produces a horizontal bar plot with patterns on the y-axis.}
 
-\item{by_year}{Logical. If TRUE, scales all values to per-year estimates.}
+\item{by_year}{Logical; if TRUE, divides all values by \code{n_years} to yield per-year estimates.}
 
-\item{n_years}{Numeric. The number of years to divide by when \code{by_year = TRUE}.}
+\item{n_years}{Numeric; the number of years used for scaling if \code{by_year = TRUE}. Must be positive.}
+
+\item{bar_colors}{Named character vector specifying fill colors for each SMC pattern. The names should match the names in \code{estimates}.}
 }
 \value{
 A \code{ggplot2} bar plot object showing mean cases averted with 95\% CI.
-
-A \code{ggplot2} bar plot object showing mean cases averted with 95\% CI.
 }
 \description{
-Generates a bar plot of estimated cases averted for each SMC pattern/scenario,
-including 95\% credible interval error bars. Supports either:
-\itemize{
-\item A list of numeric vectors (posterior samples), or
-\item A list of lists with \code{mean}, \code{lower}, and \code{upper}.
-}
-
 Generates a bar plot of estimated cases averted for each SMC pattern/scenario,
 including 95\% credible interval error bars. Supports either:
 \itemize{

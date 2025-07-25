@@ -2,7 +2,7 @@
 % Please edit documentation in R/climate_processing_functions.R
 \name{process_climate_data}
 \alias{process_climate_data}
-\title{Title}
+\title{Process and Format Climate Data for Modeling}
 \usage{
 process_climate_data(
   lon,
@@ -16,33 +16,32 @@ process_climate_data(
 )
 }
 \arguments{
-\item{lon}{\itemize{
-\item longitude coordinate
-}}
+\item{lon}{Numeric. Longitude coordinate for the location of interest.}
 
-\item{lat}{\itemize{
-\item latitude coordinate
-}}
+\item{lat}{Numeric. Latitude coordinate for the location of interest.}
 
-\item{years}{\itemize{
-\item vector containing each year for the analysis
-}}
+\item{years}{Integer vector. Years to include in the climate dataset.}
 
-\item{temp_path}{\itemize{
-\item path to temperature data saved by save_climate_data
-}}
+\item{temp_path}{Character. Path to the saved ERA5 temperature data file (NetCDF format).}
 
-\item{rain_path}{path to rainfall data saved by save_climate_data}
+\item{rain_path}{Character. Path to the saved CHIRPS rainfall data file (RDS format).}
 
-\item{path_to_data}{path to directory where the processed climate data will be stored}
+\item{months_30_days}{Logical. If TRUE (default), transforms calendar months into uniform 30-day months.}
+
+\item{save}{Logical. If TRUE, saves the processed data as an RDS file (default is FALSE).}
+
+\item{path_to_data}{Character. Directory where the processed climate data will be saved (required if \code{save = TRUE}).}
 }
 \value{
-a data frame
+A data frame with daily or monthly climate data including standardized rainfall and smoothed temperature.
 }
 \description{
-Title
+Reads and processes daily temperature and rainfall data, applies smoothing, standardizes rainfall,
+aligns dates, and optionally transforms the data to use 30-day months. Returns a clean climate dataset
+ready for use in modeling workflows.
 }
 \examples{
+\dontrun{
 years <- 2014:2023
 lon <- 17.9
 lat <- 8.3
@@ -51,5 +50,6 @@ save_climate_data(lon, lat, years, path_to_data)
 temp_path <- paste0(path_to_data, "era5_11051417.nc")
 rain_path <- paste0(path_to_data, "chirps_11051418.rds")
 met <- process_climate_data(lon, lat, years, D1 = 30, D2 = 30, temp_path = temp_path,
-rain_path = rain_path, path_to_data
+rain_path = rain_path, path_to_data)
+}
 }

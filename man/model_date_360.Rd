@@ -16,16 +16,11 @@ Represents the number of days since the start of the model.}
 A data frame with columns:
 \itemize{
 \item \code{year}: The calendar year.
-\item \code{month}: The calendar month (1–12).
-\item \code{day}: The day of the month (1–30).
+\item \code{month}: The calendar month (1-12).
+\item \code{day}: The day of the month (1-30).
 }
 }
 \description{
 Converts a given day index (e.g. from a model using 360-day years) into
 a calendar-like date assuming each year has 12 months of 30 days.
-}
-\examples{
-model_date_360(1:3, 2000)
-model_date_360(365, 2020)
-
 }

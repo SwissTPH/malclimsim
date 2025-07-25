@@ -57,9 +57,11 @@ save_climate_data(
 Saving Climate Data From ERA5 and CHIRTSdaily
 }
 \examples{
+\dontrun{
 years <- 2014:2023
 lon <- 17.9
 lat <- 8.3
 path_to_data <- "C:/Users/putnni/Documents/r-packages/data/"
 save_climate_data(lon, lat, years, path_to_data)
+}
 }

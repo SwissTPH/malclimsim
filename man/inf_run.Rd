@@ -32,40 +32,41 @@ inf_run(
 
 \item{param_inputs}{List of input parameters for the model, including temperature, decay, and coverage details.}
 
-\item{control_params}{Control parameters for the MCMC process including chain, burn-in, and step counts.}
+\item{control_params}{Named list of control parameters for MCMC (e.g., number of steps, burn-in, chains).}
 
-\item{params_to_estimate}{Character vector of parameters to estimate during inference.}
+\item{params_to_estimate}{Character vector of parameter names to be estimated.}
 
-\item{proposal_matrix}{Covariance matrix for the MCMC proposal distribution.}
+\item{proposal_matrix}{Covariance matrix used for the proposal distribution in MCMC.}
 
-\item{adaptive_params}{Parameters for adaptive proposal distribution if adaptive MCMC is used.}
+\item{adaptive_params}{List of parameters controlling adaptation in MCMC (e.g., update interval, scale factor).}
 
-\item{start_values}{Initial parameter values for starting the MCMC chains.}
+\item{start_values}{Named vector of initial values for MCMC chains.}
 
 \item{noise}{Logical; if TRUE, adds noise to the synthetic incidence data.}
 
-\item{seed}{Numeric; sets the random seed for reproducibility.}
+\item{seed}{Numeric; random seed for reproducibility of simulations.}
 
-\item{month_unequal_days}{Logical; indicates if monthly data has unequal days.}
+\item{month_unequal_days}{Logical; if TRUE, accounts for different numbers of days in each month.}
 
-\item{dates}{Vector of start and end dates for the simulation period.}
+\item{dates}{Character or Date vector of length two specifying the start and end date of the simulation period.}
 
-\item{synthetic}{Logical; if TRUE, generates synthetic incidence data.}
+\item{synthetic}{Logical; if TRUE, synthetic data is generated using the model and parameters.}
 
-\item{incidence_df}{Data frame of observed incidence data if not synthetic.}
+\item{incidence_df}{Data frame of observed incidence data. Required if \code{synthetic = FALSE}.}
 
-\item{save_trajectories}{Logical; if TRUE, saves MCMC trajectories.}
+\item{save_trajectories}{Logical; if TRUE, saves intermediate state trajectories during MCMC.}
 
-\item{rerun_n}{Numeric; frequency for re-running MCMC proposals.}
+\item{rerun_n}{Numeric; frequency (in iterations) at which to re-run the deterministic model (default is Inf).}
 
-\item{rerun_random}{Logical; if TRUE, re-runs MCMC randomly.}
+\item{rerun_random}{Logical; if TRUE, re-run times are randomized instead of fixed interval.}
 
-\item{param_priors}{Optional prior list for MCMC parameters.}
+\item{param_priors}{Optional named list of prior distributions for parameters being estimated.}
 
-\item{n_years_warmup}{Number of years to run prior to start of observation period.}
+\item{override_priors}{Optional list to override specific priors in \code{param_priors}.}
 
-\item{obs_config}{A named list specifying observation model configuration.
-Use \code{make_obs_config()} to construct this.}
+\item{n_years_warmup}{Number of years to run the model prior to the start date (default is 3).}
+
+\item{obs_config}{A named list specifying configuration of the observation model. Use \code{make_obs_config()} to construct this.}
 }
 \value{
 A list containing MCMC results, including posterior samples, fixed parameters, priors, and incidence data.
