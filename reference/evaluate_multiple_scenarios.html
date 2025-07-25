@@ -20,7 +20,6 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/using-malclimsim.html">Using malclimsim to infer parameters of a climate-driven dynamical transmission model</a></li>
     <li><a class="dropdown-item" href="../articles/using-your-own-model.html">How to import a model for use with malclimsim</a></li>
-    <li><a class="dropdown-item" href="../articles/viewing-and-modifying-observation-functions.html">Viewing and modifying observation functions</a></li>
     <li><a class="dropdown-item" href="../articles/viewing-and-modifying-priors.html">Viewing and modifying priors</a></li>
   </ul></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -74,31 +73,31 @@
 
 
 <dl><dt id="arg-patterns">patterns<a class="anchor" aria-label="anchor" href="#arg-patterns"></a></dt>
-<dd><p>A named list of 12-element binary vectors representing monthly SMC coverage patterns.</p></dd>
+<dd><p>A named list of 12-element binary vectors or lists of such vectors (per year), indicating months when SMC is applied.</p></dd>
 
 
 <dt id="arg-smc-day-of-month">smc_day_of_month<a class="anchor" aria-label="anchor" href="#arg-smc-day-of-month"></a></dt>
-<dd><p>Day of month for simulated SMC coverage start (default = 1).</p></dd>
+<dd><p>Integer specifying the day of the month to begin SMC each round (default is 1).</p></dd>
 
 
 <dt id="arg-model">model<a class="anchor" aria-label="anchor" href="#arg-model"></a></dt>
-<dd><p>A compiled model object used for simulations.</p></dd>
+<dd><p>A compiled model object to simulate from.</p></dd>
 
 
 <dt id="arg-param-inputs">param_inputs<a class="anchor" aria-label="anchor" href="#arg-param-inputs"></a></dt>
-<dd><p>A named list of baseline parameter values.</p></dd>
+<dd><p>A named list of baseline model parameters.</p></dd>
 
 
 <dt id="arg-param-samples">param_samples<a class="anchor" aria-label="anchor" href="#arg-param-samples"></a></dt>
-<dd><p>A matrix of sampled parameter sets (rows = samples).</p></dd>
+<dd><p>A matrix or data frame of sampled parameter sets (one row per sample).</p></dd>
 
 
 <dt id="arg-start-date">start_date<a class="anchor" aria-label="anchor" href="#arg-start-date"></a></dt>
-<dd><p>Start date for the simulation.</p></dd>
+<dd><p>Simulation start date (character or Date).</p></dd>
 
 
 <dt id="arg-end-date">end_date<a class="anchor" aria-label="anchor" href="#arg-end-date"></a></dt>
-<dd><p>End date for the simulation.</p></dd>
+<dd><p>Simulation end date (character or Date).</p></dd>
 
 
 <dt id="arg-avg-cov">avg_cov<a class="anchor" aria-label="anchor" href="#arg-avg-cov"></a></dt>
@@ -106,47 +105,51 @@
 
 
 <dt id="arg-years">years<a class="anchor" aria-label="anchor" href="#arg-years"></a></dt>
-<dd><p>A vector of years to apply SMC coverage.</p></dd>
+<dd><p>A vector of years to apply SMC coverage (e.g., 2018:2023).</p></dd>
 
 
 <dt id="arg-exclude-years">exclude_years<a class="anchor" aria-label="anchor" href="#arg-exclude-years"></a></dt>
-<dd><p>Years to exclude from summarizing coverage (default = 2023).</p></dd>
+<dd><p>Years to exclude when computing summaries (default is 2023).</p></dd>
 
 
 <dt id="arg-mu-transform-c">mu_transform_C<a class="anchor" aria-label="anchor" href="#arg-mu-transform-c"></a></dt>
-<dd><p>Optional transformation function for mu_C.</p></dd>
+<dd><p>Optional transformation function for compartment C incidence.</p></dd>
 
 
 <dt id="arg-mu-transform-a">mu_transform_A<a class="anchor" aria-label="anchor" href="#arg-mu-transform-a"></a></dt>
-<dd><p>Optional transformation function for mu_A.</p></dd>
+<dd><p>Optional transformation function for compartment A incidence.</p></dd>
 
 
 <dt id="arg-outcome-fn">outcome_fn<a class="anchor" aria-label="anchor" href="#arg-outcome-fn"></a></dt>
-<dd><p>A function defining the outcome to summarize (default: total cases).</p></dd>
+<dd><p>Function computing the scalar outcome of interest from two simulation outputs (default: sum of transformed incidence).</p></dd>
 
 
 <dt id="arg-o-">o1<a class="anchor" aria-label="anchor" href="#arg-o-"></a></dt>
-<dd><p>Baseline simulations for comparison.</p></dd>
+<dd><p>Optional baseline simulation for comparison.</p></dd>
 
 
 <dt id="arg-ci-level">ci_level<a class="anchor" aria-label="anchor" href="#arg-ci-level"></a></dt>
-<dd><p>Confidence level for credible intervals (default = 0.95).</p></dd>
+<dd><p>Confidence level for summary intervals (default is 0.95).</p></dd>
 
 
 <dt id="arg-out-dir">out_dir<a class="anchor" aria-label="anchor" href="#arg-out-dir"></a></dt>
-<dd><p>Directory to save plots (optional).</p></dd>
+<dd><p>Output directory to save plots. If NULL, plots are not saved.</p></dd>
 
 
 <dt id="arg-month">month<a class="anchor" aria-label="anchor" href="#arg-month"></a></dt>
-<dd><p>Logical. Whether to summarize and simulate using weekly data. Default is FALSE.</p></dd>
+<dd><p>Logical. Whether the model and summaries are in monthly (TRUE) or weekly (FALSE) time (default is FALSE).</p></dd>
 
 
 <dt id="arg-apply-decay">apply_decay<a class="anchor" aria-label="anchor" href="#arg-apply-decay"></a></dt>
-<dd><p>Logical. Whether to apply decay to SMC coverage. Default is TRUE.</p></dd>
+<dd><p>Logical. Whether to apply time-decay to SMC coverage values (default is TRUE).</p></dd>
 
 
 <dt id="arg-use-smc-as-covariate">use_SMC_as_covariate<a class="anchor" aria-label="anchor" href="#arg-use-smc-as-covariate"></a></dt>
-<dd><p>Logical. Whether or not SMC is included in the model or as a covariate in the observation model.</p></dd>
+<dd><p>Logical. Whether SMC is used as a covariate in the observation model instead of being built into the transmission model (default is FALSE).</p></dd>
+
+
+<dt id="arg-noise">noise<a class="anchor" aria-label="anchor" href="#arg-noise"></a></dt>
+<dd><p>Logical. Whether to add stochastic noise to simulated incidence (default is FALSE).</p></dd>
 
 </dl></div>
     <div class="section level2">

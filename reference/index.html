@@ -20,7 +20,6 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/using-malclimsim.html">Using malclimsim to infer parameters of a climate-driven dynamical transmission model</a></li>
     <li><a class="dropdown-item" href="../articles/using-your-own-model.html">How to import a model for use with malclimsim</a></li>
-    <li><a class="dropdown-item" href="../articles/viewing-and-modifying-observation-functions.html">Viewing and modifying observation functions</a></li>
     <li><a class="dropdown-item" href="../articles/viewing-and-modifying-priors.html">Viewing and modifying priors</a></li>
   </ul></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -72,12 +71,6 @@
 
         </dt>
         <dd>Calculate the Day Difference Assuming a 360-Day Year</dd>
-      </dl><dl><dt>
-
-          <code><a href="calculate_cases_averted.html">calculate_cases_averted()</a></code>
-
-        </dt>
-        <dd>Calculate Cases Averted by SMC</dd>
       </dl><dl><dt>
 
           <code><a href="calculate_estimate.html">calculate_estimate()</a></code>
@@ -173,7 +166,7 @@
           <code><a href="date_to_weeks_360.html">date_to_weeks_360()</a></code>
 
         </dt>
-        <dd>Generate weekly model dates (by 7-day blocks) in 360‑day calendar</dd>
+        <dd>Generate weekly model dates (by 7-day blocks) in 360-day calendar</dd>
       </dl><dl><dt>
 
           <code><a href="decay_SMC.html">decay_SMC()</a></code>
@@ -386,6 +379,12 @@
         <dd>Convert model day index to calendar date assuming 360-day years</dd>
       </dl><dl><dt>
 
+          <code><a href="obs_cases.html">obs_cases</a></code>
+
+        </dt>
+        <dd>Observed Malaria Incidence Used for Model Calibration</dd>
+      </dl><dl><dt>
+
           <code><a href="plot_cases_averted_barplot.html">plot_cases_averted_barplot()</a></code>
 
         </dt>
@@ -452,16 +451,10 @@
         <dd>Combine Posterior Simulations, Deterministic Prediction, and Observed Data for PPC Plotting</dd>
       </dl><dl><dt>
 
-          <code><a href="print_observation_structure.html">print_observation_structure()</a></code>
-
-        </dt>
-        <dd>Print Configuration for Observation Function</dd>
-      </dl><dl><dt>
-
           <code><a href="process_climate_data.html">process_climate_data()</a></code>
 
         </dt>
-        <dd>Title</dd>
+        <dd>Process and Format Climate Data for Modeling</dd>
       </dl><dl><dt>
 
           <code><a href="reorder_start_values.html">reorder_start_values()</a></code>
@@ -506,12 +499,6 @@
         <dd>Sample Parameter Sets from MCMC Results</dd>
       </dl><dl><dt>
 
-          <code><a href="sample_params.html">sample_params()</a></code>
-
-        </dt>
-        <dd>Sample Parameters from MCMC Results</dd>
-      </dl><dl><dt>
-
           <code><a href="save_climate_data.html">save_climate_data()</a></code>
 
         </dt>
@@ -536,18 +523,6 @@
         <dd>Save LaTeX Table of Scenario Estimates</dd>
       </dl><dl><dt>
 
-          <code><a href="set_eff_smc_to_zero.html">set_eff_smc_to_zero()</a></code>
-
-        </dt>
-        <dd>Set eff_SMC Parameter to Zero</dd>
-      </dl><dl><dt>
-
-          <code><a href="set_smc_coverage.html">set_smc_coverage()</a></code>
-
-        </dt>
-        <dd>Set SMC Coverage Level</dd>
-      </dl><dl><dt>
-
           <code><a href="sim_mod.html">sim_mod()</a></code>
 
         </dt>
@@ -566,40 +541,22 @@
         <dd>Simulate Models Using Sampled Parameters</dd>
       </dl><dl><dt>
 
-          <code><a href="simulate_prevalence_for_district.html">simulate_prevalence_for_district()</a></code>
-
-        </dt>
-        <dd>Simulate and Extract Yearly Prevalence Estimates for a District</dd>
-      </dl><dl><dt>
-
-          <code><a href="simulate_with_full_coverage.html">simulate_with_full_coverage()</a></code>
-
-        </dt>
-        <dd>Simulate Model with Full SMC Coverage</dd>
-      </dl><dl><dt>
-
           <code><a href="simulate_with_max_posterior_params.html">simulate_with_max_posterior_params()</a></code>
 
         </dt>
         <dd>Simulate Model Using Parameters with Maximum Log Posterior</dd>
       </dl><dl><dt>
 
-          <code><a href="simulate_with_smc.html">simulate_with_smc()</a></code>
+          <code><a href="smc_data_raw.html">smc_data_raw</a></code>
 
         </dt>
-        <dd>Simulate Model with SMC</dd>
-      </dl><dl><dt>
-
-          <code><a href="simulate_without_smc.html">simulate_without_smc()</a></code>
-
-        </dt>
-        <dd>Simulate Model Without SMC</dd>
+        <dd>Raw SMC Coverage Data from CPS</dd>
       </dl><dl><dt>
 
           <code><a href="smc_schedule_from_data.html">smc_schedule_from_data()</a></code>
 
         </dt>
-        <dd>Generate a schedule of coverage values for a given period with decay</dd>
+        <dd>Generate SMC Coverage and Decay Schedule</dd>
       </dl><dl><dt>
 
           <code><a href="summarize_simulation_ci.html">summarize_simulation_ci()</a></code>
@@ -611,7 +568,7 @@
           <code><a href="summarize_simulations.html">summarize_simulations()</a></code>
 
         </dt>
-        <dd>Summarize Simulation Results with Confidence Intervals and Selective Variables</dd>
+        <dd>Summarize Simulation Outputs with Medians and Confidence Intervals</dd>
       </dl><dl><dt>
 
           <code><a href="update_inf_stage.html">update_inf_stage()</a></code>
@@ -623,7 +580,7 @@
           <code><a href="update_param_list.html">update_param_list()</a></code>
 
         </dt>
-        <dd>Update Parameters in List with Values from Extracted Vector</dd>
+        <dd>Update a Parameter List with New Values</dd>
       </dl><dl><dt>
 
           <code><a href="update_priors.html">update_priors()</a></code>
@@ -641,7 +598,7 @@
           <code><a href="view_priors.html">view_priors()</a></code>
 
         </dt>
-        <dd>View Default Priors</dd>
+        <dd>View Details of Specified Priors</dd>
       </dl></div>
   </main></div>
 

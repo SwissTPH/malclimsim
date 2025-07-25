@@ -22,7 +22,6 @@ an associated prior distribution, an initial value, and range constraints."></he
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/using-malclimsim.html">Using malclimsim to infer parameters of a climate-driven dynamical transmission model</a></li>
     <li><a class="dropdown-item" href="../articles/using-your-own-model.html">How to import a model for use with malclimsim</a></li>
-    <li><a class="dropdown-item" href="../articles/viewing-and-modifying-observation-functions.html">Viewing and modifying observation functions</a></li>
     <li><a class="dropdown-item" href="../articles/viewing-and-modifying-priors.html">Viewing and modifying priors</a></li>
   </ul></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -70,21 +69,29 @@ an associated prior distribution, an initial value, and range constraints.</p>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># Get default priors</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># Retrieve the default priors</span></span></span>
 <span class="r-in"><span><span class="va">priors</span> <span class="op">&lt;-</span> <span class="fu">return_default_priors</span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Access the prior for a specific parameter</span></span></span>
-<span class="r-in"><span><span class="va">phi_prior</span> <span class="op">&lt;-</span> <span class="va">priors</span><span class="op">$</span><span class="va">phi</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">phi_prior</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> NULL</span>
+<span class="r-in"><span><span class="co"># List the names of all parameters with priors</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">priors</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [1] "lag_R"        "lag_T"        "alpha"        "sigma_LT"     "sigma_RT"    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [6] "R_opt"        "k1"           "size_1"       "eff_SMC"      "s"           </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [11] "b"            "qR"           "size_2"       "kappa_C"      "kappa_A"     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [16] "z"            "beta_1"       "beta_2"       "T_opt"        "c_X"         </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [21] "fT_C"         "mu_TS"        "mu_IR"        "mu_RS"        "mu_EI"       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [26] "delta_b"      "delta_d"      "delta_a"      "N"            "percAdult"   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [31] "pi_s_1"       "c_s"          "clim_SMC_lag" "r_C_0"        "r_A_0"       </span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Evaluate the prior for phi at a specific value</span></span></span>
-<span class="r-in"><span><span class="va">phi_value</span> <span class="op">&lt;-</span> <span class="fl">0.5</span></span></span>
-<span class="r-in"><span><span class="va">log_prior_density</span> <span class="op">&lt;-</span> <span class="va">phi_prior</span><span class="op">$</span><span class="fu">prior</span><span class="op">(</span><span class="va">phi_value</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> attempt to apply non-function</span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">log_prior_density</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'log_prior_density' not found</span>
+<span class="r-in"><span><span class="co"># Access the prior definition for a specific parameter</span></span></span>
+<span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="st">"phi"</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">priors</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span>  <span class="va">phi_prior</span> <span class="op">&lt;-</span> <span class="va">priors</span><span class="op">$</span><span class="va">phi</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">phi_prior</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
+<span class="r-in"><span>  <span class="co"># Evaluate the log-prior density at a specific value</span></span></span>
+<span class="r-in"><span>  <span class="va">phi_value</span> <span class="op">&lt;-</span> <span class="fl">0.5</span></span></span>
+<span class="r-in"><span>  <span class="va">log_density</span> <span class="op">&lt;-</span> <span class="va">phi_prior</span><span class="op">$</span><span class="fu">prior</span><span class="op">(</span><span class="va">phi_value</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">log_density</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

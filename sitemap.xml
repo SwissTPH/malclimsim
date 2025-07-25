@@ -5,7 +5,6 @@
 <url><loc>https://swisstph.github.io/malclimsim/articles/index.html</loc></url>
 <url><loc>https://swisstph.github.io/malclimsim/articles/using-malclimsim.html</loc></url>
 <url><loc>https://swisstph.github.io/malclimsim/articles/using-your-own-model.html</loc></url>
-<url><loc>https://swisstph.github.io/malclimsim/articles/viewing-and-modifying-observation-functions.html</loc></url>
 <url><loc>https://swisstph.github.io/malclimsim/articles/viewing-and-modifying-priors.html</loc></url>
 <url><loc>https://swisstph.github.io/malclimsim/authors.html</loc></url>
 <url><loc>https://swisstph.github.io/malclimsim/index.html</loc></url>
@@ -13,7 +12,6 @@
 <url><loc>https://swisstph.github.io/malclimsim/reference/build_priors.html</loc></url>
 <url><loc>https://swisstph.github.io/malclimsim/reference/calc_decay_arr.html</loc></url>
 <url><loc>https://swisstph.github.io/malclimsim/reference/calculate_360_day_difference.html</loc></url>
-<url><loc>https://swisstph.github.io/malclimsim/reference/calculate_cases_averted.html</loc></url>
 <url><loc>https://swisstph.github.io/malclimsim/reference/calculate_estimate.html</loc></url>
 <url><loc>https://swisstph.github.io/malclimsim/reference/calculate_monthly_metrics.html</loc></url>
 <url><loc>https://swisstph.github.io/malclimsim/reference/calculate_weekly_metrics.html</loc></url>
@@ -66,6 +64,7 @@
 <url><loc>https://swisstph.github.io/malclimsim/reference/make_transform.html</loc></url>
 <url><loc>https://swisstph.github.io/malclimsim/reference/max_ll_post.html</loc></url>
 <url><loc>https://swisstph.github.io/malclimsim/reference/model_date_360.html</loc></url>
+<url><loc>https://swisstph.github.io/malclimsim/reference/obs_cases.html</loc></url>
 <url><loc>https://swisstph.github.io/malclimsim/reference/pipe.html</loc></url>
 <url><loc>https://swisstph.github.io/malclimsim/reference/plot_cases_averted_barplot.html</loc></url>
 <url><loc>https://swisstph.github.io/malclimsim/reference/plot_chains.html</loc></url>
@@ -78,7 +77,6 @@
 <url><loc>https://swisstph.github.io/malclimsim/reference/plot_time_series.html</loc></url>
 <url><loc>https://swisstph.github.io/malclimsim/reference/post_plot.html</loc></url>
 <url><loc>https://swisstph.github.io/malclimsim/reference/prepare_ppc_data.html</loc></url>
-<url><loc>https://swisstph.github.io/malclimsim/reference/print_observation_structure.html</loc></url>
 <url><loc>https://swisstph.github.io/malclimsim/reference/process_climate_data.html</loc></url>
 <url><loc>https://swisstph.github.io/malclimsim/reference/reorder_start_values.html</loc></url>
 <url><loc>https://swisstph.github.io/malclimsim/reference/return_default_priors.html</loc></url>
@@ -87,21 +85,15 @@
 <url><loc>https://swisstph.github.io/malclimsim/reference/run_simulation_with_prewarm.html</loc></url>
 <url><loc>https://swisstph.github.io/malclimsim/reference/run_simulations_from_samples.html</loc></url>
 <url><loc>https://swisstph.github.io/malclimsim/reference/sample_mcmc_steps.html</loc></url>
-<url><loc>https://swisstph.github.io/malclimsim/reference/sample_params.html</loc></url>
 <url><loc>https://swisstph.github.io/malclimsim/reference/save_climate_data.html</loc></url>
 <url><loc>https://swisstph.github.io/malclimsim/reference/save_era5.html</loc></url>
 <url><loc>https://swisstph.github.io/malclimsim/reference/save_plot_dynamic.html</loc></url>
 <url><loc>https://swisstph.github.io/malclimsim/reference/save_scenario_summary_tex.html</loc></url>
-<url><loc>https://swisstph.github.io/malclimsim/reference/set_eff_smc_to_zero.html</loc></url>
-<url><loc>https://swisstph.github.io/malclimsim/reference/set_smc_coverage.html</loc></url>
 <url><loc>https://swisstph.github.io/malclimsim/reference/sim_mod.html</loc></url>
 <url><loc>https://swisstph.github.io/malclimsim/reference/simulate_best.html</loc></url>
 <url><loc>https://swisstph.github.io/malclimsim/reference/simulate_models.html</loc></url>
-<url><loc>https://swisstph.github.io/malclimsim/reference/simulate_prevalence_for_district.html</loc></url>
-<url><loc>https://swisstph.github.io/malclimsim/reference/simulate_with_full_coverage.html</loc></url>
 <url><loc>https://swisstph.github.io/malclimsim/reference/simulate_with_max_posterior_params.html</loc></url>
-<url><loc>https://swisstph.github.io/malclimsim/reference/simulate_with_smc.html</loc></url>
-<url><loc>https://swisstph.github.io/malclimsim/reference/simulate_without_smc.html</loc></url>
+<url><loc>https://swisstph.github.io/malclimsim/reference/smc_data_raw.html</loc></url>
 <url><loc>https://swisstph.github.io/malclimsim/reference/smc_schedule_from_data.html</loc></url>
 <url><loc>https://swisstph.github.io/malclimsim/reference/summarize_simulation_ci.html</loc></url>
 <url><loc>https://swisstph.github.io/malclimsim/reference/summarize_simulations.html</loc></url>
