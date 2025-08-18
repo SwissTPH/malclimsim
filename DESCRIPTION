@@ -12,10 +12,8 @@ RoxygenNote: 7.3.2
 Imports: 
     chirps,
     gridExtra,
-    lubridate,
     magrittr,
     ncdf4,
-    tidyr,
     zoo,
     rlang,
     reshape2,
