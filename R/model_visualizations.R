@@ -303,6 +303,195 @@ plot_ppc <- function(ppc_data,
   return(p)
 }
 
+#' Plot Posterior Predictive Check (PPC) with optional SMC overlays
+#'
+#' @param ppc_data Data frame from `prepare_ppc_data()` with columns:
+#'   `date_ymd`, `value`, `variable`, and `label` (levels: "Observed","Model").
+#' @param ci_data Optional data frame with columns: `date_ymd`, `lower`, `upper`, `variable`.
+#' @param title Plot title.
+#' @param xlab Label for x-axis.
+#' @param ylab Label for y-axis.
+#' @param show_obs Logical. Whether to show observed data.
+#' @param show_best Logical. Whether to show deterministic prediction.
+#' @param show_ribbon Logical. Whether to show posterior CI ribbon.
+#' @param smc_day_of_month_list Optional. Matrix or named list of matrices giving SMC days by year (rows=years, cols=months).
+#'   If a single matrix is provided, it is used for all variables. If a list, names must match variables.
+#' @param smc_rect_shape "rectangle" (full-height shading) or "bar" (short bars at top).
+#' @param smc_bar_height Height of each bar as fraction of y-range (for shape="bar").
+#' @param smc_bar_gap Gap between stacked bars as fraction of y-range (for shape="bar").
+#' @param smc_alpha Transparency for SMC overlays.
+#' @param smc_fill Color for SMC overlays (single color). Default neutral gray.
+#'
+#' @return A `ggplot2` object.
+#' @export
+plot_ppc <- function(ppc_data,
+                     ci_data     = NULL,
+                     title       = "Posterior Predictive Check",
+                     xlab        = "Date",
+                     ylab        = "Value",
+                     show_obs    = TRUE,
+                     show_best   = TRUE,
+                     show_ribbon = TRUE,
+                     # NEW SMC args:
+                     smc_day_of_month_list = NULL,
+                     smc_rect_shape        = c("rectangle","bar"),
+                     smc_bar_height        = 0.07,
+                     smc_bar_gap           = 0.01,
+                     smc_alpha             = 0.35,
+                     smc_fill              = "#8F8F8F") {
+
+  smc_rect_shape <- match.arg(smc_rect_shape)
+
+  # Label levels
+  label_levels <- c("Observed", "Model")
+  ppc_data$label <- factor(ppc_data$label, levels = label_levels)
+
+  # Base plot
+  p <- ggplot2::ggplot(ppc_data, ggplot2::aes(x = date_ymd, y = value, color = label))
+
+  # Posterior ribbon
+  if (!is.null(ci_data) && show_ribbon) {
+    ribbon_data <- ci_data %>%
+      dplyr::filter(variable %in% unique(ppc_data$variable))
+
+    p <- p + ggplot2::geom_ribbon(
+      data        = ribbon_data,
+      ggplot2::aes(x = date_ymd, ymin = lower, ymax = upper, group = variable),
+      fill        = "#D95F02",
+      alpha       = 0.25,
+      inherit.aes = FALSE
+    )
+  }
+
+  # ---------- SMC overlays (rectangles or bars) ----------
+  rects <- NULL
+  if (!is.null(smc_day_of_month_list)) {
+    # Ensure we have a named list keyed by variable
+    vars <- levels(factor(ppc_data$variable))
+    if (is.matrix(smc_day_of_month_list)) {
+      smc_day_of_month_list <- rlang::set_names(
+        replicate(length(vars), smc_day_of_month_list, simplify = FALSE), vars
+      )
+    } else {
+      missing_vars <- setdiff(vars, names(smc_day_of_month_list))
+      if (length(missing_vars) > 0) {
+        stop("Missing smc_day_of_month matrices for variables: ", paste(missing_vars, collapse = ", "))
+      }
+    }
+
+    # Build SMC intervals per variable, grouping contiguous months within each year
+    rects <- purrr::map_dfr(vars, function(vv) {
+      day_mat <- smc_day_of_month_list[[vv]]
+      years   <- as.integer(rownames(day_mat))
+      months_active <- (!is.na(day_mat)) * 1L
+
+      # gen_smc_schedule() returns daily rows with SMC==1 on active windows
+      sched <- gen_smc_schedule(
+        start_date        = min(ppc_data$date_ymd),
+        end_date          = max(ppc_data$date_ymd),
+        years             = years,
+        months_active     = months_active,
+        coverage          = rep(1, 12),
+        smc_day_of_month  = day_mat
+      )
+
+      rounds <- sched %>%
+        dplyr::filter(SMC == 1) %>%
+        dplyr::mutate(yr = lubridate::year(dates)) %>%
+        dplyr::group_by(yr) %>%
+        dplyr::summarise(
+          variable = vv,
+          xmin  = min(dates),
+          xmax  = max(dates) + lubridate::days(30),
+          .groups = "drop"
+        )
+
+      if (nrow(rounds) == 0) return(NULL)
+      rounds
+    })
+
+    if (!is.null(rects) && nrow(rects) > 0) {
+      rects$variable <- factor(rects$variable, levels = vars)
+    }
+  }
+
+  # Determine y-range (needed for top bars placement)
+  y_candidates <- c(ppc_data$value)
+  if (!is.null(ci_data)) {
+    y_candidates <- c(y_candidates, ci_data$lower, ci_data$upper)
+  }
+  y_candidates <- y_candidates[is.finite(y_candidates)]
+  if (length(y_candidates) == 0) {
+    y_min <- 0; y_max <- 1
+  } else {
+    y_min <- min(y_candidates, na.rm = TRUE)
+    y_max <- max(y_candidates, na.rm = TRUE)
+    if (y_min == y_max) { y_min <- 0; y_max <- y_max + 1 }
+  }
+  y_range <- y_max - y_min
+  if (y_range <= 0) y_range <- 1
+
+  # Draw SMC rectangles/bars behind data
+  if (!is.null(rects) && nrow(rects) > 0) {
+    if (smc_rect_shape == "rectangle") {
+      p <- p + ggplot2::geom_rect(
+        data        = rects,
+        ggplot2::aes(xmin = xmin, xmax = xmax),
+        ymin        = -Inf, ymax = Inf,
+        fill        = smc_fill, alpha = smc_alpha,
+        inherit.aes = FALSE
+      )
+    } else { # "bar"
+      uniq_vars <- levels(rects$variable)
+      uniq_vars <- uniq_vars[uniq_vars %in% unique(as.character(rects$variable))]
+      n_slots <- length(uniq_vars)
+      h <- smc_bar_height * y_range
+      g <- smc_bar_gap    * y_range
+      slot_map <- stats::setNames(seq_along(uniq_vars), uniq_vars)
+
+      rects_bar <- rects %>%
+        dplyr::mutate(slot = slot_map[as.character(variable)]) %>%
+        dplyr::mutate(
+          ymax = y_max - (slot - 1) * (h + g),
+          ymin = max(y_min, y_max - slot * (h + g) + g)
+        )
+
+      p <- p + ggplot2::geom_rect(
+        data        = rects_bar,
+        ggplot2::aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
+        fill        = smc_fill, alpha = smc_alpha,
+        inherit.aes = FALSE
+      )
+    }
+  }
+  # ---------- End SMC overlays ----------
+
+  # Add Observed points and Model line
+  if (show_obs) {
+    p <- p + ggplot2::geom_point(data = ppc_data %>% dplyr::filter(label == "Observed"),
+                                 size = 1.5)
+  }
+  if (show_best) {
+    p <- p + ggplot2::geom_line(data = ppc_data %>% dplyr::filter(label == "Model"),
+                                linewidth = 1.2)
+  }
+
+  # Final formatting
+  p <- p +
+    ggplot2::scale_color_manual(values = c(
+      "Observed" = "#201110",
+      "Model"    = "#D95F02"
+    )) +
+    ggplot2::labs(title = title, x = xlab, y = ylab, color = "Source") +
+    ggplot2::theme_minimal(base_size = 15) +
+    ggplot2::theme(
+      plot.title      = ggplot2::element_text(hjust = 0.5, face = "bold", size = 16),
+      legend.position = "top"
+    )
+
+  return(p)
+}
+
 
 #' Plot Single Time Series Comparison (Uncomplicated or Severe Cases)
 #'
