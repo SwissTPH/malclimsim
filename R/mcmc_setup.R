@@ -33,7 +33,7 @@ create_mcmc_params <- function(stage = "stage1",
                                n_workers = 4, n_threads_total = 8)
 {
   if(is.null(stage)){
-    adaptive_param <- adaptive_proposal_control(
+    adaptive_param <- mcstate::adaptive_proposal_control(
       initial_vcv_weight = initial_vcv_weight,
       initial_scaling = initial_scaling,
       initial_scaling_weight = initial_scaling_weight,
@@ -57,7 +57,7 @@ create_mcmc_params <- function(stage = "stage1",
   }
 
   if(stage == "stage1"){
-    adaptive_param <- adaptive_proposal_control(
+    adaptive_param <- mcstate::adaptive_proposal_control(
       initial_vcv_weight = 1,
       initial_scaling = 2,
       initial_scaling_weight = NULL,
@@ -75,7 +75,7 @@ create_mcmc_params <- function(stage = "stage1",
   }
 
   if(stage == "stage2"){
-    adaptive_param <- adaptive_proposal_control(
+    adaptive_param <- mcstate::adaptive_proposal_control(
       initial_vcv_weight = 100,
       initial_scaling = 2,
       initial_scaling_weight = NULL,
@@ -93,7 +93,7 @@ create_mcmc_params <- function(stage = "stage1",
   }
 
   if(stage == "noadapt"){
-    adaptive_param <- adaptive_proposal_control(
+    adaptive_param <- mcstate::adaptive_proposal_control(
       initial_vcv_weight = 500,
       initial_scaling = 1,
       initial_scaling_weight = NULL,
@@ -111,7 +111,7 @@ create_mcmc_params <- function(stage = "stage1",
   }
 
   if(stage == "noadapt2"){
-    adaptive_param <- adaptive_proposal_control(
+    adaptive_param <- mcstate::adaptive_proposal_control(
       initial_vcv_weight = 500,
       initial_scaling = 1,
       initial_scaling_weight = NULL,
