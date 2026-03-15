@@ -17,11 +17,11 @@ devtools::install_github("https://github.com/SwissTPH/malclimsim")
 ## Purpose
 The purpose of the package is to facilitate the simulation and calibration of a climate-driven model of malaria transmission as described in: 
 
-**Nicholas Putney, Jessica Sayyad Hilario, Israel Ukawuba, Francesco
-Grandesso, Saschveen Singh, Emilie Pothin, Elkoussing Djovouna,
-Mahamat Saleh Issakha Diar, Clara Champagne, and Anton Camacho. *Modelling malaria routine surveillance data to inform seasonal malaria chemoprevention strategy in Moissala, Southern Chad*** (not yet published).
+*Modelling malaria routine surveillance data to inform seasonal malaria chemoprevention strategy in Moissala, Southern Chad*. **Nicholas Putney, Jessica Sayyad-Hilario, Israel Ukawuba1, Francesco Grandesso3, Saschveen
+Singh, Prince Djuma Safari, Emilie Pothin, Beatrice Filippini, Elkoussing Djovouna,
+Mahamat Saleh Issakha Diar, Clara Champagne, Anton Camacho** (not yet published).
 
-The general methodology described in the paper could be used to estimate SMC effectiveness and assess different strategies in other geographies. Furthermore, the package is flexibility enough to allow users to change the model and inference procedures to suit their application.
+The general methodology described in the paper could be used to estimate SMC effectiveness and assess different strategies in other geographies. Furthermore, the package is flexible enough to allow users to change the model and inference procedures to suit their application.
 
 ## Usage
 Tutorials showing how to use the package are located at https://swisstph.github.io/malclimsim/.
