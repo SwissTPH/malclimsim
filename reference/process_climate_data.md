@@ -1,0 +1,80 @@
+# Process and Format Climate Data for Modeling
+
+Reads and processes daily temperature and rainfall data, applies
+smoothing, standardizes rainfall, aligns dates, and optionally
+transforms the data to use 30-day months. Returns a clean climate
+dataset ready for use in modeling workflows.
+
+## Usage
+
+``` r
+process_climate_data(
+  lon,
+  lat,
+  years,
+  temp_path,
+  rain_path,
+  months_30_days = TRUE,
+  save = FALSE,
+  path_to_data = NULL
+)
+```
+
+## Arguments
+
+- lon:
+
+  Numeric. Longitude coordinate for the location of interest.
+
+- lat:
+
+  Numeric. Latitude coordinate for the location of interest.
+
+- years:
+
+  Integer vector. Years to include in the climate dataset.
+
+- temp_path:
+
+  Character. Path to the saved ERA5 temperature data file (NetCDF
+  format).
+
+- rain_path:
+
+  Character. Path to the saved CHIRPS rainfall data file (RDS format).
+
+- months_30_days:
+
+  Logical. If TRUE (default), transforms calendar months into uniform
+  30-day months.
+
+- save:
+
+  Logical. If TRUE, saves the processed data as an RDS file (default is
+  FALSE).
+
+- path_to_data:
+
+  Character. Directory where the processed climate data will be saved
+  (required if `save = TRUE`).
+
+## Value
+
+A data frame with daily or monthly climate data including standardized
+rainfall and smoothed temperature.
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+years <- 2014:2023
+lon <- 17.9
+lat <- 8.3
+path_to_data <- "C:/Users/putnni/Documents/r-packages/data/"
+save_climate_data(lon, lat, years, path_to_data)
+temp_path <- paste0(path_to_data, "era5_11051417.nc")
+rain_path <- paste0(path_to_data, "chirps_11051418.rds")
+met <- process_climate_data(lon, lat, years, D1 = 30, D2 = 30, temp_path = temp_path,
+rain_path = rain_path, path_to_data)
+} # }
+```

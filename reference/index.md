@@ -1,0 +1,197 @@
+# Package index
+
+## All functions
+
+- [`MCMC_diag()`](https://swisstph.github.io/malclimsim/reference/MCMC_diag.md)
+  : MCMC Diagnostic and Summary Plots with Save Options
+- [`build_priors()`](https://swisstph.github.io/malclimsim/reference/build_priors.md)
+  : Build a list of mcstate::pmcmc_parameter() objects, starting from
+  the return_default_priors() template and then layering on any
+  overrides.
+- [`calc_decay_arr()`](https://swisstph.github.io/malclimsim/reference/calc_decay_arr.md)
+  : Calculate Normalized SMC Decay Array Over Time
+- [`calculate_360_day_difference()`](https://swisstph.github.io/malclimsim/reference/calculate_360_day_difference.md)
+  : Calculate the Day Difference Assuming a 360-Day Year
+- [`calculate_estimate()`](https://swisstph.github.io/malclimsim/reference/calculate_estimate.md)
+  : Calculate Outcome Across Matched Simulation Lists
+- [`calculate_monthly_metrics()`](https://swisstph.github.io/malclimsim/reference/calculate_monthly_metrics.md)
+  : Compute monthly metrics from SMC schedule
+- [`calculate_weekly_metrics()`](https://swisstph.github.io/malclimsim/reference/calculate_weekly_metrics.md)
+  : Compute weekly metrics from SMC schedule (epidemiological weeks,
+  starting Sunday)
+- [`climate_to_30_day_months()`](https://swisstph.github.io/malclimsim/reference/climate_to_30_day_months.md)
+  : Convert Climate Data to 360-Day Years
+- [`compartments_sim()`](https://swisstph.github.io/malclimsim/reference/compartments_sim.md)
+  : Simulate Compartments Over Time with Prewarm Period
+- [`compute_climate_lead_days()`](https://swisstph.github.io/malclimsim/reference/compute_climate_lead_days.md)
+  : Compute how many days Climate must lead SMC
+- [`create_mcmc_params()`](https://swisstph.github.io/malclimsim/reference/create_mcmc_params.md)
+  : Create Adaptive Proposal and MCMC Control Parameters
+- [`create_proposal_matrix()`](https://swisstph.github.io/malclimsim/reference/create_proposal_matrix.md)
+  : Create a Proposal Matrix
+- [`create_start_values()`](https://swisstph.github.io/malclimsim/reference/create_start_values.md)
+  : Create Starting Values for Parameters
+- [`daily_smooth_rain()`](https://swisstph.github.io/malclimsim/reference/daily_smooth_rain.md)
+  : Smooth Daily Rainfall Data
+- [`daily_smooth_temp()`](https://swisstph.github.io/malclimsim/reference/daily_smooth_temp.md)
+  : Daily Smoothed Temperature Function
+- [`data_sim()`](https://swisstph.github.io/malclimsim/reference/data_sim.md)
+  : Simulate Incidence Data Over Time (Monthly or Weekly)
+- [`data_sim_for_inference()`](https://swisstph.github.io/malclimsim/reference/data_sim_for_inference.md)
+  : Simulate Data for Inference
+- [`date_to_months()`](https://swisstph.github.io/malclimsim/reference/date_to_months.md)
+  : Convert Date Range to Monthly Format
+- [`date_to_weeks()`](https://swisstph.github.io/malclimsim/reference/date_to_weeks.md)
+  : Convert Date Range to Weekly Format (Sundays)
+- [`date_to_weeks_360()`](https://swisstph.github.io/malclimsim/reference/date_to_weeks_360.md)
+  : Generate weekly model dates (by 7-day blocks) in 360-day calendar
+- [`decay_SMC()`](https://swisstph.github.io/malclimsim/reference/decay_SMC.md)
+  : Compute SMC Efficacy Decay Over Time
+- [`define_mcmc_control()`](https://swisstph.github.io/malclimsim/reference/define_mcmc_control.md)
+  : Define MCMC Control Settings
+- [`define_transformations()`](https://swisstph.github.io/malclimsim/reference/define_transformations.md)
+  : Define Transformation Function for MCMC Simulation
+- [`evaluate_multiple_scenarios()`](https://swisstph.github.io/malclimsim/reference/evaluate_multiple_scenarios.md)
+  : Evaluate Multiple SMC Scenarios
+- [`export_param_table_tex()`](https://swisstph.github.io/malclimsim/reference/export_param_table_tex.md)
+  : Export Estimated and Fixed Parameters to LaTeX
+- [`extend_inputs_with_prewarm()`](https://swisstph.github.io/malclimsim/reference/extend_inputs_with_prewarm.md)
+  : Prepend Prewarm Climate to Your True Analysis Series
+- [`extend_time_varying_inputs()`](https://swisstph.github.io/malclimsim/reference/extend_time_varying_inputs.md)
+  : Extend Time-Varying Inputs Backwards in Time
+- [`extend_time_varying_inputs_to_length()`](https://swisstph.github.io/malclimsim/reference/extend_time_varying_inputs_to_length.md)
+  : Extend Time-Varying Inputs to Match Simulation Duration
+- [`extract_era5()`](https://swisstph.github.io/malclimsim/reference/extract_era5.md)
+  : Extract Temperature Data from ERA5 File
+- [`extract_max_posterior_params()`](https://swisstph.github.io/malclimsim/reference/extract_max_posterior_params.md)
+  : Extract Parameters with Maximum Log Posterior
+- [`extract_vcv()`](https://swisstph.github.io/malclimsim/reference/extract_vcv.md)
+  : Extract Variance-Covariance Matrix and Restart Values
+- [`filter_by_year()`](https://swisstph.github.io/malclimsim/reference/filter_by_year.md)
+  : Filter a dataset by a range of years
+- [`filter_data()`](https://swisstph.github.io/malclimsim/reference/filter_data.md)
+  : Relate Time Steps to Observed Data for mcstate
+- [`filter_data_setup()`](https://swisstph.github.io/malclimsim/reference/filter_data_setup.md)
+  : Set Up Filtered Data for Likelihood Evaluation
+- [`filter_incidence_by_dates()`](https://swisstph.github.io/malclimsim/reference/filter_incidence_by_dates.md)
+  : Filter Incidence Data by Date Range
+- [`gen_smc_schedule()`](https://swisstph.github.io/malclimsim/reference/gen_smc_schedule.md)
+  : Generate an SMC deployment schedule with optional month-specific
+  coverages
+- [`generate_360_day_dates()`](https://swisstph.github.io/malclimsim/reference/generate_360_day_dates.md)
+  : Generate Dates for a 360-Day Year Calendar
+- [`generate_comparison_function()`](https://swisstph.github.io/malclimsim/reference/generate_comparison_function.md)
+  : Generate Model-Observation Comparison Function
+- [`generate_smc_coverage_matrix()`](https://swisstph.github.io/malclimsim/reference/generate_smc_coverage_matrix.md)
+  : Generate SMC Coverage Matrix for Simulation
+- [`generate_synthetic_data()`](https://swisstph.github.io/malclimsim/reference/generate_synthetic_data.md)
+  : Generate Synthetic Incidence Data (Optional)
+- [`get_field_mapping()`](https://swisstph.github.io/malclimsim/reference/get_field_mapping.md)
+  : Get Model Output Field Names for Observation Function
+- [`get_observation_function()`](https://swisstph.github.io/malclimsim/reference/get_observation_function.md)
+  : Get Observation Function Based on User Configuration
+- [`get_population_scaling()`](https://swisstph.github.io/malclimsim/reference/get_population_scaling.md)
+  : Generate Vectors of Population Growth Scaling (r_C and r_A)
+- [`import_model()`](https://swisstph.github.io/malclimsim/reference/import_model.md)
+  : Import an Odin Model into the malclimsim Package
+- [`impute_climate_to_end_date()`](https://swisstph.github.io/malclimsim/reference/impute_climate_to_end_date.md)
+  : Impute Missing Climate Data Using Climatological Daily Means
+- [`index()`](https://swisstph.github.io/malclimsim/reference/index-topic.md)
+  : Create Index Mapping for Model Variables
+- [`inf_run()`](https://swisstph.github.io/malclimsim/reference/inf_run.md)
+  : Run MCMC Inference Simulation
+- [`initialize_observation_time()`](https://swisstph.github.io/malclimsim/reference/initialize_observation_time.md)
+  : Initialize Observation Time Index for Incidence Data
+- [`lag_and_trim_smc_climate()`](https://swisstph.github.io/malclimsim/reference/lag_and_trim_smc_climate.md)
+  : Lag and Trim SMC and Climate Data.frames
+- [`load_clean_smc_data()`](https://swisstph.github.io/malclimsim/reference/load_clean_smc_data.md)
+  : Load and clean raw SMC coverage data
+- [`load_model()`](https://swisstph.github.io/malclimsim/reference/load_model.md)
+  : Loading an Odin Model
+- [`make_obs_config()`](https://swisstph.github.io/malclimsim/reference/make_obs_config.md)
+  : Create Observation Function Configuration
+- [`make_transform()`](https://swisstph.github.io/malclimsim/reference/make_transform.md)
+  : Create a Parameter Transformation Function
+- [`max_ll_post()`](https://swisstph.github.io/malclimsim/reference/max_ll_post.md)
+  : Extract and Print Maximum Log-Likelihood and Log-Posterior
+- [`model_date_360()`](https://swisstph.github.io/malclimsim/reference/model_date_360.md)
+  : Convert model day index to calendar date assuming 360-day years
+- [`obs_cases`](https://swisstph.github.io/malclimsim/reference/obs_cases.md)
+  : Observed Malaria Incidence Used for Model Calibration
+- [`plot_cases_averted_barplot()`](https://swisstph.github.io/malclimsim/reference/plot_cases_averted_barplot.md)
+  : Plot Cases Averted Across SMC Scenarios (with 95% Credible
+  Intervals)
+- [`plot_chains()`](https://swisstph.github.io/malclimsim/reference/plot_chains.md)
+  : Convert MCMC Output to List of Chains for Visualization
+- [`plot_compartments()`](https://swisstph.github.io/malclimsim/reference/plot_compartments.md)
+  : Plot Compartmental Simulation Results
+- [`plot_corr()`](https://swisstph.github.io/malclimsim/reference/plot_corr.md)
+  : Plot Correlation of MCMC Samples
+- [`plot_estimate_distribution()`](https://swisstph.github.io/malclimsim/reference/plot_estimate_distribution.md)
+  : Plot Histogram of Estimated Effects with Confidence Interval and
+  Trimmed X-Axis
+- [`plot_ppc()`](https://swisstph.github.io/malclimsim/reference/plot_ppc.md)
+  : Plot Posterior Predictive Check (PPC)
+- [`plot_ppc_single()`](https://swisstph.github.io/malclimsim/reference/plot_ppc_single.md)
+  : Plot Single Time Series Comparison (Uncomplicated or Severe Cases)
+- [`plot_priors()`](https://swisstph.github.io/malclimsim/reference/plot_priors.md)
+  : Plot Default Priors
+- [`plot_time_series()`](https://swisstph.github.io/malclimsim/reference/plot_time_series.md)
+  : Plot Time Series of Malaria Incidence (Raw and Transformed)
+- [`post_plot()`](https://swisstph.github.io/malclimsim/reference/post_plot.md)
+  : Plot Posterior Distributions of Estimated Parameters
+- [`prepare_ppc_data()`](https://swisstph.github.io/malclimsim/reference/prepare_ppc_data.md)
+  : Combine Posterior Simulations, Deterministic Prediction, and
+  Observed Data for PPC Plotting
+- [`process_climate_data()`](https://swisstph.github.io/malclimsim/reference/process_climate_data.md)
+  : Process and Format Climate Data for Modeling
+- [`reorder_start_values()`](https://swisstph.github.io/malclimsim/reference/reorder_start_values.md)
+  : Reorder MCMC Start Values to Match Prior Specification
+- [`return_default_priors()`](https://swisstph.github.io/malclimsim/reference/return_default_priors.md)
+  : Return Default Priors Used for Inference Procedure
+- [`run_mcmc_simulation()`](https://swisstph.github.io/malclimsim/reference/run_mcmc_simulation.md)
+  : Run MCMC Simulation
+- [`run_mcmc_simulations()`](https://swisstph.github.io/malclimsim/reference/run_mcmc_simulations.md)
+  : Run Model Simulations for Each Parameter Set
+- [`run_simulation_with_prewarm()`](https://swisstph.github.io/malclimsim/reference/run_simulation_with_prewarm.md)
+  : Run Model Simulation with Pre-Warm Period
+- [`run_simulations_from_samples()`](https://swisstph.github.io/malclimsim/reference/run_simulations_from_samples.md)
+  : Run Simulations from Sampled Parameter Sets
+- [`sample_mcmc_steps()`](https://swisstph.github.io/malclimsim/reference/sample_mcmc_steps.md)
+  : Sample Parameter Sets from MCMC Results
+- [`save_climate_data()`](https://swisstph.github.io/malclimsim/reference/save_climate_data.md)
+  : Saving Climate Data From ERA5 and CHIRTSdaily
+- [`save_era5()`](https://swisstph.github.io/malclimsim/reference/save_era5.md)
+  : Save ERA5 Reanalysis Data
+- [`save_plot_dynamic()`](https://swisstph.github.io/malclimsim/reference/save_plot_dynamic.md)
+  : Save ggplot with Dynamic Filename
+- [`save_scenario_summary_tex()`](https://swisstph.github.io/malclimsim/reference/save_scenario_summary_tex.md)
+  : Save LaTeX Table of Scenario Estimates
+- [`sim_mod()`](https://swisstph.github.io/malclimsim/reference/sim_mod.md)
+  : Simulate the Malaria Model Over Time
+- [`simulate_best()`](https://swisstph.github.io/malclimsim/reference/simulate_best.md)
+  : Run the model once at the maximum-posterior parameter set
+  (deterministic)
+- [`simulate_models()`](https://swisstph.github.io/malclimsim/reference/simulate_models.md)
+  : Simulate Models Using Sampled Parameters
+- [`simulate_with_max_posterior_params()`](https://swisstph.github.io/malclimsim/reference/simulate_with_max_posterior_params.md)
+  : Simulate Model Using Parameters with Maximum Log Posterior
+- [`smc_data_raw`](https://swisstph.github.io/malclimsim/reference/smc_data_raw.md)
+  : Raw SMC Coverage Data from CPS
+- [`smc_schedule_from_data()`](https://swisstph.github.io/malclimsim/reference/smc_schedule_from_data.md)
+  : Generate SMC Coverage and Decay Schedule
+- [`summarize_simulation_ci()`](https://swisstph.github.io/malclimsim/reference/summarize_simulation_ci.md)
+  : Create Long Format Data for Simulated Posterior Median and CI
+- [`summarize_simulations()`](https://swisstph.github.io/malclimsim/reference/summarize_simulations.md)
+  : Summarize Simulation Outputs with Medians and Confidence Intervals
+- [`update_inf_stage()`](https://swisstph.github.io/malclimsim/reference/update_inf_stage.md)
+  : Update proposal matrix, start values, and MCMC settings for next
+  stage
+- [`update_param_list()`](https://swisstph.github.io/malclimsim/reference/update_param_list.md)
+  : Update a Parameter List with New Values
+- [`update_priors()`](https://swisstph.github.io/malclimsim/reference/update_priors.md)
+  : Update Default Priors
+- [`validate_smc_climate_alignment()`](https://swisstph.github.io/malclimsim/reference/validate_smc_climate_alignment.md)
+  : Validate SMC and Climate for Lagged Alignment
+- [`view_priors()`](https://swisstph.github.io/malclimsim/reference/view_priors.md)
+  : View Details of Specified Priors

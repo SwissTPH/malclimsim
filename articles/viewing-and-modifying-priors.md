@@ -1,0 +1,249 @@
+# Viewing and modifying priors
+
+``` r
+#detach("package:malclimsim", unload = TRUE)
+#devtools::install_github("https://github.com/SwissTPH/malclimsim")
+```
+
+## Overview
+
+This vignette demonstrates how to use the following functions for
+managing priors in **malclimsim**:
+
+1.  [`return_default_priors()`](https://swisstph.github.io/malclimsim/reference/return_default_priors.md)  
+2.  [`build_priors()`](https://swisstph.github.io/malclimsim/reference/build_priors.md)  
+3.  [`view_priors()`](https://swisstph.github.io/malclimsim/reference/view_priors.md)  
+4.  [`plot_priors()`](https://swisstph.github.io/malclimsim/reference/plot_priors.md)
+
+We will:
+
+- Extract the raw defaults from
+  [`return_default_priors()`](https://swisstph.github.io/malclimsim/reference/return_default_priors.md).  
+- Use
+  [`build_priors()`](https://swisstph.github.io/malclimsim/reference/build_priors.md)
+  to construct
+  [`mcstate::pmcmc_parameter()`](https://rdrr.io/pkg/mcstate/man/pmcmc_parameter.html)
+  objects (either “pure defaults” or with overrides).  
+- Inspect those priors with
+  [`view_priors()`](https://swisstph.github.io/malclimsim/reference/view_priors.md).  
+- Plot them with
+  [`plot_priors()`](https://swisstph.github.io/malclimsim/reference/plot_priors.md).  
+- Override one or more priors by passing an `override_priors` list into
+  [`build_priors()`](https://swisstph.github.io/malclimsim/reference/build_priors.md).
+
+> **Note on terminology**  
+> -
+> [`return_default_priors()`](https://swisstph.github.io/malclimsim/reference/return_default_priors.md)
+> returns a *raw* R list of lists (each element has `initial`, `min`,
+> `max`, and `prior`).  
+> -
+> [`build_priors()`](https://swisstph.github.io/malclimsim/reference/build_priors.md)
+> takes that raw list plus any `override_priors` and returns a named
+> list of `pmcmc_parameter` objects.  
+> -
+> [`view_priors()`](https://swisstph.github.io/malclimsim/reference/view_priors.md)
+> and
+> [`plot_priors()`](https://swisstph.github.io/malclimsim/reference/plot_priors.md)
+> each accept a `priors` argument that should be a list of
+> `pmcmc_parameter` objects (built by
+> [`build_priors()`](https://swisstph.github.io/malclimsim/reference/build_priors.md)).
+
+------------------------------------------------------------------------
+
+## 1. Building a Minimal Example
+
+We first create a completely self‐contained example:
+
+1.  Pull all raw defaults via
+    [`return_default_priors()`](https://swisstph.github.io/malclimsim/reference/return_default_priors.md).  
+2.  Build `param_inputs` (a named list of initial values).  
+3.  Create a dummy identity `proposal_matrix` whose rownames exactly
+    match the parameter names.  
+4.  Choose a small subset of parameters to “estimate”
+    (`params_to_estimate`).
+
+``` r
+# 1. Get the raw default prior specifications:
+default_priors <- return_default_priors()
+
+# 2. Build `param_inputs`: a named list where each element is the raw “initial” for that parameter
+param_inputs <- lapply(default_priors, function(x) x$initial)
+
+# 3. Build a dummy proposal_matrix:
+#    - identity matrix of size = number of parameters
+#    - rownames (and colnames) exactly match the names of default_priors
+all_param_names <- names(default_priors)
+proposal_matrix <- diag(length(all_param_names))
+rownames(proposal_matrix) <- colnames(proposal_matrix) <- all_param_names
+
+# 4. Pick a small subset of parameters to demonstrate:
+params_to_estimate <- c("qR", "z", "eff_SMC", "size_1")
+
+# Show what we have in param_inputs and proposal_matrix:
+str(param_inputs[params_to_estimate], max.level = 1)
+str(proposal_matrix[params_to_estimate, params_to_estimate])
+```
+
+## 2. Building “Pure Default” Priors
+
+Next, we build a list of `pmcmc_parameter` objects from the package
+defaults, using
+[`build_priors()`](https://swisstph.github.io/malclimsim/reference/build_priors.md).
+Since we do *not* supply any `override_priors`,
+[`build_priors()`](https://swisstph.github.io/malclimsim/reference/build_priors.md)
+will:
+
+1.  Internally call
+    [`return_default_priors()`](https://swisstph.github.io/malclimsim/reference/return_default_priors.md)
+    to get the defaults.  
+2.  Wrap each element (for the names in `params_to_estimate`) in
+    [`mcstate::pmcmc_parameter()`](https://rdrr.io/pkg/mcstate/man/pmcmc_parameter.html).
+
+``` r
+# Build a list of pmcmc_parameter() objects (pure defaults):
+default_mcmc_priors <- build_priors(
+  param_inputs,
+  proposal_matrix,
+  params_to_estimate,
+  override_priors = NULL
+)
+
+# Show the names and one example element:
+names(default_mcmc_priors)
+default_mcmc_priors$z
+```
+
+## 3. Viewing Default Priors
+
+We can now call
+[`view_priors()`](https://swisstph.github.io/malclimsim/reference/view_priors.md)
+to get a **data.frame** summarizing each prior’s:
+
+- **Name**  
+- **Initial** value  
+- **Min** / **Max** bounds  
+- A textual **Description** of the prior function (as a string)
+
+Because
+[`view_priors()`](https://swisstph.github.io/malclimsim/reference/view_priors.md)
+expects a list of `pmcmc_parameter` objects, we pass it
+`default_mcmc_priors` via the `priors` argument:
+
+``` r
+priors_df <- view_priors(
+  param_inputs       = param_inputs,
+  proposal_matrix    = proposal_matrix,
+  params_to_estimate = params_to_estimate,
+  priors             = default_mcmc_priors
+)
+priors_df
+```
+
+## 4. Plotting Default Priors
+
+Next, we visualize each prior over its support.
+
+``` r
+prior_plot <- plot_priors(
+  param_inputs       = param_inputs,
+  proposal_matrix    = proposal_matrix,
+  params_to_estimate = params_to_estimate,
+  priors             = default_mcmc_priors
+)
+
+print(prior_plot)
+```
+
+## 5. Modifying One or More Priors
+
+Suppose we want to change the default for **two** parameters:
+
+1.  **z**:
+    - Originally: Uniform(0.01, 2).  
+    - We want to switch to Beta(40, 12) on \[0.01, 1\].
+2.  **qR**:
+    - Originally: Normal(mean = 0.24, sd = 0.5), unbounded except by
+      `(min = 1e-6, max = 0.5)`.  
+    - We want to force `qR ∈ [0.01, 0.5]` with Uniform(0.01, 0.5).
+
+To do that, we build an `override_priors` list in the same structure as
+[`return_default_priors()`](https://swisstph.github.io/malclimsim/reference/return_default_priors.md).
+Then we call
+[`build_priors()`](https://swisstph.github.io/malclimsim/reference/build_priors.md)
+again—but passing our `override_priors`. Anything we specify in
+`override_priors` will replace the package default for that parameter;
+everything else falls back to the original.
+
+``` r
+override_priors <- list(
+  z = list(
+    initial = 0.5,
+    min     = 0.01,
+    max     = 1.0,
+    prior   = function(p) dbeta(p, 40, 12, log = TRUE)
+  ),
+  qR  = list(
+    initial = 0.1,
+    min     = 0.01,
+    max     = 0.5,
+    prior   = function(p) dunif(p, 0.01, 0.5, log = TRUE)
+  )
+)
+
+updated_mcmc_priors <- build_priors(
+  param_inputs,
+  proposal_matrix,
+  params_to_estimate,
+  override_priors = override_priors
+)
+
+updated_priors_df <- view_priors(
+  param_inputs       = param_inputs,
+  proposal_matrix    = proposal_matrix,
+  params_to_estimate = params_to_estimate,
+  priors             = updated_mcmc_priors
+)
+updated_priors_df
+```
+
+Notice how:
+
+- **z** now has `Initial = 0.5`, `Min = 0.01`, `Max = 1.0`, and a
+  Beta(40,12).  
+- **qR** now has `Initial = 0.1`, `Min = 0.01`, `Max = 0.5`, and a
+  Uniform(0.01,0.5).  
+- All other four parameters remain unchanged from the original defaults.
+
+## 6. Re‐Plotting the Updated Priors
+
+Finally, let’s re‐plot our six priors so you can see how **phi** and
+**qR** have changed shape:
+
+``` r
+updated_plot <- plot_priors(
+  param_inputs       = param_inputs,
+  proposal_matrix    = proposal_matrix,
+  params_to_estimate = params_to_estimate,
+  priors             = updated_mcmc_priors
+)
+print(updated_plot)
+```
+
+If you want to integrate directly into the main inference pipeline
+([`inf_run()`](https://swisstph.github.io/malclimsim/reference/inf_run.md)),
+you can pass `override_priors` as an argument there:
+
+``` r
+res <- inf_run(
+  model              = my_model,
+  param_inputs       = param_inputs,
+  control_params     = control_params,
+  params_to_estimate = params_to_estimate,
+  proposal_matrix    = proposal_matrix,
+  adaptive_params    = adaptive_params,
+  start_values       = start_values,
+  dates              = c("2020-01-01", "2022-12-31"),
+  obs_config         = obs_config,
+  override_priors    = override_priors
+)
+```
