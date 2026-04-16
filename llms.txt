@@ -21,10 +21,11 @@ described in:
 
 *Modelling malaria routine surveillance data to inform seasonal malaria
 chemoprevention strategy in Moissala, Southern Chad*. **Nicholas Putney,
-Jessica Sayyad-Hilario, Israel Ukawuba1, Francesco Grandesso3, Saschveen
+Jessica Sayyad-Hilario, Israel Ukawuba, Francesco Grandesso, Saschveen
 Singh, Prince Djuma Safari, Emilie Pothin, Beatrice Filippini,
 Elkoussing Djovouna, Mahamat Saleh Issakha Diar, Clara Champagne, Anton
-Camacho** (not yet published).
+Camacho**
+(<https://www.medrxiv.org/content/10.64898/2026.03.23.26349112v1.full-text>).
 
 The general methodology described in the paper could be used to estimate
 SMC effectiveness and assess different strategies in other geographies.
