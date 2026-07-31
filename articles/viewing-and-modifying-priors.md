@@ -1,6 +1,7 @@
 # Viewing and modifying priors
 
 ``` r
+
 #detach("package:malclimsim", unload = TRUE)
 #devtools::install_github("https://github.com/SwissTPH/malclimsim")
 ```
@@ -63,6 +64,7 @@ We first create a completely self‐contained example:
     (`params_to_estimate`).
 
 ``` r
+
 # 1. Get the raw default prior specifications:
 default_priors <- return_default_priors()
 
@@ -100,6 +102,7 @@ will:
     [`mcstate::pmcmc_parameter()`](https://rdrr.io/pkg/mcstate/man/pmcmc_parameter.html).
 
 ``` r
+
 # Build a list of pmcmc_parameter() objects (pure defaults):
 default_mcmc_priors <- build_priors(
   param_inputs,
@@ -130,6 +133,7 @@ expects a list of `pmcmc_parameter` objects, we pass it
 `default_mcmc_priors` via the `priors` argument:
 
 ``` r
+
 priors_df <- view_priors(
   param_inputs       = param_inputs,
   proposal_matrix    = proposal_matrix,
@@ -144,6 +148,7 @@ priors_df
 Next, we visualize each prior over its support.
 
 ``` r
+
 prior_plot <- plot_priors(
   param_inputs       = param_inputs,
   proposal_matrix    = proposal_matrix,
@@ -175,6 +180,7 @@ again—but passing our `override_priors`. Anything we specify in
 everything else falls back to the original.
 
 ``` r
+
 override_priors <- list(
   z = list(
     initial = 0.5,
@@ -220,6 +226,7 @@ Finally, let’s re‐plot our six priors so you can see how **phi** and
 **qR** have changed shape:
 
 ``` r
+
 updated_plot <- plot_priors(
   param_inputs       = param_inputs,
   proposal_matrix    = proposal_matrix,
@@ -234,6 +241,7 @@ If you want to integrate directly into the main inference pipeline
 you can pass `override_priors` as an argument there:
 
 ``` r
+
 res <- inf_run(
   model              = my_model,
   param_inputs       = param_inputs,

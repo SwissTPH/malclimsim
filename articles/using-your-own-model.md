@@ -27,6 +27,7 @@ in detail elsewhere. Models that are already installed can be viewed
 using base R commands.
 
 ``` r
+
 model_path <- paste0(find.package("malclimsim"), "/models/")
 list.files(model_path)
 ```
@@ -35,6 +36,7 @@ Furthermore, the code underlying the models can be viewed and edited in
 the following way:
 
 ``` r
+
 utils::file.edit(paste0(model_path, "model_new_R_with_FOI.R"))
 ```
 
@@ -43,6 +45,7 @@ utils::file.edit(paste0(model_path, "model_new_R_with_FOI.R"))
 First the malclimsim package must be loaded.
 
 ``` r
+
 library(malclimsim)
 ```
 
@@ -50,6 +53,7 @@ Then, two objects must be defined, one for the path to the Odin model
 stored in a .R file, and another for the name of the model.
 
 ``` r
+
 # Replace this line with location to model that you want to import
 model_path <- "C:/Users/putnni/Documents/models-stored-locally/test_model.R"
 
@@ -62,6 +66,7 @@ arguments. Then, the model can be loaded by assigning the output of
 load_model(model_name) to a variable.
 
 ``` r
+
 import_model(model_path, model_name)
 
 new_model <- load_model(model_name)

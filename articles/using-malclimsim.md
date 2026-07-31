@@ -32,6 +32,7 @@ mcstate package. Lastly, diagnostics will be examined and relevant
 quantities calculated.
 
 ``` r
+
 #detach("package:malclimsim", unload = TRUE)
 #install.packages("odin.dust", repos = c("https://mrc-ide.r-universe.dev", "https://cloud.r-project.org"))
 #install.packages("mcstate", repos = c("https://mrc-ide.r-universe.dev", "https://cloud.r-project.org"))
@@ -49,6 +50,7 @@ longitude) in which you want your model to simulate from. Additionally,
 the years used in the analysis must be specified.
 
 ``` r
+
 # Years used for the analysis
 years_clim <- 2017:2023
 start_date <- ymd("2018-01-01")  # Start date of the analysis
@@ -58,6 +60,7 @@ print("this is a test")
 ```
 
 ``` r
+
 # Latitude and longitude where climate data (rainfall and temperature) is to be saved
 # Rainfall data is from CHIRPS and temperature data is from ERA5
 lat <- 8.34
@@ -76,6 +79,7 @@ European Centre for Medium-Range Weather Forecasts API - instructions
 found here - <https://bluegreen-labs.github.io/ecmwfr/>.
 
 ``` r
+
 # Saving the rainfall data locally based on specified path
 save_climate_data(lon = lon, lat = lat, years = years_clim, 
                   path_to_data = path_to_data,
@@ -97,6 +101,7 @@ For more details, look at the code found in
 “climate_processing_functions.R”.
 
 ``` r
+
 # Reading in climate data saved by `save_climate_data`
 temp_path <- paste0(path_to_data, temp_file_name)
 rain_path <- paste0(path_to_data, rain_file_name)
@@ -116,6 +121,7 @@ the functions that process this SMC data, the format (column names) must
 be as shown below.
 
 ``` r
+
 data(smc_data_raw)
 
 head(smc_data_raw, n = 5)
@@ -138,6 +144,7 @@ intervals, to daily intervals required by the model, we call the
 \`smc_schedule_from_data’ function.
 
 ``` r
+
 smc_schedule <- smc_schedule_from_data(
   smc_cov = smc_data,
   months_30_days = FALSE,
@@ -159,6 +166,7 @@ when SMC starts. The following code helps to ensure everything is
 aligned.
 
 ``` r
+
 met_365 <- impute_climate_to_end_date(met_365, max(smc_schedule$dates)) # climate data only available until December 2023
 
 # Specify lag
@@ -184,6 +192,7 @@ This means that the results are not so sensitivity to the chosen
 population size value.
 
 ``` r
+
 N <- 150000
 ```
 
@@ -197,6 +206,7 @@ in the original paper by FitzJohn et al
 (10.12688/wellcomeopenres.16466.2).
 
 ``` r
+
 malaria_model <- load_model("model_new_R_with_FOI")  # Load the deterministic climate model
 ```
 
@@ -213,6 +223,7 @@ by Ukawuba, as the naming convention differs slightly for some
 parameters (still need to define).
 
 ``` r
+
 # Extract rainfall and temperature data
 rain <- met_365$anom  # Standardized rolling mean of rainfall
 temp <- met_365$temp  # Temperature data
@@ -277,6 +288,7 @@ parameter values above are “selected” - it is worth changing values and
 seeing how it changes the model outputs!
 
 ``` r
+
 # Run the climate-malaria model simulation
 results <- data_sim(
   malaria_model, param_inputs = param_inputs, start_date, end_date,
@@ -285,6 +297,7 @@ results <- data_sim(
 ```
 
 ``` r
+
 plot_time_series(results = results, plot_title = "Simulated Weekly Malaria Cases (2018 to 2023)",
                  select_incidence = "<5", incidence_y_label = "Weekly Malaria Cases")
 ```
@@ -294,6 +307,7 @@ plot_time_series(results = results, plot_title = "Simulated Weekly Malaria Cases
 ### Loading observed data
 
 ``` r
+
 data(obs_cases)
 obs_cases <- obs_cases %>% filter(date_ymd >= start_date)
 ```
@@ -303,6 +317,7 @@ below. If the data is monthly, the \`date_ymd’ column should correspond
 to the first of the month in year, month, day format.
 
 ``` r
+
 head(obs_cases, n = 3)
 ```
 
@@ -324,6 +339,7 @@ then the weight for each observation in the years SMC was given would be
 1, and the weight would be 5 for the year SMC was not given).
 
 ``` r
+
 obs_cases$treatment <- ifelse(year(obs_cases$date_ymd) != 2019, 1, 0)
 control_weight <- mean(obs_cases$treatment) / (1 - mean(obs_cases$treatment))
 obs_cases$obs_weight <- ifelse(year(obs_cases$date_ymd) == 2019, control_weight, 1)
@@ -332,6 +348,7 @@ obs_cases$obs_weight <- ifelse(year(obs_cases$date_ymd) == 2019, control_weight,
 ### Defining model parameters to estimate
 
 ``` r
+
 # Listing the model parameters to be estimated
 params_to_estimate <- c(lag_R = "lag_R", lag_T = "lag_T",
                         sigma_LT = "sigma_LT", sigma_RT = "sigma_RT",
@@ -374,6 +391,7 @@ algorithm is run with no adaptation so that the algorithm represents
 valid draws from the posterior distribution.
 
 ``` r
+
 params_default <- create_mcmc_params(stage = "stage1")
 adaptive_params_1 <- params_default$adaptive_params
 control_params_1 <- params_default$control_params
@@ -398,6 +416,7 @@ growth (this is currently being included as part of the fitting
 procedure and not within the model itself.
 
 ``` r
+
 inf_config <- make_obs_config(
   use_monthly = FALSE,
   age_group = c("u5"),
@@ -406,6 +425,7 @@ inf_config <- make_obs_config(
 ```
 
 ``` r
+
 # Small wrapper around inf_run() + diagnostics + saving
 run_stage <- function(proposal_matrix, start_values, control_params,
                       adaptive_params, out_dir, out_file, rerun_n = 1000,
@@ -437,10 +457,12 @@ run_stage <- function(proposal_matrix, start_values, control_params,
 ### Running Inference
 
 ``` r
+
 mcmc_results_out_dir = "C:/Users/putnni/Documents/git-hub-repositories/vignette-storage/malclimsim/mcmc-results/"
 ```
 
 ``` r
+
 mcmc_stage_1 <- run_stage(proposal_matrix_1, start_values_1, 
           control_params = control_params_1, 
           adaptive_params = adaptive_params_1,
@@ -449,6 +471,7 @@ mcmc_stage_1 <- run_stage(proposal_matrix_1, start_values_1,
 ```
 
 ``` r
+
 mcmc_stage_1 <- readRDS(paste0(mcmc_results_out_dir, "mcmc_results_stage_1.rds"))
 
 inf_params_stage_2 <- update_inf_stage(results_obj = mcmc_stage_1,
@@ -468,6 +491,7 @@ mcmc_stage_2 <- run_stage(proposal_matrix = inf_params_stage_2$proposal_matrix,
 ```
 
 ``` r
+
 mcmc_stage_2 <- readRDS(paste0(mcmc_results_out_dir, "mcmc_results_stage_2.rds")) 
 
 inf_params_stage_3 <- update_inf_stage(results_obj = mcmc_stage_2,
@@ -489,30 +513,35 @@ mcmc_stage_3 <- run_stage(proposal_matrix = inf_params_stage_3$proposal_matrix,
 ## Inference Diagnostics
 
 ``` r
+
 mcmc_stage_3 <- readRDS(paste0(mcmc_results_out_dir, "mcmc_results_stage_3.rds")) 
 ```
 
 ### Examining trace plots
 
 ``` r
+
 mcmc_trace <- MCMC_diag(mcmc_stage_3, params = "trace")
 ```
 
 ### Gelman-rubin test
 
 ``` r
+
 MCMC_diag(mcmc_stage_3, params = "gelman")
 ```
 
 ### Correlation between parameters
 
 ``` r
+
 plot_corr(mcmc_stage_3)
 ```
 
 ### Marginal posterior distributions
 
 ``` r
+
 # Posterior plot
 post_plot_fig <- post_plot(
   list(mcmc_stage_3), params_to_estimate, dim_plot = c(4, 3),
@@ -533,6 +562,7 @@ posterior predictive check). To do this, we first sample a certain
 number of parameter sets from the posterior distribution.
 
 ``` r
+
 # Sample posterior draws from MCMC
 n_samples <- 200
 param_samples <- sample_mcmc_steps(mcmc_stage_3$coda_pars, n_samples)
@@ -545,6 +575,7 @@ also need to include population growth when comparing the model to the
 observed data.
 
 ``` r
+
 # Create covariate matrix (population growth)
 r_df <- get_population_scaling(
   n             = nrow(obs_cases),
@@ -572,6 +603,7 @@ We start by extracting which parameter sets maximized the posterior
 distribution and simulate the weekly number of cases using these values
 
 ``` r
+
 # Extract MAP (max posterior) parameter set
 max_posterior_params <- extract_max_posterior_params(mcmc_stage_3)
 param_inputs_best <- update_param_list(param_inputs, max_posterior_params)
@@ -602,6 +634,7 @@ negative binomial distribution. This provides an interval that gives the
 range of weekly malaria cases we’d be likely to observe.
 
 ``` r
+
 # Simulate cases using different parameter sets coming from MCMC run
 simulations <- run_simulations_from_samples(
   model         = malaria_model,
@@ -622,6 +655,7 @@ The simulations are then summarized and we plot the resulting posterior
 predictive check.
 
 ``` r
+
 # Summarize the simulations
 ci_data <- summarize_simulation_ci(simulations, variables = "inc_C_transformed", ci_level = 0.95)
 
@@ -648,5 +682,6 @@ ppc_plot <- plot_ppc(
 ```
 
 ``` r
+
 print(ppc_plot)
 ```
