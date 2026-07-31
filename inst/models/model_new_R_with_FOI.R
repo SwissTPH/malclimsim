@@ -33,14 +33,14 @@ p_MH_C <- user(0.50)
 ######################################
 # Children
 update(SC) <- SC -  mu_SE_C * SC + mu_RS * RC + mu_TS * TrC - (delta_d + delta_a) * SC + delta_b * P
-update(EC) <- EC - mu_EI * EC +  mu_SE * SC - (delta_d + delta_a) * EC
+update(EC) <- EC - mu_EI * EC +  mu_SE_C * SC - (delta_d + delta_a) * EC
 update(IC) <- IC - mu_IR * IC + pi_s_1 * (1 - fT_C) * mu_EI * EC - (delta_d + delta_a) * IC
 update(TrC) <- TrC - mu_TS * TrC + pi_s_1 * fT_C * mu_EI * EC - (delta_d + delta_a) * TrC
 update(RC) <- RC - mu_RS * RC + mu_IR * IC + (1 - pi_s_1) * mu_EI * EC - (delta_d + delta_a) * RC
 
 # Adults
 update(SA) <- SA -  mu_SE_A * SA + mu_RS * RA + mu_TS * TrA - delta_d * SA + delta_a * SC
-update(EA) <- EA - mu_EI * EA +  mu_SE * SA - delta_d * EA + delta_a * EC
+update(EA) <- EA - mu_EI * EA +  mu_SE_A * SA - delta_d * EA + delta_a * EC
 update(IA) <- IA - mu_IR * IA + pi_s_2 * (1 - fT_A) * mu_EI * EA - delta_d * IA + delta_a * IC
 update(TrA) <- TrA - mu_TS * TrA + pi_s_2 * fT_A * mu_EI * EA - delta_d * TrA + delta_a * TrC
 update(RA) <- RA - mu_RS * RA + mu_IR * IA + (1 - pi_s_2) * mu_EI * EA - delta_d * RA + delta_a * RC
